@@ -1,0 +1,43 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: gateway
+data:
+  application.yml: |-
+    spring:
+      cloud:
+        gateway:
+          discovery:
+            locator:
+              enabled: true
+          routes:
+            - id: account-service
+              uri: lb://account-service
+              predicates:
+                - Path=/account/**
+              filters:
+                - RewritePath=/account/(?<path>.*), /$\{path}
+            - id: execution-service
+              uri: lb://execution-service
+              predicates:
+                - Path=/execution/**
+              filters:
+                - RewritePath=/execution/(?<path>.*), /$\{path}
+            - id: task-service
+              uri: lb://task-service
+              predicates:
+                - Path=/task/**
+              filters:
+                - RewritePath=/task/(?<path>.*), /$\{path}
+            - id: worker-service
+              uri: lb://worker-service
+              predicates:
+                - Path=/worker/**
+              filters:
+                - RewritePath=/worker/(?<path>.*), /$\{path}
+            - id: workflow-service
+              uri: lb://workflow-service
+              predicates:
+                - Path=/workflow/**
+              filters:
+                - RewritePath=/workflow/(?<path>.*), /$\{path}

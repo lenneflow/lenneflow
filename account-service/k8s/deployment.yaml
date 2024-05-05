@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: account-service
+  labels:
+    app: account-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: account-service
+  template:
+    metadata:
+      labels:
+        app: account-service
+    spec:
+      serviceAccountName: spring-cloud-kubernetes
+      containers:
+      - name: account-service
+        image: lenneflow/account-service
+        ports:
+        - containerPort: 8080
+        env:
+          - name: SPRING_CLOUD_BOOTSTRAP_ENABLED
+            value: "true"
+          - name: SPRING_CLOUD_KUBERNETES_SECRETS_ENABLEAPI
+            value: "true"
+#          - name: SPRING_CONFIG_IMPORT
+#            value: "kubernetes:"

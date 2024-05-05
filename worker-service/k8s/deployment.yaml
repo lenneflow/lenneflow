@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-service
+  labels:
+    app: worker-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-service
+  template:
+    metadata:
+      labels:
+        app: worker-service
+    spec:
+      serviceAccountName: spring-cloud-kubernetes
+      containers:
+      - name: worker-service
+        image: lenneflow/worker-service
+        ports:
+        - containerPort: 8080
+        env:
+          - name: SPRING_CLOUD_BOOTSTRAP_ENABLED
+            value: "true"
+          - name: SPRING_CLOUD_KUBERNETES_SECRETS_ENABLEAPI
+            value: "true"
+#          - name: SPRING_CONFIG_IMPORT
+#            value: "kubernetes:"

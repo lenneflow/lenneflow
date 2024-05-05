@@ -1,0 +1,34 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: gateway-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  backend:
+    serviceName: default-http-backend
+    servicePort: 80
+  rules:
+  - host: microservices.info
+    http:
+      paths:
+      - path: /account
+        backend:
+          serviceName: account-service
+          servicePort: 8080
+      - path: /execution
+        backend:
+          serviceName: execution-service
+          servicePort: 8080
+      - path: /task
+        backend:
+          serviceName: task-service
+          servicePort: 8080
+      - path: /worker
+        backend:
+          serviceName: worker-service
+          servicePort: 8080
+      - path: /workflow
+        backend:
+          serviceName: workflow-service
+          servicePort: 8080
