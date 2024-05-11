@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: task-service
+  name: execution-service
   labels:
-    app: task-service
+    app: execution-service
     spring-boot: "true"
 spec:
   ports:
-    - port: 8080
+    - port: 47002
       protocol: TCP
   selector:
-    app: task-service
+    app: execution-service
   type: ClusterIP

@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: task-service
+  name: account-service
   labels:
-    app: task-service
+    app: account-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: task-service
+      app: account-service
   template:
     metadata:
       labels:
-        app: task-service
+        app: account-service
     spec:
-      serviceAccountName: spring-cloud-kubernetes
+      serviceAccountName: lenneflow
       containers:
-      - name: task-service
-        image: lenneflow/task-service
+      - name: account-service
+        image: lenneflow/account-service
         ports:
-        - containerPort: 8080
+        - containerPort: 47001
         env:
           - name: SPRING_CLOUD_BOOTSTRAP_ENABLED
             value: "true"

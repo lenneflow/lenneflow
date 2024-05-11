@@ -14,12 +14,12 @@ spec:
       labels:
         app: workflow-service
     spec:
-      serviceAccountName: spring-cloud-kubernetes
+      serviceAccountName: lenneflow
       containers:
       - name: workflow-service
         image: lenneflow/workflow-service
         ports:
-        - containerPort: 8080
+        - containerPort: 47005
         env:
           - name: SPRING_CLOUD_BOOTSTRAP_ENABLED
             value: "true"

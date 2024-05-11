@@ -1,7 +1,13 @@
 cd..
 
+cd..
+
 cd account-service
 docker build -t lenneflow/account-service .
+cd..
+
+cd admin-service
+docker build -t lenneflow/admin-service .
 cd..
 
 cd execution-service

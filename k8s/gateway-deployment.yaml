@@ -14,7 +14,7 @@ spec:
       labels:
         app: gateway-service
     spec:
-      serviceAccountName: spring-cloud-kubernetes
+      serviceAccountName: lenneflow
       containers:
       - name: gateway
         image: idriss1704/gateway-service

@@ -5,10 +5,10 @@ RUN gradle bootJar --no-daemon
 
 FROM openjdk:17-alpine
 
-EXPOSE 47001
+EXPOSE 8080
 
 RUN mkdir /app
 
-COPY --from=build /home/gradle/src/build/libs/*.jar /app/account-service.jar
+COPY --from=build /home/gradle/src/build/libs/*.jar /app/admin-service.jar
 
-ENTRYPOINT ["java", "-jar","/app/account-service.jar"]
+ENTRYPOINT ["java","-jar","/app/admin-service.jar"]

@@ -3,6 +3,7 @@ apiVersion: v1
 metadata:
   name: account-service
 data:
+  spring.cloud.kubernetes.discovery.all-namespaces: "true"
   application.properties: |-
     spring.data.mongodb.host=mongodb
     spring.data.mongodb.database:admin
