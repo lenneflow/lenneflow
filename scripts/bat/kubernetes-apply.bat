@@ -1,6 +1,6 @@
 cd..
 cd..
 
-kubectl apply -f .\k8s\
+kubectl apply -f .\k8s\ -n lenneflow
 
-kubectl get pods
+kubectl get pods -n lenneflow

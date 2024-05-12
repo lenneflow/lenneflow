@@ -11,7 +11,7 @@ spec:
       labels:
         app: admin-service
     spec:
-      serviceAccountName: lenneflow
+      serviceAccountName: lenneflow-sa
       containers:
       - name: admin
         image: lenneflow/admin-service

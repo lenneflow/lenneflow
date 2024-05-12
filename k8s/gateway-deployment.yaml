@@ -14,9 +14,9 @@ spec:
       labels:
         app: gateway-service
     spec:
-      serviceAccountName: lenneflow
+      serviceAccountName: lenneflow-sa
       containers:
       - name: gateway
-        image: idriss1704/gateway-service
+        image: lenneflow/gateway-service
         ports:
         - containerPort: 8080

@@ -4,41 +4,19 @@ metadata:
   name: gateway-service
 data:
   spring.cloud.kubernetes.discovery.all-namespaces: "true"
-  application.yml: |-
-    spring:
-      cloud:
-        gateway:
-          discovery:
-            locator:
-              enabled: true
-          routes:
-            - id: account-service
-              uri: account-service
-              predicates:
-                - Path=/account/**
-              filters:
-                - RewritePath=/account/(?<path>.*), /$\{path}
-            - id: execution-service
-              uri: execution-service
-              predicates:
-                - Path=/execution/**
-              filters:
-                - RewritePath=/execution/(?<path>.*), /$\{path}
-            - id: task-service
-              uri: task-service
-              predicates:
-                - Path=/task/**
-              filters:
-                - RewritePath=/task/(?<path>.*), /$\{path}
-            - id: worker-service
-              uri: worker-service
-              predicates:
-                - Path=/worker/**
-              filters:
-                - RewritePath=/worker/(?<path>.*), /$\{path}
-            - id: workflow-service
-              uri: http://leneflow.local/workflow-service
-              predicates:
-                - Path=/workflow/**
-              filters:
-                - RewritePath=/workflow/(?<path>.*), /$\{path}
+  application.properties: |-
+    spring.cloud.gateway.routes[0].id=account-service
+    spring.cloud.gateway.routes[0].filters=RewritePath=/execution/(?<path>.*), /$\{path}
+    spring.cloud.gateway.routes[0].predicates[0]=Path=/account/**
+    spring.cloud.gateway.routes[2].id=execution-service
+    spring.cloud.gateway.routes[2].filters=RewritePath=/execution/(?<path>.*), /$\{path}
+    spring.cloud.gateway.routes[2].predicates[2]=Path=/execution/**
+    spring.cloud.gateway.routes[3].id=task-service
+    spring.cloud.gateway.routes[3].filters=RewritePath=/execution/(?<path>.*), /$\{path}
+    spring.cloud.gateway.routes[3].predicates[3]=Path=/task/**
+    spring.cloud.gateway.routes[1].id=worker-service
+    spring.cloud.gateway.routes[1].filters=RewritePath=/execution/(?<path>.*), /$\{path}
+    spring.cloud.gateway.routes[1].predicates[1]=Path=/worker/**
+    spring.cloud.gateway.routes[4].id=workflow-service
+    spring.cloud.gateway.routes[4].filters=RewritePath=/execution/(?<path>.*), /$\{path}
+    spring.cloud.gateway.routes[4].predicates[4]=Path=/workflow/**

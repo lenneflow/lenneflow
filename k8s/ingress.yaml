@@ -1,19 +1,15 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: gateway-ingress
+  name: lenneflow-ingress
   annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
-  defaultBackend:
-    service:
-      name: default-http-backend
-      port:
-        number: 80
-  ingressClassName: nginx-example
+  ingressClassName: nginx
   rules:
     - host: lenneflow.local
-    - http:
+      http:
         paths:
           - path: /account
             pathType: Prefix
