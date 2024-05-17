@@ -24,6 +24,6 @@ public class HelloWorldController {
 
     @GetMapping("/hello2")
     public ResponseEntity<String> getHello2() {
-        return ResponseEntity.ok("Call execution service from account service  " + executionClient.getHello());
+        return  executionClient.getHello();
     }
 }
