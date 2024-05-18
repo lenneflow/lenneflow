@@ -5,6 +5,8 @@ set -x
 
 cd ..
 
+cd ..
+
 cd account-service
 docker build -t lenneflow/account-service .
 cd ..
