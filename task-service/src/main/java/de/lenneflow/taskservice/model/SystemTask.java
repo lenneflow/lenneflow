@@ -1,0 +1,55 @@
+package de.lenneflow.taskservice.model;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.lenneflow.taskservice.util.TaskStatus;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Document
+public class SystemTask {
+
+    private String taskID;
+
+    private String taskName;
+
+    private String taskDescription;
+
+    private TaskStatus taskStatus;
+
+    private String taskType;
+
+    private String taskPriority;
+
+    private int retryCount;
+
+    private long scheduledTime;
+
+    private long startTime;
+
+    private long endTime;
+
+    private long updateTime;
+
+    @JsonIgnore
+    private Map<String, Object> inputPayload = new HashMap<>();
+
+    @JsonIgnore
+    private Map<String, Object> outputPayload = new HashMap<>();
+
+    @JsonIgnore
+    private Map<String, Object> inputData = new HashMap<>();
+
+    @JsonIgnore
+    private Map<String, Object> outputData = new HashMap<>();
+
+}
