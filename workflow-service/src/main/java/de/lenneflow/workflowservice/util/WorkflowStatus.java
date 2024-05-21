@@ -1,0 +1,28 @@
+package de.lenneflow.workflowservice.util;
+
+public enum WorkflowStatus {
+
+    RUNNING(false, false),
+    COMPLETED(true, true),
+    FAILED(true, false),
+    TIMED_OUT(true, false),
+    TERMINATED(true, false),
+    PAUSED(false, true);
+
+    private final boolean terminal;
+
+    private final boolean successful;
+
+    WorkflowStatus(boolean terminal, boolean successful) {
+        this.terminal = terminal;
+        this.successful = successful;
+    }
+
+    public boolean isTerminal() {
+        return terminal;
+    }
+
+    public boolean isSuccessful() {
+        return successful;
+    }
+}
