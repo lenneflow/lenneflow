@@ -34,7 +34,6 @@ public class ExecutionController {
         workflowExecution.setWorkflowDescription(workflow.getDescription());
         workflowExecution.setWorkflowName(workflow.getName());
         workflowExecution.setWorkflowStatus(workflow.getStatus());
-
         return workflowExecutionRepository.save(workflowExecution);
     }
 
