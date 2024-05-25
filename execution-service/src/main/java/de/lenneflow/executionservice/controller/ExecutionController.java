@@ -37,7 +37,6 @@ public class ExecutionController {
         return workflowExecutionRepository.save(workflowExecution);
     }
 
-
     @GetMapping("/stop/{executionId}")
     public WorkflowExecution stopWorkflow(@PathVariable String executionId) {
         WorkflowExecution workflowExecution = workflowExecutionRepository.findByExecutionID(executionId);
