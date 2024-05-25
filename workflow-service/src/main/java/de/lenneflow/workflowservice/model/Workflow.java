@@ -1,6 +1,6 @@
 package de.lenneflow.workflowservice.model;
 
-import de.lenneflow.workflowservice.util.WorkflowStatus;
+import de.lenneflow.workflowservice.enums.WorkflowStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,7 +31,7 @@ public class Workflow {
 
     private int version = 1;
 
-    private List<WorkflowTask> tasks = new LinkedList<>();
+    private List<WorkflowStep> tasks = new LinkedList<>();
 
     private boolean statusListenerEnabled = false;
 

@@ -1,7 +1,7 @@
-package de.lenneflow.taskservice.model;
+package de.lenneflow.executionservice.feignmodels;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.lenneflow.taskservice.enums.TaskStatus;
+import de.lenneflow.executionservice.enums.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

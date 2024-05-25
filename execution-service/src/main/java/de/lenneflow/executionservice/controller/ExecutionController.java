@@ -1,10 +1,10 @@
 package de.lenneflow.executionservice.controller;
 
+import de.lenneflow.executionservice.enums.WorkflowStatus;
 import de.lenneflow.executionservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.executionservice.feignmodels.Workflow;
 import de.lenneflow.executionservice.model.WorkflowExecution;
 import de.lenneflow.executionservice.repository.WorkflowExecutionRepository;
-import de.lenneflow.executionservice.utils.WorkflowStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 

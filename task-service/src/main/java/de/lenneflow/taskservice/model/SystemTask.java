@@ -1,11 +1,14 @@
 package de.lenneflow.taskservice.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.lenneflow.taskservice.util.TaskStatus;
+import de.lenneflow.taskservice.enums.SystemTaskType;
+import de.lenneflow.taskservice.enums.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.HashMap;
@@ -18,25 +21,23 @@ import java.util.Map;
 @Document
 public class SystemTask {
 
+    @Id
     private String taskID;
 
+    @Indexed(unique = true)
     private String taskName;
 
     private String taskDescription;
 
     private TaskStatus taskStatus;
 
-    private String taskType;
+    private SystemTaskType taskType;
 
     private String taskPriority;
 
     private int retryCount;
 
-    private long scheduledTime;
-
-    private long startTime;
-
-    private long endTime;
+    private long creationTime;
 
     private long updateTime;
 

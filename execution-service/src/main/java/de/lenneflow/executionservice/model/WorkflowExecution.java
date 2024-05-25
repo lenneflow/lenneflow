@@ -1,6 +1,6 @@
 package de.lenneflow.executionservice.model;
 
-import de.lenneflow.executionservice.utils.WorkflowStatus;
+import de.lenneflow.executionservice.enums.WorkflowStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

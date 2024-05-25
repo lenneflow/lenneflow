@@ -1,6 +1,6 @@
 package de.lenneflow.executionservice.feignmodels;
 
-import de.lenneflow.executionservice.utils.WorkflowStatus;
+import de.lenneflow.executionservice.enums.WorkflowStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,8 +16,10 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Document
 public class Workflow {
 
+    @Id
     private String uuid;
 
     @Indexed(unique = true)
@@ -25,11 +27,11 @@ public class Workflow {
 
     private String description;
 
-    private int version = 1;
-
     private WorkflowStatus status;
 
-    private List<WorkflowTask> tasks = new LinkedList<>();
+    private int version = 1;
+
+    private List<WorkflowStep> tasks = new LinkedList<>();
 
     private boolean statusListenerEnabled = false;
 

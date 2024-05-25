@@ -1,5 +1,8 @@
-package de.lenneflow.taskservice.util;
+package de.lenneflow.executionservice.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum TaskStatus {
 
     IN_PROGRESS(false, true, true),
@@ -24,15 +27,4 @@ public enum TaskStatus {
         this.retriable = retriable;
     }
 
-    public boolean isTerminal() {
-        return terminal;
-    }
-
-    public boolean isSuccessful() {
-        return successful;
-    }
-
-    public boolean isRetriable() {
-        return retriable;
-    }
 }

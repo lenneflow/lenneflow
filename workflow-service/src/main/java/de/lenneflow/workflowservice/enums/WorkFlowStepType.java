@@ -1,6 +1,6 @@
-package de.lenneflow.executionservice.utils;
+package de.lenneflow.workflowservice.enums;
 
-public enum WorkFlowTaskType {
+public enum WorkFlowStepType {
     SIMPLE,
     DYNAMIC,
     FORK_JOIN,

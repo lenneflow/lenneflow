@@ -1,7 +1,7 @@
 package de.lenneflow.taskservice.repository;
 
 import de.lenneflow.taskservice.model.WorkerTask;
-import de.lenneflow.taskservice.util.TaskStatus;
+import de.lenneflow.taskservice.enums.TaskStatus;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;

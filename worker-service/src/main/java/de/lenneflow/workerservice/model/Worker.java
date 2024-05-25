@@ -1,22 +1,21 @@
-package de.lenneflow.executionservice.feignmodels;
+package de.lenneflow.workerservice.model;
 
-import de.lenneflow.executionservice.utils.WorkFlowTaskType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class WorkflowTask {
+@Document
+public class Worker {
 
     @Id
     private String uuid;
@@ -26,9 +25,11 @@ public class WorkflowTask {
 
     private String description;
 
-    private WorkFlowTaskType taskType;
+    private String nameSpace;
 
-    private Map<String, List<WorkflowTask>> decisionCases = new LinkedHashMap<>();
+    private List<String> taskTypes;
 
-    private Integer retryCount;
+    private String dockerRepositoryUrl;
+
+    private String dockerImageName;
 }

@@ -1,5 +1,8 @@
-package de.lenneflow.executionservice.utils;
+package de.lenneflow.workflowservice.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum WorkflowStatus {
 
     RUNNING(false, false),
@@ -19,11 +22,4 @@ public enum WorkflowStatus {
         this.successful = successful;
     }
 
-    public boolean isTerminal() {
-        return terminal;
-    }
-
-    public boolean isSuccessful() {
-        return successful;
-    }
 }

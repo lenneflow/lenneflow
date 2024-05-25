@@ -1,7 +1,7 @@
 package de.lenneflow.workflowservice.controller;
 
-import de.lenneflow.workflowservice.model.WorkflowTask;
-import de.lenneflow.workflowservice.repository.WorkflowTaskRepository;
+import de.lenneflow.workflowservice.model.WorkflowStep;
+import de.lenneflow.workflowservice.repository.WorkflowStepRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,29 +11,29 @@ import java.util.List;
 public class WorkflowTaskController {
 
     final
-    WorkflowTaskRepository workflowTaskRepository;
+    WorkflowStepRepository workflowStepRepository;
 
-    public WorkflowTaskController(WorkflowTaskRepository workflowTaskRepository) {
-        this.workflowTaskRepository = workflowTaskRepository;
+    public WorkflowTaskController(WorkflowStepRepository workflowStepRepository) {
+        this.workflowStepRepository = workflowStepRepository;
     }
 
     @GetMapping("/get/{uuid}")
-    public WorkflowTask getWorkflow(@PathVariable String uuid) {
-        return workflowTaskRepository.findByUuid(uuid);
+    public WorkflowStep getWorkflow(@PathVariable String uuid) {
+        return workflowStepRepository.findByUuid(uuid);
     }
 
     @GetMapping("/get/all")
-    public List<WorkflowTask> getAllWorkflows() {
-        return workflowTaskRepository.findAll();
+    public List<WorkflowStep> getAllWorkflows() {
+        return workflowStepRepository.findAll();
     }
 
     @PostMapping("/add")
-    public WorkflowTask addNewWorkflow(WorkflowTask workflowTask) {
-        return workflowTaskRepository.save(workflowTask);
+    public WorkflowStep addNewWorkflow(WorkflowStep workflowStep) {
+        return workflowStepRepository.save(workflowStep);
     }
 
     @PatchMapping("/update")
-    public WorkflowTask patchWorkflow(WorkflowTask workflowTask) {
-        return workflowTaskRepository.save(workflowTask);
+    public WorkflowStep patchWorkflow(WorkflowStep workflowStep) {
+        return workflowStepRepository.save(workflowStep);
     }
 }
