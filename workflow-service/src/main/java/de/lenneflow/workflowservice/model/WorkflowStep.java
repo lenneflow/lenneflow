@@ -1,5 +1,6 @@
 package de.lenneflow.workflowservice.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.lenneflow.workflowservice.enums.WorkFlowStepType;
 import de.lenneflow.workflowservice.enums.WorkflowStepStatus;
 import lombok.AllArgsConstructor;
@@ -9,6 +10,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,4 +55,16 @@ public class WorkflowStep {
     private long endTime;
 
     private long updateTime;
+
+    @JsonIgnore
+    private Map<String, Object> inputPayload = new HashMap<>();
+
+    @JsonIgnore
+    private Map<String, Object> outputPayload = new HashMap<>();
+
+    @JsonIgnore
+    private Map<String, Object> inputData = new HashMap<>();
+
+    @JsonIgnore
+    private Map<String, Object> outputData = new HashMap<>();
 }

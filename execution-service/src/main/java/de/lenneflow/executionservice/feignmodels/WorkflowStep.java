@@ -1,6 +1,6 @@
 package de.lenneflow.executionservice.feignmodels;
 
-import de.lenneflow.executionservice.enums.WorkFlowStepType;
+import de.lenneflow.executionservice.enums.StepTaskType;
 import de.lenneflow.executionservice.enums.WorkflowStepStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,7 +36,7 @@ public class WorkflowStep {
 
     private WorkflowStep previousStep;
 
-    private WorkFlowStepType stepType;
+    private StepTaskType stepTaskType;
 
     private String workerTaskId;
 

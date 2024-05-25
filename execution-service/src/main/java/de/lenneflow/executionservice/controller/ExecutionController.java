@@ -1,6 +1,7 @@
 package de.lenneflow.executionservice.controller;
 
 import de.lenneflow.executionservice.enums.WorkflowStatus;
+import de.lenneflow.executionservice.feignclients.TaskServiceClient;
 import de.lenneflow.executionservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.executionservice.feignmodels.Workflow;
 import de.lenneflow.executionservice.model.WorkflowExecution;
@@ -19,9 +20,12 @@ public class ExecutionController {
 
     final WorkflowServiceClient workflowServiceClient;
 
-    public ExecutionController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient) {
+    final TaskServiceClient taskServiceClient;
+
+    public ExecutionController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient, TaskServiceClient taskServiceClient) {
         this.workflowExecutionRepository = workflowExecutionRepository;
         this.workflowServiceClient = workflowServiceClient;
+        this.taskServiceClient = taskServiceClient;
     }
 
     @GetMapping("/start/{id}")

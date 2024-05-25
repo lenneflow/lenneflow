@@ -31,7 +31,7 @@ public class Workflow {
 
     private int version = 1;
 
-    private List<WorkflowStep> tasks = new LinkedList<>();
+    private List<WorkflowStep> steps = new LinkedList<>();
 
     private boolean statusListenerEnabled = false;
 

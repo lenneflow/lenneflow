@@ -28,7 +28,7 @@ public class WorkerTask {
 
     private String taskDescription;
 
-    private TaskStatus taskStatus;
+    private TaskStatus  taskStatus;
 
     private String taskType;
 
