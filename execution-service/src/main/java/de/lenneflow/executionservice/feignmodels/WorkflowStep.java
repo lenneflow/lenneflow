@@ -1,13 +1,10 @@
 package de.lenneflow.executionservice.feignmodels;
 
-import de.lenneflow.executionservice.enums.StepTaskType;
-import de.lenneflow.executionservice.enums.WorkflowStepStatus;
+import de.lenneflow.executionservice.enums.RunNode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,9 +14,8 @@ import java.util.Map;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Document
 public class WorkflowStep {
-    @Id
+
     private String uuid;
 
     private String workflowUuid;
@@ -36,7 +32,7 @@ public class WorkflowStep {
 
     private WorkflowStep previousStep;
 
-    private StepTaskType stepTaskType;
+    private RunNode runNode;
 
     private String workerTaskId;
 

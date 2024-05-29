@@ -5,7 +5,10 @@ import de.lenneflow.executionservice.feignclients.TaskServiceClient;
 import de.lenneflow.executionservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.executionservice.feignmodels.Workflow;
 import de.lenneflow.executionservice.model.WorkflowExecution;
+import de.lenneflow.executionservice.model.WorkflowInstance;
 import de.lenneflow.executionservice.repository.WorkflowExecutionRepository;
+import de.lenneflow.executionservice.repository.WorkflowInstanceRepository;
+import de.lenneflow.executionservice.repository.WorkflowStepInstanceRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,36 +18,31 @@ import java.util.UUID;
 @RequestMapping("/execution/workflow")
 public class ExecutionController {
 
-    final
-    WorkflowExecutionRepository workflowExecutionRepository;
-
+    final WorkflowExecutionRepository workflowExecutionRepository;
     final WorkflowServiceClient workflowServiceClient;
-
     final TaskServiceClient taskServiceClient;
+    final WorkflowInstanceRepository workflowInstanceRepository;
+    final WorkflowStepInstanceRepository workflowStepInstanceRepository;
+    final WorkflowRunner workflowRunner;
 
-    public ExecutionController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient, TaskServiceClient taskServiceClient) {
+    public ExecutionController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient, TaskServiceClient taskServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowRunner workflowRunner) {
         this.workflowExecutionRepository = workflowExecutionRepository;
         this.workflowServiceClient = workflowServiceClient;
         this.taskServiceClient = taskServiceClient;
+        this.workflowInstanceRepository = workflowInstanceRepository;
+        this.workflowStepInstanceRepository = workflowStepInstanceRepository;
+        this.workflowRunner = workflowRunner;
     }
 
-    @GetMapping("/start/{id}")
-    public WorkflowExecution startWorkflow(@PathVariable String id) {
-        WorkflowExecution workflowExecution = new WorkflowExecution();
-        workflowExecution.setExecutionID(UUID.randomUUID().toString());
-        Workflow workflow = workflowServiceClient.getWorkflow(id);
-        workflow.setStatus(WorkflowStatus.RUNNING);
-        workflowServiceClient.updateWorkflow(workflow);
-        workflowExecution.setWorkflowDescription(workflow.getDescription());
-        workflowExecution.setWorkflowName(workflow.getName());
-        workflowExecution.setWorkflowStatus(workflow.getStatus());
-        return workflowExecutionRepository.save(workflowExecution);
+    @GetMapping("/start/{workflowId}")
+    public WorkflowInstance startWorkflow(@PathVariable String workflowId) {
+       return workflowRunner.start(workflowId);
     }
 
     @GetMapping("/stop/{executionId}")
-    public WorkflowExecution stopWorkflow(@PathVariable String executionId) {
+    public WorkflowInstance stopWorkflow(@PathVariable String executionId) {
         WorkflowExecution workflowExecution = workflowExecutionRepository.findByExecutionID(executionId);
-        Workflow workflow = workflowServiceClient.getWorkflow(workflowExecution.getWorkflowID());
+        Workflow workflow = workflowServiceClient.getWorkflow(workflowExecution.getWorkflowId());
         workflow.setStatus(WorkflowStatus.STOPPED);
         workflowServiceClient.updateWorkflow(workflow);
         workflowExecution.setWorkflowStatus(workflow.getStatus());

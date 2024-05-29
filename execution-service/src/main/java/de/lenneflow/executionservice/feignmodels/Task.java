@@ -1,14 +1,11 @@
-package de.lenneflow.taskservice.model;
+package de.lenneflow.executionservice.feignmodels;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.lenneflow.taskservice.enums.TaskStatus;
+import de.lenneflow.executionservice.enums.RunNode;
+import de.lenneflow.executionservice.enums.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,20 +14,23 @@ import java.util.Map;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Document
-public class WorkerTask {
+public class Task {
 
-    @Id
-    private String taskID;
+    public static final String METADATA_KEY_EXECUTION_ID = "executionId";
+    public static final String METADATA_KEY_STEP_INSTANCE_ID = "stepInstanceId";
+    public static final String METADATA_KEY_WORKFlOW_INSTANCE_ID = "workflowInstanceId";
 
-    @Indexed(unique = true)
+    private Map<String, String> metaData = new HashMap<>();
+
     private String taskName;
 
     private String taskDescription;
 
-    private TaskStatus taskStatus;
+    private TaskStatus  taskStatus;
 
     private String taskType;
+
+    private RunNode runNode;
 
     private int taskPriority;
 
@@ -40,15 +40,11 @@ public class WorkerTask {
 
     private long updateTime;
 
-    @JsonIgnore
     private Map<String, Object> inputPayload = new HashMap<>();
 
-    @JsonIgnore
     private Map<String, Object> outputPayload = new HashMap<>();
 
-    @JsonIgnore
     private Map<String, Object> inputData = new HashMap<>();
 
-    @JsonIgnore
     private Map<String, Object> outputData = new HashMap<>();
 }

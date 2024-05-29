@@ -1,5 +1,5 @@
 package de.lenneflow.executionservice.enums;
 
-public enum StepTaskType {
+public enum RunNode {
     SYSTEM, WORKER
 }

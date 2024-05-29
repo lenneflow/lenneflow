@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 @Getter
 @Setter
@@ -16,9 +17,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class WorkflowExecution {
 
     @Id
-    private String executionID;
+    private String executionId;
 
-    private String workflowID;
+    @DocumentReference
+    private WorkflowInstance workflowInstance;
+
+    @DocumentReference
+    private WorkflowStepInstance workflowStepInstance;
 
     private String workflowName;
 
@@ -30,12 +35,12 @@ public class WorkflowExecution {
 
     private String workflowVersion;
 
-    private String workflowStartTime;
+    private String runStartTime;
 
-    private String workflowEndTime;
+    private String runEndTime;
 
-    private String workflowErrors;
+    private String runErrors;
 
-    private String workflowOutput;
+    private String runOutput;
 
 }

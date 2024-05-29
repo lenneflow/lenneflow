@@ -17,8 +17,7 @@ import org.springframework.context.annotation.Bean;
 @EnableFeignClients
 public class ExecutionServiceApplication {
 
-    private static final String WORKERTASKRESULTQUEUE = "WorkerTaskResultQueue";
-    private static final String SYSTEMTASKRESULTQUEUE = "SystemTaskResultQueue";
+    private static final String TASKRESULTQUEUE = "taskResultQueue";
 
     public static void main(String[] args) {
         SpringApplication.run(ExecutionServiceApplication.class, args);
@@ -48,13 +47,8 @@ public class ExecutionServiceApplication {
     }
 
     @Bean
-    public Queue workerTaskResultsQueue() {
-        return new Queue(WORKERTASKRESULTQUEUE);
-    }
-
-    @Bean
-    public Queue systemTaskResultsQueue() {
-        return new Queue(SYSTEMTASKRESULTQUEUE);
+    public Queue taskResultsQueue() {
+        return new Queue(TASKRESULTQUEUE);
     }
 
 }

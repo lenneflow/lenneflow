@@ -1,6 +1,7 @@
-package de.lenneflow.workflowservice.model;
+package de.lenneflow.executionservice.model;
 
-import de.lenneflow.workflowservice.enums.WorkflowStatus;
+
+import de.lenneflow.executionservice.enums.WorkflowStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,10 +19,12 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document
-public class Workflow {
+public class WorkflowInstance {
 
     @Id
-    private String workflowId;
+    private String instanceID;
+
+    private String workflowID;
 
     @Indexed(unique = true)
     private String name;
@@ -33,7 +36,7 @@ public class Workflow {
     private int version = 1;
 
     @DocumentReference
-    private List<WorkflowStep> steps = new LinkedList<>();
+    private List<WorkflowStepInstance> stepInstances = new LinkedList<>();
 
     private boolean statusListenerEnabled = false;
 

@@ -1,6 +1,7 @@
-package de.lenneflow.taskservice.queue;
+package de.lenneflow.executionservice.queue;
 
-import de.lenneflow.taskservice.model.Task;
+import de.lenneflow.executionservice.enums.RunNode;
+import de.lenneflow.executionservice.feignmodels.Task;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Queue;
@@ -18,8 +19,24 @@ public class QueueUtil {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public void addWorkerTaskToQueue(Task task) {
+    public void addTaskToQueue(Task task) {
+        if(task.getRunNode() == RunNode.SYSTEM){
+            addSystemTaskToQueue(task);
+        }else{
+            addWorkerTaskToQueue(task);
+        }
+    }
+
+    private void addWorkerTaskToQueue(Task task) {
         String queueName = task.getTaskType();
+        String exchange  = queueName + "-exchange";
+        String routingKey = queueName + "-routingKey";
+        createQueueAndBinding(queueName, exchange, routingKey);
+        rabbitTemplate.convertAndSend(exchange, routingKey, task);
+    }
+
+    private void addSystemTaskToQueue(Task task) {
+        String queueName = "SystemQueue";
         String exchange  = queueName + "-exchange";
         String routingKey = queueName + "-routingKey";
         createQueueAndBinding(queueName, exchange, routingKey);

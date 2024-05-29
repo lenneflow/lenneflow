@@ -13,6 +13,7 @@ public enum TaskStatus {
     COMPLETED_WITH_ERRORS(true, true, true),
     SCHEDULED(false, true, true),
     TIMED_OUT(true, false, true),
+    NOT_RUN(false, false, false),
     SKIPPED(true, true, false);
 
     private final boolean terminal;

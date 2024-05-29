@@ -1,4 +1,4 @@
-package de.lenneflow.workflowservice.enums;
+package de.lenneflow.executionservice.enums;
 
 public enum WorkFlowStepType {
     SIMPLE,

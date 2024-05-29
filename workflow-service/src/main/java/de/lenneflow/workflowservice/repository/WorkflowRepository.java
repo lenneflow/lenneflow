@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface WorkflowRepository extends MongoRepository<Workflow, String> {
 
-    Workflow findByUuid(String uuid);
+    Workflow findByWorkflowId(String id);
 
     Workflow findByName(String name);
 

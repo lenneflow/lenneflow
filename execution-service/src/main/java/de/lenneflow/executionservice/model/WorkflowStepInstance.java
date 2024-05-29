@@ -1,8 +1,9 @@
-package de.lenneflow.workflowservice.model;
+package de.lenneflow.executionservice.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.lenneflow.workflowservice.enums.WorkFlowStepType;
-import de.lenneflow.workflowservice.enums.WorkflowStepStatus;
+import de.lenneflow.executionservice.enums.TaskStatus;
+import de.lenneflow.executionservice.enums.WorkFlowStepType;
+import de.lenneflow.executionservice.feignmodels.Task;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,11 +22,16 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document
-public class WorkflowStep {
+public class WorkflowStepInstance {
+
     @Id
+    private String instanceId;
+
     private String stepId;
 
     private String workflowId;
+
+    private String workflowInstanceId;
 
     private String description;
 
@@ -33,18 +39,21 @@ public class WorkflowStep {
 
     private boolean end;
 
-    private WorkflowStepStatus status;
+    private TaskStatus taskStatus;
 
-    private WorkflowStep nextStep;
+    @DocumentReference
+    private WorkflowStepInstance nextStep;
 
-    private WorkflowStep previousStep;
+    @DocumentReference
+    private WorkflowStepInstance previousStep;
 
     private WorkFlowStepType stepType;
 
-    private String taskId;
+    @DocumentReference
+    private Task task;
 
     @DocumentReference
-    private Map<String, List<WorkflowStep>> decisionCases = new LinkedHashMap<>();
+    private Map<String, List<WorkflowStepInstance>> decisionCases = new LinkedHashMap<>();
 
     private Integer retryCount;
 
