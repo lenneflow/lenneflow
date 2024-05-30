@@ -41,33 +41,18 @@ public class ExecutionController {
 
     @GetMapping("/stop/{executionId}")
     public WorkflowInstance stopWorkflow(@PathVariable String executionId) {
-        WorkflowExecution workflowExecution = workflowExecutionRepository.findByExecutionID(executionId);
-        Workflow workflow = workflowServiceClient.getWorkflow(workflowExecution.getWorkflowId());
-        workflow.setStatus(WorkflowStatus.STOPPED);
-        workflowServiceClient.updateWorkflow(workflow);
-        workflowExecution.setWorkflowStatus(workflow.getStatus());
-        return workflowExecutionRepository.save(workflowExecution);
+        return workflowRunner.stop(executionId);
     }
 
     @GetMapping("/pause/{executionId}")
     @ResponseStatus(HttpStatus.OK)
-    public WorkflowExecution pauseWorkflow(@PathVariable String executionId) {
-        WorkflowExecution workflowExecution = workflowExecutionRepository.findByExecutionID(executionId);
-        Workflow workflow = workflowServiceClient.getWorkflow(workflowExecution.getWorkflowID());
-        workflow.setStatus(WorkflowStatus.PAUSED);
-        workflowServiceClient.updateWorkflow(workflow);
-        workflowExecution.setWorkflowStatus(workflow.getStatus());
-        return workflowExecutionRepository.save(workflowExecution);
+    public WorkflowInstance pauseWorkflow(@PathVariable String executionId) {
+        return workflowRunner.pause(executionId);
     }
 
     @GetMapping("/resume/{executionId}")
-    public WorkflowExecution resumeWorkflow(@PathVariable String executionId) {
-        WorkflowExecution workflowExecution = workflowExecutionRepository.findByExecutionID(executionId);
-        Workflow workflow = workflowServiceClient.getWorkflow(workflowExecution.getWorkflowID());
-        workflow.setStatus(WorkflowStatus.RUNNING);
-        workflowServiceClient.updateWorkflow(workflow);
-        workflowExecution.setWorkflowStatus(workflow.getStatus());
-        return workflowExecutionRepository.save(workflowExecution);
+    public WorkflowInstance resumeWorkflow(@PathVariable String executionId) {
+        return workflowRunner.resume(executionId);
     }
 
 }

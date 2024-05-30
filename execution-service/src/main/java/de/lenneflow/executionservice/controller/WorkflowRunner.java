@@ -6,6 +6,8 @@ import de.lenneflow.executionservice.feignclients.TaskServiceClient;
 import de.lenneflow.executionservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.executionservice.feignmodels.Task;
 import de.lenneflow.executionservice.feignmodels.TaskResult;
+import de.lenneflow.executionservice.feignmodels.Workflow;
+import de.lenneflow.executionservice.feignmodels.WorkflowStep;
 import de.lenneflow.executionservice.model.WorkflowExecution;
 import de.lenneflow.executionservice.model.WorkflowInstance;
 import de.lenneflow.executionservice.model.WorkflowStepInstance;
@@ -72,7 +74,7 @@ public class WorkflowRunner {
     }
 
     private WorkflowStepInstance getNextStep(WorkflowStepInstance stepInstance) {
-        switch (stepInstance.getStepType()){
+        switch (stepInstance.getWorkFlowStepType()){
             case SIMPLE:
                 return stepInstance.getNextStep();
         }
@@ -112,7 +114,7 @@ public class WorkflowRunner {
     }
 
     private WorkflowStepInstance getInitialStep(WorkflowInstance workflow) {
-        for (WorkflowStepInstance step : workflowStepInstanceRepository.findByWorkflowInstanceId(workflow.getInstanceID())) {
+        for (WorkflowStepInstance step : workflowStepInstanceRepository.findByWorkflowInstanceId(workflow.getId())) {
             if (step.isStart()) return step;
         }
         return null;
@@ -120,15 +122,15 @@ public class WorkflowRunner {
 
     private Map<String, String> generateTaskMetaData(WorkflowExecution execution, WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance) {
         Map<String, String> metaData = new HashMap<>();
-        metaData.put(Task.METADATA_KEY_EXECUTION_ID, execution.getExecutionId());
-        metaData.put(Task.METADATA_KEY_WORKFlOW_INSTANCE_ID, workflowInstance.getInstanceID());
-        metaData.put(Task.METADATA_KEY_STEP_INSTANCE_ID, workflowStepInstance.getInstanceId());
+        metaData.put(Task.METADATA_KEY_EXECUTION_ID, execution.getId());
+        metaData.put(Task.METADATA_KEY_WORKFlOW_INSTANCE_ID, workflowInstance.getId());
+        metaData.put(Task.METADATA_KEY_STEP_INSTANCE_ID, workflowStepInstance.getId());
         return metaData;
     }
 
     private WorkflowExecution createWorkflowExecution(WorkflowInstance workflowInstance) {
         WorkflowExecution workflowExecution = new WorkflowExecution();
-        workflowExecution.setExecutionId(UUID.randomUUID().toString());
+        workflowExecution.setId(UUID.randomUUID().toString());
         workflowExecution.setWorkflowDescription(workflowInstance.getDescription());
         workflowExecution.setWorkflowName(workflowInstance.getName());
         workflowExecution.setWorkflowStatus(workflowInstance.getStatus());
@@ -136,13 +138,20 @@ public class WorkflowRunner {
     }
 
     private WorkflowInstance createWorkflowInstance(String workflowId) {
-        WorkflowInstance workflowInstance = workflowServiceClient.getWorkflow(workflowId);
-        workflowInstance.setInstanceID(UUID.randomUUID().toString());
-        List<WorkflowStepInstance> stepInstances = workflowServiceClient.getWorkflowSteps(workflowId);
-        for (WorkflowStepInstance instance : stepInstances) {
-            instance.setInstanceId(UUID.randomUUID().toString());
-            instance.setWorkflowInstanceId(workflowInstance.getInstanceID());
-            workflowStepInstanceRepository.save(instance);
+        Workflow workflow = workflowServiceClient.getWorkflow(workflowId);
+        WorkflowInstance workflowInstance = new WorkflowInstance(workflow);
+        List<WorkflowStep> steps = workflowServiceClient.getWorkflowSteps(workflowId);
+        for (WorkflowStep step : steps) {
+            WorkflowStepInstance stepInstance = new WorkflowStepInstance(step, workflowInstance.getId());
+            workflowStepInstanceRepository.save(stepInstance);
+        }
+        for (WorkflowStep step : steps) {
+            WorkflowStep nestStep = step.getNextStep();
+            if(nestStep != null) {
+                WorkflowStepInstance nextStepInstance = workflowStepInstanceRepository.findByWorkflowStepId(nestStep.getId());
+                step.setNextStep();
+            }
+            workflowStepInstanceRepository.save(stepInstance);
         }
         //workflowInstance.setStepInstances(workflowStepInstanceRepository.findByWorkflowInstanceId(workflowInstance.getInstanceID()));
         return workflowInstanceRepository.save(workflowInstance);
@@ -157,4 +166,5 @@ public class WorkflowRunner {
         workflowStepInstance.setTaskStatus(taskStatus);
         workflowStepInstanceRepository.save(workflowStepInstance);
     }
+
 }

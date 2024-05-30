@@ -1,11 +1,16 @@
 package de.lenneflow.executionservice.feignmodels;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.lenneflow.executionservice.enums.RunNode;
+import de.lenneflow.executionservice.enums.TaskStatus;
+import de.lenneflow.executionservice.enums.WorkFlowStepType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,37 +21,36 @@ import java.util.Map;
 @NoArgsConstructor
 public class WorkflowStep {
 
-    private String uuid;
+    private String id;
 
-    private String workflowUuid;
+    private String workflowId;
 
     private String description;
+
+    private WorkFlowStepType workFlowStepType;
 
     private boolean start;
 
     private boolean end;
 
-    private WorkflowStepStatus status;
+    private TaskStatus status;
 
+    @DocumentReference
     private WorkflowStep nextStep;
 
+    @DocumentReference
     private WorkflowStep previousStep;
 
     private RunNode runNode;
 
-    private String workerTaskId;
+    private String taskId;
 
-    private  String systemTaskId;
-
+    @DocumentReference
     private Map<String, List<WorkflowStep>> decisionCases = new LinkedHashMap<>();
 
     private Integer retryCount;
 
-    private long scheduledTime;
+    private LocalDateTime creationTime;
 
-    private long startTime;
-
-    private long endTime;
-
-    private long updateTime;
+    private LocalDateTime updateTime;
 }

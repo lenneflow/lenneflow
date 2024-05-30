@@ -15,12 +15,12 @@ import java.util.List;
 public interface WorkflowServiceClient {
 
     @GetMapping("/workflow/get/{uuid}")
-    public WorkflowInstance getWorkflow(@PathVariable("uuid") String uuid);
+    public Workflow getWorkflow(@PathVariable("uuid") String uuid);
 
     @GetMapping("/workflow-step/get/{workflowId}/{stepId}")
-    public WorkflowStepInstance getWorkflowStep(@PathVariable("workflowId") String workflowId, @PathVariable("stepId") String stepId);
+    public WorkflowStep getWorkflowStep(@PathVariable("workflowId") String workflowId, @PathVariable("stepId") String stepId);
 
     @GetMapping("/workflow-step/get/{workflowId}")
-    public List<WorkflowStepInstance> getWorkflowSteps(@PathVariable("workflowId") String workflowId);
+    public List<WorkflowStep> getWorkflowSteps(@PathVariable("workflowId") String workflowId);
 
 }

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -15,7 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 public class Workflow {
 
-    private String uuid;
+    private String id;
 
     private String name;
 
@@ -34,5 +35,9 @@ public class Workflow {
     private boolean restartable = true;
 
     private long timeOutInSeconds;
+
+    private LocalDateTime creationTime;
+
+    private LocalDateTime updateTime;
 
 }

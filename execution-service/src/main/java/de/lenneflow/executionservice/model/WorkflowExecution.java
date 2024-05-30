@@ -17,7 +17,7 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference;
 public class WorkflowExecution {
 
     @Id
-    private String executionId;
+    private String id;
 
     @DocumentReference
     private WorkflowInstance workflowInstance;

@@ -10,7 +10,9 @@ import java.util.List;
 
 public interface WorkflowStepInstanceRepository extends MongoRepository<WorkflowStepInstance, String> {
 
-    WorkflowStepInstance findByInstanceId(String id);
+    WorkflowStepInstance findById(String id);
+
+    WorkflowStepInstance findByWorkflowStepId(String id);
 
     List<WorkflowStepInstance> findByStepType(WorkFlowStepType type);
 

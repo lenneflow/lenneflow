@@ -2,6 +2,7 @@ package de.lenneflow.executionservice.model;
 
 
 import de.lenneflow.executionservice.enums.WorkflowStatus;
+import de.lenneflow.executionservice.feignmodels.Workflow;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -22,9 +24,9 @@ import java.util.List;
 public class WorkflowInstance {
 
     @Id
-    private String instanceID;
+    private String id;
 
-    private String workflowID;
+    private String workflowId;
 
     @Indexed(unique = true)
     private String name;
@@ -45,5 +47,18 @@ public class WorkflowInstance {
     private boolean restartable = true;
 
     private long timeOutInSeconds;
+
+    public WorkflowInstance(Workflow workflow) {
+        this.id = UUID.randomUUID().toString();
+        this.description = workflow.getDescription();
+        this.workflowId = workflow.getId();
+        this.name = workflow.getName();
+        this.status = workflow.getStatus();
+        this.version = workflow.getVersion();
+        this.ownerEmail = workflow.getOwnerEmail();
+        this.restartable = workflow.isRestartable();
+        this.timeOutInSeconds = workflow.getTimeOutInSeconds();
+
+    }
 
 }
