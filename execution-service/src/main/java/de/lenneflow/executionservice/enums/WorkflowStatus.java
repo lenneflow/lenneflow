@@ -5,6 +5,7 @@ import lombok.Getter;
 @Getter
 public enum WorkflowStatus {
 
+    NOT_RUN(false, false),
     RUNNING(false, false),
     COMPLETED(true, true),
     FAILED(true, false),

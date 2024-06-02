@@ -24,7 +24,7 @@ import java.util.UUID;
 public class WorkflowInstance {
 
     @Id
-    private String id;
+    private String uid;
 
     private String workflowId;
 
@@ -49,7 +49,7 @@ public class WorkflowInstance {
     private long timeOutInSeconds;
 
     public WorkflowInstance(Workflow workflow) {
-        this.id = UUID.randomUUID().toString();
+        this.uid = UUID.randomUUID().toString();
         this.description = workflow.getDescription();
         this.workflowId = workflow.getId();
         this.name = workflow.getName();

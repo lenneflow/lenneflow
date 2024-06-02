@@ -5,13 +5,10 @@ import de.lenneflow.executionservice.model.WorkflowExecution;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface WorkflowExecutionRepository extends MongoRepository<WorkflowExecution, String> {
 
-    WorkflowExecution findByExecutionID(String id);
-
-    List<WorkflowExecution> findByWorkflowID(String workflowId);
-
-    List<WorkflowExecution> findByWorkflowStatus(String status);
+    WorkflowExecution findByUid(String id);
 
 }

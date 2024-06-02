@@ -24,7 +24,7 @@ import java.util.*;
 public class WorkflowStepInstance {
 
     @Id
-    private String id;
+    private String uid;
 
     private String workflowStepId;
 
@@ -61,11 +61,11 @@ public class WorkflowStepInstance {
 
     private LocalDateTime updateTime;
 
-    @JsonIgnore
-    private Map<String, Object> inputPayload = new HashMap<>();
+    //@JsonIgnore
+    //private Map<String, Object> inputPayload = new HashMap<>();
 
-    @JsonIgnore
-    private Map<String, Object> outputPayload = new HashMap<>();
+    //@JsonIgnore
+    //private Map<String, Object> outputPayload = new HashMap<>();
 
     @JsonIgnore
     private Map<String, Object> inputData = new HashMap<>();
@@ -74,7 +74,7 @@ public class WorkflowStepInstance {
     private Map<String, Object> outputData = new HashMap<>();
 
     public WorkflowStepInstance(WorkflowStep step, String workflowInstanceId) {
-        this.id = UUID.randomUUID().toString();
+        this.uid = UUID.randomUUID().toString();
         this.end = step.isEnd();
         this.start = step.isStart();
         this.taskStatus = step.getStatus();
