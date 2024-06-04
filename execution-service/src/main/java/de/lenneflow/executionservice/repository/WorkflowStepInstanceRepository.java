@@ -1,8 +1,6 @@
 package de.lenneflow.executionservice.repository;
 
 
-import de.lenneflow.executionservice.enums.WorkFlowStepType;
-import de.lenneflow.executionservice.model.WorkflowExecution;
 import de.lenneflow.executionservice.model.WorkflowStepInstance;
 import org.springframework.data.mongodb.repository.MongoRepository;
 

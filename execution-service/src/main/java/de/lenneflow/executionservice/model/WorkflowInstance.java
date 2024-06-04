@@ -8,9 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -28,8 +26,7 @@ public class WorkflowInstance {
 
     private String workflowId;
 
-    @Indexed(unique = true)
-    private String name;
+    private String workflowName;
 
     private String description;
 
@@ -37,8 +34,7 @@ public class WorkflowInstance {
 
     private int version = 1;
 
-    @DocumentReference
-    private List<WorkflowStepInstance> stepInstances = new LinkedList<>();
+    private List<String> stepInstanceIds = new LinkedList<>();
 
     private boolean statusListenerEnabled = false;
 
@@ -51,8 +47,8 @@ public class WorkflowInstance {
     public WorkflowInstance(Workflow workflow) {
         this.uid = UUID.randomUUID().toString();
         this.description = workflow.getDescription();
-        this.workflowId = workflow.getId();
-        this.name = workflow.getName();
+        this.workflowId = workflow.getUid();
+        this.workflowName = workflow.getName();
         this.status = workflow.getStatus();
         this.version = workflow.getVersion();
         this.ownerEmail = workflow.getOwnerEmail();

@@ -1,7 +1,6 @@
 package de.lenneflow.executionservice;
 
-import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -17,7 +16,7 @@ import org.springframework.context.annotation.Bean;
 @EnableFeignClients
 public class ExecutionServiceApplication {
 
-    private static final String TASKRESULTQUEUE = "taskResultQueue";
+   public static final String TASKRESULTQUEUE = "taskResultQueue";
 
     public static void main(String[] args) {
         SpringApplication.run(ExecutionServiceApplication.class, args);
@@ -25,6 +24,9 @@ public class ExecutionServiceApplication {
 
     @Value("${rabbit.address}")
     private String address;
+
+    @Value("${rabbit.port}")
+    private int port;
 
     @Value("${rabbit.username}")
     private String userName;
@@ -36,6 +38,7 @@ public class ExecutionServiceApplication {
     public ConnectionFactory connectionFactory() {
         CachingConnectionFactory connectionFactory = new CachingConnectionFactory();
         connectionFactory.setAddresses(address);
+        connectionFactory.setPort(port);
         connectionFactory.setUsername(userName);
         connectionFactory.setPassword(password);
         return connectionFactory;
@@ -48,7 +51,16 @@ public class ExecutionServiceApplication {
 
     @Bean
     public Queue taskResultsQueue() {
-        return new Queue(TASKRESULTQUEUE);
+        return new Queue(TASKRESULTQUEUE, true);
     }
+//    @Bean
+//    public TopicExchange taskResultsExchange() {
+//        return new TopicExchange("taskResultsExchange");
+//    }
+//
+//    @Bean
+//    Binding binding(Queue queue, TopicExchange exchange) {
+//        return BindingBuilder.bind(queue).to(exchange).with("key");
+//    }
 
 }

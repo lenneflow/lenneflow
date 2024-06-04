@@ -5,6 +5,7 @@ import de.lenneflow.executionservice.feignmodels.Task;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
@@ -29,24 +30,26 @@ public class QueueUtil {
 
     private void addWorkerTaskToQueue(Task task) {
         String queueName = task.getTaskType();
-        String exchange  = queueName + "-exchange";
-        String routingKey = queueName + "-routingKey";
+        String exchange  = queueName + "-Exchange";
+        String routingKey = queueName + "-RoutingKey";
         createQueueAndBinding(queueName, exchange, routingKey);
         rabbitTemplate.convertAndSend(exchange, routingKey, task);
     }
 
     private void addSystemTaskToQueue(Task task) {
         String queueName = "SystemQueue";
-        String exchange  = queueName + "-exchange";
-        String routingKey = queueName + "-routingKey";
+        String exchange  = queueName + "-Exchange";
+        String routingKey = queueName + "-RoutingKey";
         createQueueAndBinding(queueName, exchange, routingKey);
         rabbitTemplate.convertAndSend(exchange, routingKey, task);
     }
 
-    private void createQueueAndBinding(String queueName, String exchange, String routingKey) {
+    public void createQueueAndBinding(String queueName, String exchangeName, String routingKey) {
         Queue queue = new Queue(queueName, true, false, false);
-        Binding binding = new Binding(queueName, Binding.DestinationType.QUEUE, exchange, routingKey, null);
         admin.declareQueue(queue);
+        TopicExchange exchange = new TopicExchange(exchangeName, true, false);
+        admin.declareExchange(exchange);
+        Binding binding = new Binding(queueName, Binding.DestinationType.QUEUE, exchangeName, routingKey, null);
         admin.declareBinding(binding);
     }
 }

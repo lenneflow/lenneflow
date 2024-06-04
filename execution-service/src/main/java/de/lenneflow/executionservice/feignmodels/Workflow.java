@@ -16,7 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 public class Workflow {
 
-    private String id;
+    private String uid;
 
     private String name;
 

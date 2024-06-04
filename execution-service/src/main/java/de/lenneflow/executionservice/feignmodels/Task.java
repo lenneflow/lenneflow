@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,7 +15,7 @@ import java.util.Map;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Task {
+public class Task implements Serializable {
 
     public static final String METADATA_KEY_EXECUTION_ID = "executionId";
     public static final String METADATA_KEY_STEP_INSTANCE_ID = "stepInstanceId";

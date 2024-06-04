@@ -3,7 +3,6 @@ package de.lenneflow.executionservice.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.lenneflow.executionservice.enums.TaskStatus;
 import de.lenneflow.executionservice.enums.WorkFlowStepType;
-import de.lenneflow.executionservice.feignmodels.Task;
 import de.lenneflow.executionservice.feignmodels.WorkflowStep;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,7 +10,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -38,20 +36,19 @@ public class WorkflowStepInstance {
 
     private TaskStatus taskStatus;
 
-    @DocumentReference
-    private WorkflowStepInstance nextStep;
+    private String nextStepId;
 
-    @DocumentReference
-    private WorkflowStepInstance previousStep;
+    private String previousStepId;
 
     private WorkFlowStepType workFlowStepType;
 
     private String taskId;
 
-    @DocumentReference
-    private Map<String, List<WorkflowStepInstance>> decisionCases = new LinkedHashMap<>();
+    private Map<String, String> decisionCases = new LinkedHashMap<>();
 
     private Integer retryCount;
+
+    private Integer loopCount;
 
     private LocalDateTime scheduledTime;
 
@@ -60,12 +57,6 @@ public class WorkflowStepInstance {
     private LocalDateTime endTime;
 
     private LocalDateTime updateTime;
-
-    //@JsonIgnore
-    //private Map<String, Object> inputPayload = new HashMap<>();
-
-    //@JsonIgnore
-    //private Map<String, Object> outputPayload = new HashMap<>();
 
     @JsonIgnore
     private Map<String, Object> inputData = new HashMap<>();
@@ -81,6 +72,7 @@ public class WorkflowStepInstance {
         this.description = step.getDescription();
         this.taskId = step.getTaskId();
         this.workflowInstanceId = workflowInstanceId;
+        this.workflowStepId = step.getUid();
         this.workFlowStepType = step.getWorkFlowStepType();
         this.retryCount = step.getRetryCount();
 

@@ -35,23 +35,23 @@ public class ExecutionController {
     }
 
     @GetMapping("/start/{workflowId}")
-    public WorkflowInstance startWorkflow(@PathVariable String workflowId) {
+    public WorkflowExecution startWorkflow(@PathVariable String workflowId) {
        return workflowRunner.start(workflowId);
     }
 
     @GetMapping("/stop/{executionId}")
-    public WorkflowInstance stopWorkflow(@PathVariable String executionId) {
+    public WorkflowExecution stopWorkflow(@PathVariable String executionId) {
         return workflowRunner.stop(executionId);
     }
 
     @GetMapping("/pause/{executionId}")
     @ResponseStatus(HttpStatus.OK)
-    public WorkflowInstance pauseWorkflow(@PathVariable String executionId) {
+    public WorkflowExecution pauseWorkflow(@PathVariable String executionId) {
         return workflowRunner.pause(executionId);
     }
 
     @GetMapping("/resume/{executionId}")
-    public WorkflowInstance resumeWorkflow(@PathVariable String executionId) {
+    public WorkflowExecution resumeWorkflow(@PathVariable String executionId) {
         return workflowRunner.resume(executionId);
     }
 

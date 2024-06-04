@@ -8,9 +8,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 @FeignClient(name = "task-service")
 public interface TaskServiceClient {
 
-    @GetMapping("/get/{uuid}")
-    public Workflow enqueueTask(String runId, String taskId);
+    //public Task getTask(String taskId);
 
-    public Task getTask(String taskId);
+    default Task getTask(String taskId){
+        return new TaskServiceClientImpl().getTask(taskId);
+    }
 
 }

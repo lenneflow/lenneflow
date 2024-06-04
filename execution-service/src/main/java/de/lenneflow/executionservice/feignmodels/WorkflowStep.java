@@ -21,7 +21,7 @@ import java.util.Map;
 @NoArgsConstructor
 public class WorkflowStep {
 
-    private String id;
+    private String uid;
 
     private String workflowId;
 
@@ -35,18 +35,15 @@ public class WorkflowStep {
 
     private TaskStatus status;
 
-    @DocumentReference
-    private WorkflowStep nextStep;
+    private String nextStepId;
 
-    @DocumentReference
-    private WorkflowStep previousStep;
+    private String previousStepId;
 
     private RunNode runNode;
 
     private String taskId;
 
-    @DocumentReference
-    private Map<String, List<WorkflowStep>> decisionCases = new LinkedHashMap<>();
+    private Map<String, String> decisionCases = new LinkedHashMap<>();
 
     private Integer retryCount;
 
