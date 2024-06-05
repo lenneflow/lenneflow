@@ -1,5 +1,7 @@
 package de.lenneflow.executionservice.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.lenneflow.executionservice.ExecutionServiceApplication;
 import de.lenneflow.executionservice.enums.TaskStatus;
 import de.lenneflow.executionservice.enums.WorkflowStatus;
@@ -19,6 +21,7 @@ import de.lenneflow.executionservice.repository.WorkflowStepInstanceRepository;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.*;
 
 @Component
@@ -41,10 +44,17 @@ public class WorkflowRunner {
     }
 
     @RabbitListener(queues = ExecutionServiceApplication.TASKRESULTQUEUE)
-    public void processTasksResult(TaskResult taskResult) {
+    public void processTasksResult(byte[] serializedTaskResult) {
+        ObjectMapper mapper = new ObjectMapper();
+        TaskResult taskResult = null;
+        try {
+            taskResult = mapper.readValue(serializedTaskResult, TaskResult.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(taskResult.getMetaData().get(Task.METADATA_KEY_EXECUTION_ID));
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(taskResult.getMetaData().get(Task.METADATA_KEY_WORKFlOW_INSTANCE_ID));
-        WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(taskResult.getMetaData().get(Task.METADATA_KEY_STEP_INSTANCE_ID));
+        WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid("cf668908-f159-4616-9c9c-16115c0d581f"); //findByUid(taskResult.getMetaData().get(Task.METADATA_KEY_STEP_INSTANCE_ID));
         updateCurrentStep(stepInstance, taskResult);
         switch (taskResult.getTaskStatus()) {
             case COMPLETED, SKIPPED:
@@ -110,6 +120,10 @@ public class WorkflowRunner {
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId());
         updateWorkflowInstanceAndExecutionStatus(workflowInstance,execution, WorkflowStatus.RUNNING);
         return workflowExecutionRepository.findByRunId(execution.getRunId());
+    }
+
+    public WorkflowExecution runState(String workflowExecutionId) {
+        return workflowExecutionRepository.findByRunId(workflowExecutionId);
     }
 
     private WorkflowStepInstance getStartStep(WorkflowInstance workflow) {

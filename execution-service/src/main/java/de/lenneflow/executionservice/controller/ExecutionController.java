@@ -55,4 +55,9 @@ public class ExecutionController {
         return workflowRunner.resume(executionId);
     }
 
+    @GetMapping("/run-state/{executionId}")
+    public WorkflowExecution workflowRunState(@PathVariable String executionId) {
+        return workflowRunner.runState(executionId);
+    }
+
 }
