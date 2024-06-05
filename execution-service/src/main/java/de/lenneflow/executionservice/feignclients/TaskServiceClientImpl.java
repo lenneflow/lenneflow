@@ -28,9 +28,11 @@ public class TaskServiceClientImpl {
             case "t4":
                 task.setTaskName("Task4");
                 break;
-            default:
+            case "t5":
                 task.setTaskName("Task5");
                 task.setTaskType("TypeB");
+                break;
+            default:
                 break;
 
         }

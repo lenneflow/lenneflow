@@ -42,11 +42,10 @@ public class WorkflowRunner {
 
     @RabbitListener(queues = ExecutionServiceApplication.TASKRESULTQUEUE)
     public void processTasksResult(TaskResult taskResult) {
-        WorkflowExecution execution = workflowExecutionRepository.findByUid(taskResult.getMetaData().get(Task.METADATA_KEY_EXECUTION_ID));
+        WorkflowExecution execution = workflowExecutionRepository.findByRunId(taskResult.getMetaData().get(Task.METADATA_KEY_EXECUTION_ID));
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(taskResult.getMetaData().get(Task.METADATA_KEY_WORKFlOW_INSTANCE_ID));
         WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(taskResult.getMetaData().get(Task.METADATA_KEY_STEP_INSTANCE_ID));
-        updateWorkflowStepInstanceStatus(stepInstance, taskResult.getTaskStatus());
-        updateWorkflowStepInstanceOutput(stepInstance, taskResult);
+        updateCurrentStep(stepInstance, taskResult);
         switch (taskResult.getTaskStatus()) {
             case COMPLETED, SKIPPED:
                 WorkflowStepInstance nextStep = getNextStep(stepInstance);
@@ -54,7 +53,7 @@ public class WorkflowRunner {
                     Task task =  taskServiceClient.getTask(nextStep.getTaskId());
                     Map<String, String> metadata = generateTaskMetaData(execution, workflowInstance, stepInstance);
                     task.setMetaData(metadata);
-                    queueUtil.addTaskToQueue(task);
+                    runStep(task, nextStep);
                 } else {
                     workflowInstance.setStatus(WorkflowStatus.COMPLETED);
                 }
@@ -65,6 +64,11 @@ public class WorkflowRunner {
                 throw new IllegalStateException("Unexpected value: " + taskResult.getTaskStatus());
         }
 
+    }
+
+    private void updateCurrentStep(WorkflowStepInstance stepInstance, TaskResult taskResult) {
+        updateWorkflowStepInstanceStatus(stepInstance, taskResult.getTaskStatus());
+        updateWorkflowStepInstanceOutput(stepInstance, taskResult);
     }
 
     public WorkflowExecution start(String workflowId) {
@@ -78,30 +82,34 @@ public class WorkflowRunner {
         Task task = taskServiceClient.getTask(firstStep.getTaskId());
         Map<String, String> metadata = generateTaskMetaData(execution, workflowInstance, firstStep);
         task.setMetaData(metadata);
+        runStep(task, firstStep);
+        return workflowExecutionRepository.findByRunId(execution.getRunId());
+    }
+
+    private void runStep(Task task, WorkflowStepInstance firstStep) {
         queueUtil.addTaskToQueue(task);
         updateWorkflowStepInstanceStatus(firstStep, TaskStatus.IN_PROGRESS);
-        return workflowExecutionRepository.findByUid(execution.getUid());
     }
 
     public WorkflowExecution stop(String workflowExecutionId) {
-        WorkflowExecution execution = workflowExecutionRepository.findByUid(workflowExecutionId);
+        WorkflowExecution execution = workflowExecutionRepository.findByRunId(workflowExecutionId);
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId());
         updateWorkflowInstanceAndExecutionStatus(workflowInstance,execution, WorkflowStatus.STOPPED);
-        return workflowExecutionRepository.findByUid(execution.getUid());
+        return workflowExecutionRepository.findByRunId(execution.getRunId());
     }
 
     public WorkflowExecution pause(String workflowExecutionId) {
-        WorkflowExecution execution = workflowExecutionRepository.findByUid(workflowExecutionId);
+        WorkflowExecution execution = workflowExecutionRepository.findByRunId(workflowExecutionId);
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId());
         updateWorkflowInstanceAndExecutionStatus(workflowInstance,execution, WorkflowStatus.PAUSED);
-        return workflowExecutionRepository.findByUid(execution.getUid());
+        return workflowExecutionRepository.findByRunId(execution.getRunId());
     }
 
     public WorkflowExecution resume(String workflowExecutionId) {
-        WorkflowExecution execution = workflowExecutionRepository.findByUid(workflowExecutionId);
+        WorkflowExecution execution = workflowExecutionRepository.findByRunId(workflowExecutionId);
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId());
         updateWorkflowInstanceAndExecutionStatus(workflowInstance,execution, WorkflowStatus.RUNNING);
-        return workflowExecutionRepository.findByUid(execution.getUid());
+        return workflowExecutionRepository.findByRunId(execution.getRunId());
     }
 
     private WorkflowStepInstance getStartStep(WorkflowInstance workflow) {
@@ -113,7 +121,7 @@ public class WorkflowRunner {
 
     private Map<String, String> generateTaskMetaData(WorkflowExecution execution, WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance) {
         Map<String, String> metaData = new HashMap<>();
-        metaData.put(Task.METADATA_KEY_EXECUTION_ID, execution.getUid());
+        metaData.put(Task.METADATA_KEY_EXECUTION_ID, execution.getRunId());
         metaData.put(Task.METADATA_KEY_WORKFlOW_INSTANCE_ID, workflowInstance.getUid());
         metaData.put(Task.METADATA_KEY_STEP_INSTANCE_ID, workflowStepInstance.getUid());
         return metaData;

@@ -6,5 +6,5 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface WorkflowExecutionRepository extends MongoRepository<WorkflowExecution, String> {
 
-    WorkflowExecution findByUid(String id);
+    WorkflowExecution findByRunId(String id);
 }
