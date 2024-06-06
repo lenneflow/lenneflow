@@ -1,6 +1,7 @@
 package de.lenneflow.executionservice.feignclients;
 
 import de.lenneflow.executionservice.enums.TaskStatus;
+import de.lenneflow.executionservice.enums.WorkFlowStepType;
 import de.lenneflow.executionservice.enums.WorkflowStatus;
 import de.lenneflow.executionservice.feignmodels.Workflow;
 import de.lenneflow.executionservice.feignmodels.WorkflowStep;
@@ -43,6 +44,7 @@ public class WorkflowServiceClientImpl {
             step.setStatus(TaskStatus.NOT_RUN);
             step.setTaskId("t"+i);
             step.setWorkflowId("w1");
+            step.setWorkFlowStepType(WorkFlowStepType.SIMPLE);
             step.setStart(false);
             step.setEnd(false);
             if(i == 0){

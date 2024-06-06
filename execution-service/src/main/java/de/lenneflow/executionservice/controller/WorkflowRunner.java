@@ -54,8 +54,8 @@ public class WorkflowRunner {
         }
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(taskResult.getMetaData().get(Task.METADATA_KEY_EXECUTION_ID));
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(taskResult.getMetaData().get(Task.METADATA_KEY_WORKFlOW_INSTANCE_ID));
-        WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid("cf668908-f159-4616-9c9c-16115c0d581f"); //findByUid(taskResult.getMetaData().get(Task.METADATA_KEY_STEP_INSTANCE_ID));
-        updateCurrentStep(stepInstance, taskResult);
+        WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(taskResult.getMetaData().get(Task.METADATA_KEY_STEP_INSTANCE_ID));
+        stepInstance = updateCurrentStep(stepInstance, taskResult);
         switch (taskResult.getTaskStatus()) {
             case COMPLETED, SKIPPED:
                 WorkflowStepInstance nextStep = getNextStep(stepInstance);
@@ -66,6 +66,7 @@ public class WorkflowRunner {
                     runStep(task, nextStep);
                 } else {
                     workflowInstance.setStatus(WorkflowStatus.COMPLETED);
+                    workflowInstanceRepository.save(workflowInstance);
                 }
                 break;
 
@@ -76,9 +77,9 @@ public class WorkflowRunner {
 
     }
 
-    private void updateCurrentStep(WorkflowStepInstance stepInstance, TaskResult taskResult) {
+    private WorkflowStepInstance updateCurrentStep(WorkflowStepInstance stepInstance, TaskResult taskResult) {
         updateWorkflowStepInstanceStatus(stepInstance, taskResult.getTaskStatus());
-        updateWorkflowStepInstanceOutput(stepInstance, taskResult);
+        return updateWorkflowStepInstanceOutput(stepInstance, taskResult);
     }
 
     public WorkflowExecution start(String workflowId) {
@@ -232,15 +233,15 @@ public class WorkflowRunner {
         workflowExecutionRepository.save(execution);
     }
 
-    private void updateWorkflowStepInstanceStatus(WorkflowStepInstance workflowStepInstance, TaskStatus taskStatus) {
+    private WorkflowStepInstance updateWorkflowStepInstanceStatus(WorkflowStepInstance workflowStepInstance, TaskStatus taskStatus) {
         workflowStepInstance.setTaskStatus(taskStatus);
-        workflowStepInstanceRepository.save(workflowStepInstance);
+        return workflowStepInstanceRepository.save(workflowStepInstance);
     }
 
-    private void updateWorkflowStepInstanceOutput(WorkflowStepInstance workflowStepInstance, TaskResult taskResult) {
+    private WorkflowStepInstance updateWorkflowStepInstanceOutput(WorkflowStepInstance workflowStepInstance, TaskResult taskResult) {
         Map<String, Object> output = taskResult.getOutputData();
         workflowStepInstance.setOutputData(output);
-        workflowStepInstanceRepository.save(workflowStepInstance);
+        return workflowStepInstanceRepository.save(workflowStepInstance);
     }
 
 }
