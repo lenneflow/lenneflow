@@ -1,6 +1,5 @@
 package de.lenneflow.executionservice.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.lenneflow.executionservice.ExecutionServiceApplication;
 import de.lenneflow.executionservice.enums.TaskStatus;
@@ -55,18 +54,17 @@ public class WorkflowRunner {
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(taskResult.getMetaData().get(Task.METADATA_KEY_EXECUTION_ID));
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(taskResult.getMetaData().get(Task.METADATA_KEY_WORKFlOW_INSTANCE_ID));
         WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(taskResult.getMetaData().get(Task.METADATA_KEY_STEP_INSTANCE_ID));
-        stepInstance = updateCurrentStep(stepInstance, taskResult);
+        updateCurrentStep(stepInstance, taskResult);
         switch (taskResult.getTaskStatus()) {
             case COMPLETED, SKIPPED:
-                WorkflowStepInstance nextStep = getNextStep(stepInstance);
-                if (nextStep != null) {
-                    Task task =  taskServiceClient.getTask(nextStep.getTaskId());
-                    Map<String, String> metadata = generateTaskMetaData(execution, workflowInstance, stepInstance);
+                WorkflowStepInstance nextStepInstance = getNextStep(stepInstance);
+                if (nextStepInstance != null) {
+                    Task task =  taskServiceClient.getTask(nextStepInstance.getTaskId());
+                    Map<String, String> metadata = generateTaskMetaData(execution, workflowInstance, nextStepInstance);
                     task.setMetaData(metadata);
-                    runStep(task, nextStep);
+                    runStep(task, nextStepInstance);
                 } else {
-                    workflowInstance.setStatus(WorkflowStatus.COMPLETED);
-                    workflowInstanceRepository.save(workflowInstance);
+                    updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, WorkflowStatus.COMPLETED);
                 }
                 break;
 
