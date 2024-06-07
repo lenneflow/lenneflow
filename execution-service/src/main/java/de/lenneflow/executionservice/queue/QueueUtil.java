@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.lenneflow.executionservice.enums.RunNode;
 import de.lenneflow.executionservice.feignmodels.Task;
+import de.lenneflow.executionservice.utils.Util;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Queue;
@@ -23,13 +24,7 @@ public class QueueUtil {
     }
 
     public void addTaskToQueue(Task task) {
-        ObjectMapper mapper = new ObjectMapper();
-        String serializedTask = null;
-        try {
-            serializedTask = mapper.writeValueAsString(task);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        String serializedTask = Util.serializeTask(task);
         if(task.getRunNode() == RunNode.SYSTEM){
             addSystemTaskToQueue(serializedTask);
         }else{

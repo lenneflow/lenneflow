@@ -1,6 +1,5 @@
 package de.lenneflow.executionservice.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.lenneflow.executionservice.ExecutionServiceApplication;
 import de.lenneflow.executionservice.enums.TaskStatus;
 import de.lenneflow.executionservice.enums.WorkflowStatus;
@@ -17,10 +16,10 @@ import de.lenneflow.executionservice.queue.QueueUtil;
 import de.lenneflow.executionservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.executionservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.executionservice.repository.WorkflowStepInstanceRepository;
+import de.lenneflow.executionservice.utils.Util;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.*;
 
 @Component
@@ -44,13 +43,7 @@ public class WorkflowRunner {
 
     @RabbitListener(queues = ExecutionServiceApplication.TASKRESULTQUEUE)
     public void processTasksResult(byte[] serializedTaskResult) {
-        ObjectMapper mapper = new ObjectMapper();
-        TaskResult taskResult = null;
-        try {
-            taskResult = mapper.readValue(serializedTaskResult, TaskResult.class);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        TaskResult taskResult = Util.deserializeTaskResult(serializedTaskResult);
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(taskResult.getMetaData().get(Task.METADATA_KEY_EXECUTION_ID));
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(taskResult.getMetaData().get(Task.METADATA_KEY_WORKFlOW_INSTANCE_ID));
         WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(taskResult.getMetaData().get(Task.METADATA_KEY_STEP_INSTANCE_ID));
@@ -75,9 +68,9 @@ public class WorkflowRunner {
 
     }
 
-    private WorkflowStepInstance updateCurrentStep(WorkflowStepInstance stepInstance, TaskResult taskResult) {
+    private void updateCurrentStep(WorkflowStepInstance stepInstance, TaskResult taskResult) {
         updateWorkflowStepInstanceStatus(stepInstance, taskResult.getTaskStatus());
-        return updateWorkflowStepInstanceOutput(stepInstance, taskResult);
+        updateWorkflowStepInstanceOutput(stepInstance, taskResult);
     }
 
     public WorkflowExecution start(String workflowId) {
