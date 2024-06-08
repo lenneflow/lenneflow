@@ -3,12 +3,10 @@ package de.lenneflow.executionservice.enums;
 public enum WorkFlowStepType {
     SIMPLE,
     DYNAMIC,
-    DECISION,
     SWITCH,
-    JOIN,
     DO_WHILE,
     SUB_WORKFLOW,
-    START_WORKFLOW,
+    START,
     EVENT,
     WAIT,
     HUMAN,

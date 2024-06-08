@@ -3,18 +3,17 @@ package de.lenneflow.executionservice.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.lenneflow.executionservice.feignmodels.Task;
-import de.lenneflow.executionservice.feignmodels.TaskResult;
 import de.lenneflow.executionservice.feignmodels.Workflow;
 
 import java.io.IOException;
 
 public class Util {
 
-    public static TaskResult deserializeTaskResult(byte[] serializedTaskResult) {
+    public static Task deserializeTask(byte[] serializedTask) {
         ObjectMapper mapper = new ObjectMapper();
-        TaskResult taskResult = null;
+        Task taskResult = null;
         try {
-            taskResult = mapper.readValue(serializedTaskResult, TaskResult.class);
+            taskResult = mapper.readValue(serializedTask, Task.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

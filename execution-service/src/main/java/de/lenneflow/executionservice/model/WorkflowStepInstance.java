@@ -24,15 +24,16 @@ public class WorkflowStepInstance {
     @Id
     private String uid;
 
+    @Id
+    private String stepName;
+
     private String workflowStepId;
 
     private String workflowInstanceId;
 
     private String description;
 
-    private boolean start;
-
-    private boolean end;
+    private boolean retriable;
 
     private TaskStatus taskStatus;
 
@@ -50,6 +51,8 @@ public class WorkflowStepInstance {
 
     private Integer loopCount;
 
+    private String errorMessage;
+
     private LocalDateTime scheduledTime;
 
     private LocalDateTime startTime;
@@ -66,15 +69,16 @@ public class WorkflowStepInstance {
 
     public WorkflowStepInstance(WorkflowStep step, String workflowInstanceId) {
         this.uid = UUID.randomUUID().toString();
-        this.end = step.isEnd();
-        this.start = step.isStart();
         this.taskStatus = step.getStatus();
         this.description = step.getDescription();
         this.taskId = step.getTaskId();
+        this.retriable = step.isRetriable();
         this.workflowInstanceId = workflowInstanceId;
         this.workflowStepId = step.getUid();
+        this.stepName = step.getStepName();
         this.workFlowStepType = step.getWorkFlowStepType();
         this.retryCount = step.getRetryCount();
+        this.errorMessage = step.getErrorMessage();
 
     }
 }

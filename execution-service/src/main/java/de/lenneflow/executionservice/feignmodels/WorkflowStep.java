@@ -23,15 +23,15 @@ public class WorkflowStep {
 
     private String uid;
 
+    private String stepName;
+
     private String workflowId;
 
     private String description;
 
     private WorkFlowStepType workFlowStepType;
 
-    private boolean start;
-
-    private boolean end;
+    private boolean retriable;
 
     private TaskStatus status;
 
@@ -40,6 +40,8 @@ public class WorkflowStep {
     private String previousStepId;
 
     private RunNode runNode;
+
+    private String errorMessage;
 
     private String taskId;
 

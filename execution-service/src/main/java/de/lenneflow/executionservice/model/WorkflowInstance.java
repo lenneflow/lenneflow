@@ -10,9 +10,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Getter
 @Setter
@@ -28,11 +26,17 @@ public class WorkflowInstance {
 
     private String workflowName;
 
+    private boolean errorsPresent;
+
+    private Map<String, String> errorMessages = new HashMap<>();
+
     private String description;
 
     private WorkflowStatus status;
 
     private int version = 1;
+
+    private Map<String, Object> inputParameters = new HashMap<>();
 
     private List<String> stepInstanceIds = new LinkedList<>();
 
@@ -44,11 +48,12 @@ public class WorkflowInstance {
 
     private long timeOutInSeconds;
 
-    public WorkflowInstance(Workflow workflow) {
+    public WorkflowInstance(Workflow workflow, Map<String, Object> inputParameters) {
         this.uid = UUID.randomUUID().toString();
         this.description = workflow.getDescription();
         this.workflowId = workflow.getUid();
         this.workflowName = workflow.getName();
+        this.inputParameters = inputParameters;
         this.status = workflow.getStatus();
         this.version = workflow.getVersion();
         this.ownerEmail = workflow.getOwnerEmail();

@@ -4,23 +4,14 @@ import lombok.Getter;
 
 @Getter
 public enum WorkflowStatus {
+    NOT_RUN,
+    RUNNING,
+    COMPLETED,
+    FAILED,
+    TIMED_OUT,
+    COMPLETED_WITH_ERRORS,
+    PAUSED,
+    STOPPED;
 
-    NOT_RUN(false, false),
-    RUNNING(false, false),
-    COMPLETED(true, true),
-    FAILED(true, false),
-    TIMED_OUT(true, false),
-    TERMINATED(true, false),
-    PAUSED(false, true),
-    STOPPED(true, false);
-
-    private final boolean terminal;
-
-    private final boolean successful;
-
-    WorkflowStatus(boolean terminal, boolean successful) {
-        this.terminal = terminal;
-        this.successful = successful;
-    }
 
 }

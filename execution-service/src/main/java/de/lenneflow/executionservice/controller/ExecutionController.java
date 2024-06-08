@@ -1,18 +1,17 @@
 package de.lenneflow.executionservice.controller;
 
-import de.lenneflow.executionservice.enums.WorkflowStatus;
 import de.lenneflow.executionservice.feignclients.TaskServiceClient;
 import de.lenneflow.executionservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.executionservice.feignmodels.Workflow;
 import de.lenneflow.executionservice.model.WorkflowExecution;
-import de.lenneflow.executionservice.model.WorkflowInstance;
 import de.lenneflow.executionservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.executionservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.executionservice.repository.WorkflowStepInstanceRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/execution/workflow")
@@ -35,8 +34,20 @@ public class ExecutionController {
     }
 
     @GetMapping("/start/{workflowId}")
-    public WorkflowExecution startWorkflow(@PathVariable String workflowId) {
-       return workflowRunner.start(workflowId);
+    public ResponseEntity<WorkflowExecution>  startWorkflowGet(@PathVariable String workflowId) {
+        if(inputParametersValid(workflowId, null)){
+            return new ResponseEntity<>(workflowRunner.start(workflowId, null), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+
+    }
+
+    @PostMapping("/start/{workflowId}")
+    public ResponseEntity<WorkflowExecution> startWorkflowPost(@PathVariable String workflowId, @RequestBody Map<String, Object> inputParameters) {
+        if(inputParametersValid(workflowId, inputParameters)){
+            return new ResponseEntity<>(workflowRunner.start(workflowId, inputParameters), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
     @GetMapping("/stop/{executionId}")
@@ -58,6 +69,17 @@ public class ExecutionController {
     @GetMapping("/run-state/{executionId}")
     public WorkflowExecution workflowRunState(@PathVariable String executionId) {
         return workflowRunner.runState(executionId);
+    }
+
+    private boolean inputParametersValid(String workflowId, Map<String, Object> inputParameters) {
+        Workflow workflow = workflowServiceClient.getWorkflow(workflowId);
+        Map<String, Object> inputParameterMap = workflow.getInputParameters();
+        for (String key : inputParameterMap.keySet()) {
+            if(!inputParameters.containsKey(key)){
+                return false;
+            }
+        }
+        return true;
     }
 
 }

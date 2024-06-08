@@ -7,8 +7,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -25,6 +27,8 @@ public class Workflow {
     private WorkflowStatus status;
 
     private int version = 1;
+
+    private Map<String, Object> inputParameters = new HashMap<>();
 
     private List<WorkflowStep> steps = new LinkedList<>();
 

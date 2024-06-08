@@ -45,13 +45,11 @@ public class WorkflowServiceClientImpl {
             step.setTaskId("t"+i);
             step.setWorkflowId("w1");
             step.setWorkFlowStepType(WorkFlowStepType.SIMPLE);
-            step.setStart(false);
-            step.setEnd(false);
             if(i == 0){
-                step.setStart(true);
+                step.setWorkFlowStepType(WorkFlowStepType.START);
             }
             if(i == 4){
-                step.setEnd(true);
+                step.setWorkFlowStepType(WorkFlowStepType.TERMINATE);
             }
             workflowSteps.add(step);
         }

@@ -31,11 +31,17 @@ public class Task implements Serializable {
 
     private String taskType;
 
+    private String errorMessage;
+
     private RunNode runNode;
 
     private int taskPriority;
 
-    private int retryCount;
+    private int loopCount;
+
+    private String switchCase;
+
+    private boolean doWhileStop;
 
     private long creationTime;
 
