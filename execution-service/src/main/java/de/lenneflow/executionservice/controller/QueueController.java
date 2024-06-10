@@ -1,7 +1,5 @@
-package de.lenneflow.executionservice.queue;
+package de.lenneflow.executionservice.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.lenneflow.executionservice.enums.RunNode;
 import de.lenneflow.executionservice.feignmodels.Task;
 import de.lenneflow.executionservice.utils.Util;
@@ -13,12 +11,12 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
-public class QueueUtil {
+public class QueueController {
 
     private final AmqpAdmin admin;
     private final RabbitTemplate rabbitTemplate;
 
-    public QueueUtil(AmqpAdmin admin, RabbitTemplate rabbitTemplate) {
+    public QueueController(AmqpAdmin admin, RabbitTemplate rabbitTemplate) {
         this.admin = admin;
         this.rabbitTemplate = rabbitTemplate;
     }

@@ -8,11 +8,9 @@ import de.lenneflow.executionservice.feignclients.TaskServiceClient;
 import de.lenneflow.executionservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.executionservice.feignmodels.Task;
 import de.lenneflow.executionservice.feignmodels.Workflow;
-import de.lenneflow.executionservice.feignmodels.WorkflowStep;
 import de.lenneflow.executionservice.model.WorkflowExecution;
 import de.lenneflow.executionservice.model.WorkflowInstance;
 import de.lenneflow.executionservice.model.WorkflowStepInstance;
-import de.lenneflow.executionservice.queue.QueueUtil;
 import de.lenneflow.executionservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.executionservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.executionservice.repository.WorkflowStepInstanceRepository;
@@ -30,15 +28,17 @@ public class WorkflowRunner {
     final WorkflowExecutionRepository workflowExecutionRepository;
     final WorkflowInstanceRepository workflowInstanceRepository;
     final WorkflowStepInstanceRepository workflowStepInstanceRepository;
-    final QueueUtil queueUtil;
+    final QueueController queueController;
+    final InstanceController instanceController;
 
-    WorkflowRunner(TaskServiceClient taskServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowExecutionRepository workflowExecutionRepository, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueUtil queueUtil) {
+    WorkflowRunner(TaskServiceClient taskServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowExecutionRepository workflowExecutionRepository, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController, InstanceController instanceController) {
         this.taskServiceClient = taskServiceClient;
         this.workflowServiceClient = workflowServiceClient;
         this.workflowExecutionRepository = workflowExecutionRepository;
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.workflowStepInstanceRepository = workflowStepInstanceRepository;
-        this.queueUtil = queueUtil;
+        this.queueController = queueController;
+        this.instanceController = instanceController;
     }
 
     @RabbitListener(queues = ExecutionServiceApplication.TASKRESULTQUEUE)
@@ -47,7 +47,7 @@ public class WorkflowRunner {
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(resultTask.getMetaData().get(Task.METADATA_KEY_EXECUTION_ID));
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(resultTask.getMetaData().get(Task.METADATA_KEY_WORKFlOW_INSTANCE_ID));
         WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(resultTask.getMetaData().get(Task.METADATA_KEY_STEP_INSTANCE_ID));
-        updateCurrentStep(stepInstance, resultTask);
+        updateCurrentStepInstance(stepInstance, resultTask);
         if (stepInstance.getWorkFlowStepType() == WorkFlowStepType.TERMINATE) {
             terminateWorkflowRun(execution, workflowInstance, stepInstance);
         } else {
@@ -109,20 +109,19 @@ public class WorkflowRunner {
                     updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, WorkflowStatus.COMPLETED_WITH_ERRORS);
                     break;
             }
-
         }
         else {
             updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, WorkflowStatus.COMPLETED);
         }
     }
 
-    private void updateCurrentStep(WorkflowStepInstance stepInstance, Task task) {
+    private void updateCurrentStepInstance(WorkflowStepInstance stepInstance, Task task) {
         updateWorkflowStepInstanceStatus(stepInstance, task.getTaskStatus());
         updateWorkflowStepInstanceOutput(stepInstance, task);
     }
 
     public WorkflowExecution start(String workflowId, Map<String, Object> inputParameters) {
-        WorkflowInstance workflowInstance = createWorkflowInstance(workflowId, inputParameters);
+        WorkflowInstance workflowInstance = instanceController.createWorkflowInstance(workflowId, inputParameters);
         Workflow workflow = workflowServiceClient.getWorkflow(workflowId);
         WorkflowExecution execution = createWorkflowExecution(workflow, workflowInstance);
         updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, WorkflowStatus.RUNNING);
@@ -137,7 +136,7 @@ public class WorkflowRunner {
     }
 
     private void runStep(Task task, WorkflowStepInstance firstStep) {
-        queueUtil.addTaskToQueue(task);
+        queueController.addTaskToQueue(task);
         updateWorkflowStepInstanceStatus(firstStep, TaskStatus.IN_PROGRESS);
     }
 
@@ -190,23 +189,7 @@ public class WorkflowRunner {
         return workflowExecutionRepository.save(workflowExecution);
     }
 
-    private WorkflowInstance createWorkflowInstance(String workflowId, Map<String, Object> inputParameters) {
-        Workflow workflow = workflowServiceClient.getWorkflow(workflowId);
-        WorkflowInstance workflowInstance = new WorkflowInstance(workflow, inputParameters);
-        workflowInstanceRepository.save(workflowInstance);
-        workflowInstance.setStatus(WorkflowStatus.NOT_RUN);
-        List<WorkflowStep> steps = workflowServiceClient.getWorkflowSteps(workflowId);
-        Map<String, String> stepStepInstanceMapping = new HashMap<>();
 
-        for (WorkflowStep step : steps) {
-            WorkflowStepInstance stepInstance = new WorkflowStepInstance(step, workflowInstance.getUid());
-            stepStepInstanceMapping.put(step.getUid(), stepInstance.getUid());
-            workflowStepInstanceRepository.save(stepInstance);
-        }
-        List<String> stepInstanceIds = updateWorkflowStepInstances(workflowId, steps, stepStepInstanceMapping);
-        workflowInstance.setStepInstanceIds(stepInstanceIds);
-        return workflowInstanceRepository.save(workflowInstance);
-    }
 
     private WorkflowStepInstance getNextStep(WorkflowStepInstance stepInstance, Task task) {
         switch (stepInstance.getWorkFlowStepType()) {
@@ -224,36 +207,6 @@ public class WorkflowRunner {
                 return null;
         }
 
-    }
-
-    private List<String> updateWorkflowStepInstances(String workflowId, List<WorkflowStep> steps, Map<String, String> stepStepInstanceMapping) {
-        List<String> stepInstanceIds = new ArrayList<>();
-        for (WorkflowStep step : steps) {
-            WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getUid()));
-            WorkflowStep nextStep = workflowServiceClient.getWorkflowStep(workflowId, step.getNextStepId());
-            if (nextStep != null) {
-                WorkflowStepInstance nextStepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getNextStepId()));
-                stepInstance.setNextStepId(nextStepInstance.getUid());
-            }
-            WorkflowStep previousStep = workflowServiceClient.getWorkflowStep(workflowId, step.getPreviousStepId());
-            if (previousStep != null) {
-                WorkflowStepInstance previousStepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getPreviousStepId()));
-                stepInstance.setPreviousStepId(previousStepInstance.getUid());
-            }
-            Map<String, String> decisionCases = step.getDecisionCases();
-            if (decisionCases != null && !decisionCases.isEmpty()) {
-                Map<String, String> decisionCaseInstances = new HashMap<>();
-                for (Map.Entry<String, String> entry : decisionCases.entrySet()) {
-                    String decisionCaseId = entry.getValue();
-                    WorkflowStepInstance decisionCaseInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(decisionCaseId));
-                    decisionCaseInstances.put(entry.getKey(), decisionCaseInstance.getUid());
-                }
-                stepInstance.setDecisionCases(decisionCaseInstances);
-            }
-            workflowStepInstanceRepository.save(stepInstance);
-            stepInstanceIds.add(stepInstance.getUid());
-        }
-        return stepInstanceIds;
     }
 
     private void updateWorkflowInstanceAndExecutionStatus(WorkflowInstance workflowInstance, WorkflowExecution execution, WorkflowStatus workflowStatus) {
