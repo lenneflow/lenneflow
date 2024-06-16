@@ -39,6 +39,14 @@ public class InstanceController {
         this.queueController = queueController;
     }
 
+    /**
+     * From a workflow ID, this method will create a new workflow instance to run.
+     * It will also create all the workflow step instances.
+     *
+     * @param workflowId      workflow ID.
+     * @param inputParameters the specific input parameters.
+     * @return the created workflow instance.
+     */
     public WorkflowInstance newWorkflowInstance(String workflowId, Map<String, Object> inputParameters) {
         Workflow workflow = workflowServiceClient.getWorkflow(workflowId);
         WorkflowInstance workflowInstance = new WorkflowInstance(workflow, inputParameters);
@@ -57,6 +65,12 @@ public class InstanceController {
         return workflowInstanceRepository.save(workflowInstance);
     }
 
+
+    /**
+     * Updates the workflow step instance status and output data.
+     * @param workflowStepInstance the workflow step instance to update.
+     * @param task the executed task belonging to the workflow instance.
+     */
     public void updateWorkflowStepInstance(WorkflowStepInstance workflowStepInstance, Task task) {
 
         workflowStepInstance.setTaskStatus(task.getTaskStatus());
@@ -67,23 +81,44 @@ public class InstanceController {
         workflowStepInstanceRepository.save(workflowStepInstance);
     }
 
+    /**
+     * Updated the workflow instance status
+     * @param workflowInstance the workflow instance to update.
+     * @param workflowStatus The status to set.
+     */
     public void updateWorkflowInstanceStatus(WorkflowInstance workflowInstance, WorkflowStatus workflowStatus) {
         workflowInstance.setStatus(workflowStatus);
         workflowInstanceRepository.save(workflowInstance);
     }
 
+    /**
+     * Updated the workflow execution status
+     * @param execution the workflow execution to update.
+     * @param workflowStatus The status to set.
+     */
     public void updateWorkflowExecutionStatus(WorkflowExecution execution, WorkflowStatus workflowStatus) {
         execution.setWorkflowStatus(workflowStatus);
         workflowExecutionRepository.save(execution);
     }
 
+    /**
+     * Updated the workflow step instance status
+     * @param stepInstance the workflow step instance to update.
+     * @param taskStatus The status to set.
+     */
     public void updateWorkflowStepInstanceStatus(WorkflowStepInstance stepInstance, TaskStatus taskStatus) {
         stepInstance.setTaskStatus(taskStatus);
         workflowStepInstanceRepository.save(stepInstance);
     }
 
 
-
+    /**
+     * This method sets previous and next step parameters to the steps in the given list.
+     * @param workflowId The workflow ID.
+     * @param steps The workflow step list to update.
+     * @param stepStepInstanceMapping a map of workflow instances
+     * @return a list of workflow instance IDs.
+     */
     private List<String> updateWorkflowStepInstances(String workflowId, List<WorkflowStep> steps, Map<String, String> stepStepInstanceMapping) {
         List<String> stepInstanceIds = new ArrayList<>();
         for (WorkflowStep step : steps) {

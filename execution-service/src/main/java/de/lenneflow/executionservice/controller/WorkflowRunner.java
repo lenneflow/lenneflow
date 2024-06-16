@@ -41,6 +41,12 @@ public class WorkflowRunner {
         this.instanceController = instanceController;
     }
 
+    /**
+     * Implementation of the Task results listener. This method will listen on the task results queue and process
+     * the result task
+     *
+     * @param serializedTask serialized task object
+     */
     @RabbitListener(queues = ExecutionServiceApplication.TASKRESULTQUEUE)
     public void processTaskResult(byte[] serializedTask) {
         Task resultTask = Util.deserializeTask(serializedTask);
@@ -86,18 +92,25 @@ public class WorkflowRunner {
         }
     }
 
+    /**
+     * Method that terminates a workflow run. It will go throw all steps status and update the workflow instance status.
+     *
+     * @param execution        The workflow execution
+     * @param workflowInstance the running workflow instance
+     * @param stepInstance     the last step instance before termination
+     */
     private void terminateWorkflowRun(WorkflowExecution execution, WorkflowInstance workflowInstance, WorkflowStepInstance stepInstance) {
-        if (workflowInstance.isErrorsPresent()){
-            Map<String, String> errorMessages =  new HashMap<>();
-            for(String stepId: workflowInstance.getStepInstanceIds()){
+        if (workflowInstance.isErrorsPresent()) {
+            Map<String, String> errorMessages = new HashMap<>();
+            for (String stepId : workflowInstance.getStepInstanceIds()) {
                 WorkflowStepInstance foundStep = workflowStepInstanceRepository.findByUid(stepId);
-                if(foundStep != null && foundStep.getErrorMessage()  != null && !foundStep.getErrorMessage().isEmpty()){
+                if (foundStep != null && foundStep.getErrorMessage() != null && !foundStep.getErrorMessage().isEmpty()) {
                     errorMessages.put(foundStep.getStepName(), foundStep.getErrorMessage());
                 }
             }
             workflowInstance.setErrorMessages(errorMessages);
             workflowInstanceRepository.save(workflowInstance);
-            switch (stepInstance.getTaskStatus()){
+            switch (stepInstance.getTaskStatus()) {
                 case FAILED, FAILED_WITH_TERMINAL_ERROR:
                     instanceController.updateWorkflowInstanceStatus(workflowInstance, WorkflowStatus.FAILED);
                     instanceController.updateWorkflowExecutionStatus(execution, WorkflowStatus.FAILED);
@@ -115,15 +128,23 @@ public class WorkflowRunner {
                     instanceController.updateWorkflowExecutionStatus(execution, WorkflowStatus.COMPLETED_WITH_ERRORS);
                     break;
             }
-        }
-        else {
+        } else {
             instanceController.updateWorkflowInstanceStatus(workflowInstance, WorkflowStatus.COMPLETED);
             instanceController.updateWorkflowExecutionStatus(execution, WorkflowStatus.COMPLETED);
         }
+
+        //TODO delete workflow and step instances
     }
 
 
-
+    /**
+     * This is the start method of every workflow run. This method searches for the starting workflow step, gets the task
+     * associated to the step and run the workflow step.
+     *
+     * @param workflowId      The ID od the workflow to run.
+     * @param inputParameters The input parameters for the workflow run.
+     * @return a workflow execution object.
+     */
     public WorkflowExecution start(String workflowId, Map<String, Object> inputParameters) {
         WorkflowInstance workflowInstance = instanceController.newWorkflowInstance(workflowId, inputParameters);
         Workflow workflow = workflowServiceClient.getWorkflow(workflowId);
@@ -140,11 +161,12 @@ public class WorkflowRunner {
         return workflowExecutionRepository.findByRunId(execution.getRunId());
     }
 
-    private void runStep(Task task, WorkflowStepInstance firstStep) {
-        queueController.addTaskToQueue(task);
-        instanceController.updateWorkflowStepInstanceStatus(firstStep, TaskStatus.IN_PROGRESS);
-    }
-
+    /**
+     * Method that stops the workflow execution by updating the workflow instance and the workflow execution instance.
+     *
+     * @param workflowExecutionId The workflow execution ID.
+     * @return a workflow execution object with the current status.
+     */
     public WorkflowExecution stop(String workflowExecutionId) {
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(workflowExecutionId);
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId());
@@ -153,6 +175,12 @@ public class WorkflowRunner {
         return workflowExecutionRepository.findByRunId(execution.getRunId());
     }
 
+    /**
+     * Method that pauses the workflow execution by updating the workflow instance and the workflow execution instance.
+     *
+     * @param workflowExecutionId The workflow execution ID.
+     * @return a workflow execution object with the current status.
+     */
     public WorkflowExecution pause(String workflowExecutionId) {
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(workflowExecutionId);
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId());
@@ -161,6 +189,13 @@ public class WorkflowRunner {
         return workflowExecutionRepository.findByRunId(execution.getRunId());
     }
 
+    /**
+     * Method that resumes the workflow execution by updating the workflow instance and the workflow execution instance
+     * and then running the next step of the workflow.
+     *
+     * @param workflowExecutionId The workflow execution ID.
+     * @return a workflow execution object with the current status.
+     */
     public WorkflowExecution resume(String workflowExecutionId) {
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(workflowExecutionId);
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId());
@@ -169,17 +204,39 @@ public class WorkflowRunner {
         return workflowExecutionRepository.findByRunId(execution.getRunId());
     }
 
+    /**
+     * If called, this method will return the current state of the workflow execution.
+     *
+     * @param workflowExecutionId The workflow execution ID
+     * @return a workflow execution object with the current status.
+     */
     public WorkflowExecution executionState(String workflowExecutionId) {
         return workflowExecutionRepository.findByRunId(workflowExecutionId);
     }
 
-    private WorkflowStepInstance getStartStep(WorkflowInstance workflow) {
-        for (WorkflowStepInstance step : workflowStepInstanceRepository.findByWorkflowInstanceId(workflow.getUid())) {
+    /**
+     * Receives a workflow instance, searches for the start step and returns it.
+     *
+     * @param workflowInstance The workflow instance
+     * @return the start step of the workflow.
+     */
+    private WorkflowStepInstance getStartStep(WorkflowInstance workflowInstance) {
+        for (WorkflowStepInstance step : workflowStepInstanceRepository.findByWorkflowInstanceId(workflowInstance.getUid())) {
             if (step.getWorkFlowStepType() == WorkFlowStepType.START) return step;
         }
         return null;
     }
 
+    /**
+     * In order to enqueue the task it is necessary the group the important parameters in a metadata map, so the worker just
+     * have to put it in the result object. The information are necessary to locate which running instance belongs to
+     * the result task.
+     *
+     * @param execution            the workflow execution ID.
+     * @param workflowInstance     The running workflow instance
+     * @param workflowStepInstance the running workflow step
+     * @return the generated map of metadata.
+     */
     private Map<String, String> generateTaskMetaData(WorkflowExecution execution, WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance) {
         Map<String, String> metaData = new HashMap<>();
         metaData.put(Task.METADATA_KEY_EXECUTION_ID, execution.getRunId());
@@ -188,6 +245,13 @@ public class WorkflowRunner {
         return metaData;
     }
 
+    /**
+     * This method creates a workflow execution instance.
+     *
+     * @param workflow         The workflow object.
+     * @param workflowInstance The workflow instance object.
+     * @return a workflow execution object
+     */
     private WorkflowExecution createWorkflowExecution(Workflow workflow, WorkflowInstance workflowInstance) {
         List<WorkflowStepInstance> stepInstances = new ArrayList<>();
         for (String setInstanceId : workflowInstance.getStepInstanceIds()) {
@@ -197,8 +261,25 @@ public class WorkflowRunner {
         return workflowExecutionRepository.save(workflowExecution);
     }
 
+    /**
+     * Runs a workflow step by adding it to the queue.
+     *
+     * @param task task to process.
+     * @param step workflow step to run
+     */
+    private void runStep(Task task, WorkflowStepInstance step) {
+        queueController.addTaskToQueue(task);
+        instanceController.updateWorkflowStepInstanceStatus(step, TaskStatus.IN_PROGRESS);
+    }
 
 
+    /**
+     * Finds the next workflow step instance to run.
+     *
+     * @param stepInstance the current step instance.
+     * @param task         the current executed task.
+     * @return the next workflow step instance.
+     */
     private WorkflowStepInstance getNextStepInstance(WorkflowStepInstance stepInstance, Task task) {
         switch (stepInstance.getWorkFlowStepType()) {
             case SIMPLE, START:
@@ -216,8 +297,4 @@ public class WorkflowRunner {
         }
 
     }
-
-
-
-
 }
