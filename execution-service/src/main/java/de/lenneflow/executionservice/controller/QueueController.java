@@ -46,7 +46,7 @@ public class QueueController {
         rabbitTemplate.convertAndSend(exchange, routingKey, serializedTask);
     }
 
-    public void createQueueAndBinding(String queueName, String exchangeName, String routingKey) {
+    private void createQueueAndBinding(String queueName, String exchangeName, String routingKey) {
         Queue queue = new Queue(queueName, true, false, false);
         admin.declareQueue(queue);
         TopicExchange exchange = new TopicExchange(exchangeName, true, false);

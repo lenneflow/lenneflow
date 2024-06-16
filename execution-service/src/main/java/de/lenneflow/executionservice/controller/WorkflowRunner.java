@@ -42,18 +42,20 @@ public class WorkflowRunner {
     }
 
     @RabbitListener(queues = ExecutionServiceApplication.TASKRESULTQUEUE)
-    public void processTasksResult(byte[] serializedTask) {
+    public void processTaskResult(byte[] serializedTask) {
         Task resultTask = Util.deserializeTask(serializedTask);
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(resultTask.getMetaData().get(Task.METADATA_KEY_EXECUTION_ID));
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(resultTask.getMetaData().get(Task.METADATA_KEY_WORKFlOW_INSTANCE_ID));
         WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(resultTask.getMetaData().get(Task.METADATA_KEY_STEP_INSTANCE_ID));
-        updateCurrentStepInstance(stepInstance, resultTask);
+
+        instanceController.updateWorkflowStepInstance(stepInstance, resultTask);
+
         if (stepInstance.getWorkFlowStepType() == WorkFlowStepType.TERMINATE) {
             terminateWorkflowRun(execution, workflowInstance, stepInstance);
         } else {
             switch (resultTask.getTaskStatus()) {
                 case COMPLETED, SKIPPED:
-                    WorkflowStepInstance nextStepInstance = getNextStep(stepInstance, resultTask);
+                    WorkflowStepInstance nextStepInstance = getNextStepInstance(stepInstance, resultTask);
                     if (nextStepInstance != null) {
                         Task task = taskServiceClient.getTask(nextStepInstance.getTaskId());
                         Map<String, String> metadata = generateTaskMetaData(execution, workflowInstance, nextStepInstance);
@@ -97,34 +99,37 @@ public class WorkflowRunner {
             workflowInstanceRepository.save(workflowInstance);
             switch (stepInstance.getTaskStatus()){
                 case FAILED, FAILED_WITH_TERMINAL_ERROR:
-                    updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, WorkflowStatus.FAILED);
+                    instanceController.updateWorkflowInstanceStatus(workflowInstance, WorkflowStatus.FAILED);
+                    instanceController.updateWorkflowExecutionStatus(execution, WorkflowStatus.FAILED);
                     break;
                 case CANCELED:
-                    updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, WorkflowStatus.STOPPED);
+                    instanceController.updateWorkflowInstanceStatus(workflowInstance, WorkflowStatus.STOPPED);
+                    instanceController.updateWorkflowExecutionStatus(execution, WorkflowStatus.STOPPED);
                     break;
                 case TIMED_OUT:
-                    updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, WorkflowStatus.TIMED_OUT);
+                    instanceController.updateWorkflowInstanceStatus(workflowInstance, WorkflowStatus.TIMED_OUT);
+                    instanceController.updateWorkflowExecutionStatus(execution, WorkflowStatus.TIMED_OUT);
                     break;
                 default:
-                    updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, WorkflowStatus.COMPLETED_WITH_ERRORS);
+                    instanceController.updateWorkflowInstanceStatus(workflowInstance, WorkflowStatus.COMPLETED_WITH_ERRORS);
+                    instanceController.updateWorkflowExecutionStatus(execution, WorkflowStatus.COMPLETED_WITH_ERRORS);
                     break;
             }
         }
         else {
-            updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, WorkflowStatus.COMPLETED);
+            instanceController.updateWorkflowInstanceStatus(workflowInstance, WorkflowStatus.COMPLETED);
+            instanceController.updateWorkflowExecutionStatus(execution, WorkflowStatus.COMPLETED);
         }
     }
 
-    private void updateCurrentStepInstance(WorkflowStepInstance stepInstance, Task task) {
-        updateWorkflowStepInstanceStatus(stepInstance, task.getTaskStatus());
-        updateWorkflowStepInstanceOutput(stepInstance, task);
-    }
+
 
     public WorkflowExecution start(String workflowId, Map<String, Object> inputParameters) {
-        WorkflowInstance workflowInstance = instanceController.createWorkflowInstance(workflowId, inputParameters);
+        WorkflowInstance workflowInstance = instanceController.newWorkflowInstance(workflowId, inputParameters);
         Workflow workflow = workflowServiceClient.getWorkflow(workflowId);
         WorkflowExecution execution = createWorkflowExecution(workflow, workflowInstance);
-        updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, WorkflowStatus.RUNNING);
+        instanceController.updateWorkflowInstanceStatus(workflowInstance, WorkflowStatus.RUNNING);
+        instanceController.updateWorkflowExecutionStatus(execution, WorkflowStatus.RUNNING);
 
         WorkflowStepInstance firstStep = getStartStep(workflowInstance);
         assert firstStep != null;
@@ -137,31 +142,34 @@ public class WorkflowRunner {
 
     private void runStep(Task task, WorkflowStepInstance firstStep) {
         queueController.addTaskToQueue(task);
-        updateWorkflowStepInstanceStatus(firstStep, TaskStatus.IN_PROGRESS);
+        instanceController.updateWorkflowStepInstanceStatus(firstStep, TaskStatus.IN_PROGRESS);
     }
 
     public WorkflowExecution stop(String workflowExecutionId) {
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(workflowExecutionId);
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId());
-        updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, WorkflowStatus.STOPPED);
+        instanceController.updateWorkflowInstanceStatus(workflowInstance, WorkflowStatus.STOPPED);
+        instanceController.updateWorkflowExecutionStatus(execution, WorkflowStatus.STOPPED);
         return workflowExecutionRepository.findByRunId(execution.getRunId());
     }
 
     public WorkflowExecution pause(String workflowExecutionId) {
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(workflowExecutionId);
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId());
-        updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, WorkflowStatus.PAUSED);
+        instanceController.updateWorkflowInstanceStatus(workflowInstance, WorkflowStatus.PAUSED);
+        instanceController.updateWorkflowExecutionStatus(execution, WorkflowStatus.PAUSED);
         return workflowExecutionRepository.findByRunId(execution.getRunId());
     }
 
     public WorkflowExecution resume(String workflowExecutionId) {
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(workflowExecutionId);
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId());
-        updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, WorkflowStatus.RUNNING);
+        instanceController.updateWorkflowInstanceStatus(workflowInstance, WorkflowStatus.RUNNING);
+        instanceController.updateWorkflowExecutionStatus(execution, WorkflowStatus.RUNNING);
         return workflowExecutionRepository.findByRunId(execution.getRunId());
     }
 
-    public WorkflowExecution runState(String workflowExecutionId) {
+    public WorkflowExecution executionState(String workflowExecutionId) {
         return workflowExecutionRepository.findByRunId(workflowExecutionId);
     }
 
@@ -191,9 +199,9 @@ public class WorkflowRunner {
 
 
 
-    private WorkflowStepInstance getNextStep(WorkflowStepInstance stepInstance, Task task) {
+    private WorkflowStepInstance getNextStepInstance(WorkflowStepInstance stepInstance, Task task) {
         switch (stepInstance.getWorkFlowStepType()) {
-            case SIMPLE:
+            case SIMPLE, START:
                 return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
             case DO_WHILE:
                 if (task.isDoWhileStop())
@@ -209,22 +217,7 @@ public class WorkflowRunner {
 
     }
 
-    private void updateWorkflowInstanceAndExecutionStatus(WorkflowInstance workflowInstance, WorkflowExecution execution, WorkflowStatus workflowStatus) {
-        workflowInstance.setStatus(workflowStatus);
-        execution.setWorkflowStatus(workflowStatus);
-        workflowInstanceRepository.save(workflowInstance);
-        workflowExecutionRepository.save(execution);
-    }
 
-    private void updateWorkflowStepInstanceStatus(WorkflowStepInstance workflowStepInstance, TaskStatus taskStatus) {
-        workflowStepInstance.setTaskStatus(taskStatus);
-        workflowStepInstanceRepository.save(workflowStepInstance);
-    }
 
-    private void updateWorkflowStepInstanceOutput(WorkflowStepInstance workflowStepInstance, Task task) {
-        Map<String, Object> output = task.getOutputData();
-        workflowStepInstance.setOutputData(output);
-        workflowStepInstanceRepository.save(workflowStepInstance);
-    }
 
 }

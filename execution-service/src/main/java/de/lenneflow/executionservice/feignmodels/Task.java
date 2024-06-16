@@ -47,10 +47,6 @@ public class Task implements Serializable {
 
     private long updateTime;
 
-    private Map<String, Object> inputPayload = new HashMap<>();
-
-    private Map<String, Object> outputPayload = new HashMap<>();
-
     private Map<String, Object> inputData = new HashMap<>();
 
     private Map<String, Object> outputData = new HashMap<>();

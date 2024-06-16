@@ -1,5 +1,6 @@
-package de.lenneflow.executionservice.controller;
+package de.lenneflow.executionservice.rest;
 
+import de.lenneflow.executionservice.controller.WorkflowRunner;
 import de.lenneflow.executionservice.feignclients.TaskServiceClient;
 import de.lenneflow.executionservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.executionservice.feignmodels.Workflow;
@@ -15,7 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/execution/workflow")
-public class ExecutionController {
+public class ExecutionRestController {
 
     final WorkflowExecutionRepository workflowExecutionRepository;
     final WorkflowServiceClient workflowServiceClient;
@@ -24,7 +25,7 @@ public class ExecutionController {
     final WorkflowStepInstanceRepository workflowStepInstanceRepository;
     final WorkflowRunner workflowRunner;
 
-    public ExecutionController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient, TaskServiceClient taskServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowRunner workflowRunner) {
+    public ExecutionRestController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient, TaskServiceClient taskServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowRunner workflowRunner) {
         this.workflowExecutionRepository = workflowExecutionRepository;
         this.workflowServiceClient = workflowServiceClient;
         this.taskServiceClient = taskServiceClient;
@@ -68,7 +69,7 @@ public class ExecutionController {
 
     @GetMapping("/run-state/{executionId}")
     public WorkflowExecution workflowRunState(@PathVariable String executionId) {
-        return workflowRunner.runState(executionId);
+        return workflowRunner.executionState(executionId);
     }
 
     private boolean inputParametersValid(String workflowId, Map<String, Object> inputParameters) {

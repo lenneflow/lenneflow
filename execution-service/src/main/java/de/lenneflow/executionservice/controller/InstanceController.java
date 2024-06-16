@@ -1,10 +1,13 @@
 package de.lenneflow.executionservice.controller;
 
+import de.lenneflow.executionservice.enums.TaskStatus;
 import de.lenneflow.executionservice.enums.WorkflowStatus;
 import de.lenneflow.executionservice.feignclients.TaskServiceClient;
 import de.lenneflow.executionservice.feignclients.WorkflowServiceClient;
+import de.lenneflow.executionservice.feignmodels.Task;
 import de.lenneflow.executionservice.feignmodels.Workflow;
 import de.lenneflow.executionservice.feignmodels.WorkflowStep;
+import de.lenneflow.executionservice.model.WorkflowExecution;
 import de.lenneflow.executionservice.model.WorkflowInstance;
 import de.lenneflow.executionservice.model.WorkflowStepInstance;
 import de.lenneflow.executionservice.repository.WorkflowExecutionRepository;
@@ -36,7 +39,7 @@ public class InstanceController {
         this.queueController = queueController;
     }
 
-    public WorkflowInstance createWorkflowInstance(String workflowId, Map<String, Object> inputParameters) {
+    public WorkflowInstance newWorkflowInstance(String workflowId, Map<String, Object> inputParameters) {
         Workflow workflow = workflowServiceClient.getWorkflow(workflowId);
         WorkflowInstance workflowInstance = new WorkflowInstance(workflow, inputParameters);
         workflowInstanceRepository.save(workflowInstance);
@@ -53,6 +56,33 @@ public class InstanceController {
         workflowInstance.setStepInstanceIds(stepInstanceIds);
         return workflowInstanceRepository.save(workflowInstance);
     }
+
+    public void updateWorkflowStepInstance(WorkflowStepInstance workflowStepInstance, Task task) {
+
+        workflowStepInstance.setTaskStatus(task.getTaskStatus());
+        workflowStepInstanceRepository.save(workflowStepInstance);
+
+        Map<String, Object> output = task.getOutputData();
+        workflowStepInstance.setOutputData(output);
+        workflowStepInstanceRepository.save(workflowStepInstance);
+    }
+
+    public void updateWorkflowInstanceStatus(WorkflowInstance workflowInstance, WorkflowStatus workflowStatus) {
+        workflowInstance.setStatus(workflowStatus);
+        workflowInstanceRepository.save(workflowInstance);
+    }
+
+    public void updateWorkflowExecutionStatus(WorkflowExecution execution, WorkflowStatus workflowStatus) {
+        execution.setWorkflowStatus(workflowStatus);
+        workflowExecutionRepository.save(execution);
+    }
+
+    public void updateWorkflowStepInstanceStatus(WorkflowStepInstance stepInstance, TaskStatus taskStatus) {
+        stepInstance.setTaskStatus(taskStatus);
+        workflowStepInstanceRepository.save(stepInstance);
+    }
+
+
 
     private List<String> updateWorkflowStepInstances(String workflowId, List<WorkflowStep> steps, Map<String, String> stepStepInstanceMapping) {
         List<String> stepInstanceIds = new ArrayList<>();

@@ -3,7 +3,6 @@ package de.lenneflow.executionservice.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.lenneflow.executionservice.feignmodels.Task;
-import de.lenneflow.executionservice.feignmodels.Workflow;
 
 import java.io.IOException;
 

@@ -24,7 +24,6 @@ public class WorkflowStepInstance {
     @Id
     private String uid;
 
-    @Id
     private String stepName;
 
     private String workflowStepId;
