@@ -31,9 +31,9 @@ public class WorkerTaskController {
 
     @PostMapping("/add")
     @ResponseStatus(HttpStatus.CREATED)
-    public void addWorkerTask(@RequestBody Task task) {
+    public Task addWorkerTask(@RequestBody Task task) {
         task.setTaskID(UUID.randomUUID().toString());
-        taskRepository.save(task);
+        return taskRepository.save(task);
     }
 
     @PatchMapping("/update")

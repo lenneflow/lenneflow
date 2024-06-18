@@ -53,14 +53,5 @@ public class ExecutionServiceApplication {
     public Queue taskResultsQueue() {
         return new Queue(TASKRESULTQUEUE, true);
     }
-//    @Bean
-//    public TopicExchange taskResultsExchange() {
-//        return new TopicExchange("taskResultsExchange");
-//    }
-//
-//    @Bean
-//    Binding binding(Queue queue, TopicExchange exchange) {
-//        return BindingBuilder.bind(queue).to(exchange).with("key");
-//    }
 
 }

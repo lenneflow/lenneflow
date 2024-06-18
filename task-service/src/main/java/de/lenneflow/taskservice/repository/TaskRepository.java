@@ -1,5 +1,6 @@
 package de.lenneflow.taskservice.repository;
 
+import de.lenneflow.taskservice.enums.RunNode;
 import de.lenneflow.taskservice.model.Task;
 import de.lenneflow.taskservice.enums.TaskStatus;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -13,6 +14,8 @@ public interface TaskRepository extends MongoRepository<Task, String> {
     Task findByTaskName(String taskName);
 
     List<Task> findByTaskStatus(TaskStatus status);
+
+    List<Task> findByRunNode(RunNode runNode);
 
     List<Task> findByTaskType(String taskType);
 

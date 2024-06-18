@@ -1,10 +1,8 @@
 package de.lenneflow.executionservice.enums;
 
-import lombok.Getter;
-
 import java.io.Serializable;
 
-@Getter
+
 public enum TaskStatus implements Serializable {
     IN_PROGRESS,
     CANCELED,

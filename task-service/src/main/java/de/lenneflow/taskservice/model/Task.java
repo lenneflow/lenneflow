@@ -1,7 +1,7 @@
 package de.lenneflow.taskservice.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.lenneflow.taskservice.enums.TaskRunner;
+import de.lenneflow.taskservice.enums.RunNode;
 import de.lenneflow.taskservice.enums.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -29,25 +29,25 @@ public class Task {
 
     private String taskDescription;
 
-    private TaskStatus taskStatus;
+    private TaskStatus  taskStatus;
 
     private String taskType;
 
-    private TaskRunner taskRunner;
+    private String errorMessage;
+
+    private RunNode runNode;
 
     private int taskPriority;
 
-    private int retryCount;
+    private int loopCount;
+
+    private String switchCase;
+
+    private boolean doWhileStop;
 
     private long creationTime;
 
     private long updateTime;
-
-    @JsonIgnore
-    private Map<String, Object> inputPayload = new HashMap<>();
-
-    @JsonIgnore
-    private Map<String, Object> outputPayload = new HashMap<>();
 
     @JsonIgnore
     private Map<String, Object> inputData = new HashMap<>();

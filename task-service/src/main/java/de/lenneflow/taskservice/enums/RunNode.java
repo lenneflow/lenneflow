@@ -1,5 +1,5 @@
 package de.lenneflow.taskservice.enums;
 
-public enum TaskRunner {
+public enum RunNode {
     SYSTEM, WORKER
 }
