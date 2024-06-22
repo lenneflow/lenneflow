@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: execution-service
+  name: orchestration-service
   labels:
-    app: execution-service
+    app: orchestration-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: execution-service
+      app: orchestration-service
   template:
     metadata:
       labels:
-        app: execution-service
+        app: orchestration-service
     spec:
       serviceAccountName: lenneflow-sa
       containers:
-      - name: execution-service
-        image: lenneflow/execution-service
+      - name: orchestration-service
+        image: lenneflow/orchestration-service
         ports:
         - containerPort: 47002
         resources:
@@ -58,7 +58,7 @@ spec:
       volumes:
             - name: mongodb
               secret:
-                secretName: execution-service
+                secretName: orchestration-service
           #        - name: config
           #          configMap:
           #            name: department

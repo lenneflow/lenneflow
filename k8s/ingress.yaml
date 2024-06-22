@@ -18,11 +18,11 @@ spec:
                 name: account-service
                 port:
                   number: 47001
-          - path: /execution
+          - path: /orchestration
             pathType: Prefix
             backend:
               service:
-                name: execution-service
+                name: orchestration-service
                 port:
                   number: 47002
           - path: /task

@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: execution-service
+  name: orchestration-service
   labels:
-    app: execution-service
+    app: orchestration-service
     spring-boot: "true"
 spec:
   ports:
     - port: 47002
       protocol: TCP
   selector:
-    app: execution-service
+    app: orchestration-service
   type: ClusterIP
