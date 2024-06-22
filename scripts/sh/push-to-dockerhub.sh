@@ -1,7 +1,7 @@
 
 docker push lenneflow/account-service
 
-docker push lenneflow/execution-service
+docker push lenneflow/orchestration-service
 
 docker push lenneflow/task-service
 

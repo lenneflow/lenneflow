@@ -1,6 +1,5 @@
 package de.lenneflow.orchestrationservice.feignmodels;
 
-import de.lenneflow.orchestrationservice.enums.RunNode;
 import de.lenneflow.orchestrationservice.enums.TaskStatus;
 import de.lenneflow.orchestrationservice.enums.WorkFlowStepType;
 import lombok.AllArgsConstructor;
@@ -35,8 +34,6 @@ public class WorkflowStep {
     private String nextStepId;
 
     private String previousStepId;
-
-    private RunNode runNode;
 
     private String errorMessage;
 

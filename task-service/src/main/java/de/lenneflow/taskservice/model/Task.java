@@ -1,7 +1,6 @@
 package de.lenneflow.taskservice.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.lenneflow.taskservice.enums.RunNode;
 import de.lenneflow.taskservice.enums.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -34,8 +33,6 @@ public class Task {
     private String taskType;
 
     private String errorMessage;
-
-    private RunNode runNode;
 
     private int taskPriority;
 

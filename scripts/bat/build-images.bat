@@ -10,8 +10,8 @@ cd admin-service
 docker build -t lenneflow/admin-service .
 cd..
 
-cd execution-service
-docker build -t lenneflow/execution-service .
+cd orchestration-service
+docker build -t lenneflow/orchestration-service .
 cd..
 
 cd task-service

@@ -1,6 +1,5 @@
 package de.lenneflow.orchestrationservice.controller;
 
-import de.lenneflow.orchestrationservice.enums.RunNode;
 import de.lenneflow.orchestrationservice.feignmodels.Task;
 import de.lenneflow.orchestrationservice.utils.Util;
 import org.springframework.amqp.core.AmqpAdmin;
@@ -21,25 +20,9 @@ public class QueueController {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public void addTaskToQueue(Task task) {
+    public void addWorkerTaskToQueue(Task task)  {
         String serializedTask = Util.serializeTask(task);
-        if(task.getRunNode() == RunNode.SYSTEM){
-            addSystemTaskToQueue(serializedTask);
-        }else{
-            addWorkerTaskToQueue(task, serializedTask);
-        }
-    }
-
-    private void addWorkerTaskToQueue(Task task, String serializedTask)  {
         String queueName = task.getTaskType();
-        String exchange  = queueName + "-Exchange";
-        String routingKey = queueName + "-RoutingKey";
-        createQueueAndBinding(queueName, exchange, routingKey);
-        rabbitTemplate.convertAndSend(exchange, routingKey, serializedTask);
-    }
-
-    private void addSystemTaskToQueue(String serializedTask) {
-        String queueName = "SystemQueue";
         String exchange  = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";
         createQueueAndBinding(queueName, exchange, routingKey);

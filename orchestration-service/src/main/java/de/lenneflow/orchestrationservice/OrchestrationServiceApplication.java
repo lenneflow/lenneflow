@@ -14,12 +14,12 @@ import org.springframework.context.annotation.Bean;
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients
-public class ExecutionServiceApplication {
+public class OrchestrationServiceApplication {
 
    public static final String TASKRESULTQUEUE = "taskResultQueue";
 
     public static void main(String[] args) {
-        SpringApplication.run(ExecutionServiceApplication.class, args);
+        SpringApplication.run(OrchestrationServiceApplication.class, args);
     }
 
     @Value("${rabbit.address}")

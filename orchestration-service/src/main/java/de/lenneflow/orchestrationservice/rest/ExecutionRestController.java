@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/execution/workflow")
+@RequestMapping("/orchestration/workflow")
 public class ExecutionRestController {
 
     final WorkflowExecutionRepository workflowExecutionRepository;
@@ -67,7 +67,7 @@ public class ExecutionRestController {
         return workflowRunner.resume(executionId);
     }
 
-    @GetMapping("/run-state/{executionId}")
+    @GetMapping("/state/{executionId}")
     public WorkflowExecution workflowRunState(@PathVariable String executionId) {
         return workflowRunner.executionState(executionId);
     }

@@ -1,6 +1,6 @@
 package de.lenneflow.orchestrationservice.controller;
 
-import de.lenneflow.orchestrationservice.ExecutionServiceApplication;
+import de.lenneflow.orchestrationservice.OrchestrationServiceApplication;
 import de.lenneflow.orchestrationservice.enums.TaskStatus;
 import de.lenneflow.orchestrationservice.enums.WorkFlowStepType;
 import de.lenneflow.orchestrationservice.enums.WorkflowStatus;
@@ -47,7 +47,7 @@ public class WorkflowRunner {
      *
      * @param serializedTask serialized task object
      */
-    @RabbitListener(queues = ExecutionServiceApplication.TASKRESULTQUEUE)
+    @RabbitListener(queues = OrchestrationServiceApplication.TASKRESULTQUEUE)
     public void processTaskResult(byte[] serializedTask) {
         Task resultTask = Util.deserializeTask(serializedTask);
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(resultTask.getMetaData().get(Task.METADATA_KEY_EXECUTION_ID));
@@ -268,7 +268,7 @@ public class WorkflowRunner {
      * @param step workflow step to run
      */
     private void runStep(Task task, WorkflowStepInstance step) {
-        queueController.addTaskToQueue(task);
+        queueController.addWorkerTaskToQueue(task);
         instanceController.updateWorkflowStepInstanceStatus(step, TaskStatus.IN_PROGRESS);
     }
 

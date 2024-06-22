@@ -1,6 +1,5 @@
 package de.lenneflow.orchestrationservice.feignmodels;
 
-import de.lenneflow.orchestrationservice.enums.RunNode;
 import de.lenneflow.orchestrationservice.enums.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,8 +31,6 @@ public class Task implements Serializable {
     private String taskType;
 
     private String errorMessage;
-
-    private RunNode runNode;
 
     private int taskPriority;
 

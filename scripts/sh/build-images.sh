@@ -11,8 +11,8 @@ cd account-service
 docker build -t lenneflow/account-service .
 cd ..
 
-cd execution-service
-docker build -t lenneflow/execution-service .
+cd orchestration-service
+docker build -t lenneflow/orchestration-service .
 cd ..
 
 cd task-service
