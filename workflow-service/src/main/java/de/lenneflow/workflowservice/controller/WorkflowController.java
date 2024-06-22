@@ -21,7 +21,7 @@ public class WorkflowController {
 
     @GetMapping("/get/{uuid}")
     public Workflow getWorkflow(@PathVariable String uuid) {
-        return workflowRepository.findByUuid(uuid);
+        return workflowRepository.findByWorkflowId(uuid);
     }
 
     @GetMapping("/get/all")
