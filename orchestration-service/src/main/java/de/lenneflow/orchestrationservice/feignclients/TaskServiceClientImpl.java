@@ -1,6 +1,5 @@
 package de.lenneflow.orchestrationservice.feignclients;
 
-import de.lenneflow.orchestrationservice.enums.RunNode;
 import de.lenneflow.orchestrationservice.enums.TaskStatus;
 import de.lenneflow.orchestrationservice.feignmodels.Task;
 
@@ -11,7 +10,6 @@ public class TaskServiceClientImpl {
         Task task = new Task();
         task.setTaskDescription("Description");
         task.setTaskPriority(1);
-        task.setRunNode(RunNode.WORKER);
         task.setTaskType("TypeA");
         task.setTaskStatus(TaskStatus.NOT_RUN);
         switch (taskId){
