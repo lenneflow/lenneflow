@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lenneflow-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: lenneflow.local
+      http:
+        paths:
+          - path: /account
+            pathType: Prefix
+            backend:
+              service:
+                name: account-service
+                port:
+                  number: 47001
+          - path: /orchestration
+            pathType: Prefix
+            backend:
+              service:
+                name: orchestration-service
+                port:
+                  number: 47002
+          - path: /task
+            pathType: Prefix
+            backend:
+              service:
+                name: task-service
+                port:
+                  number: 47003
+          - path: /worker
+            pathType: Prefix
+            backend:
+              service:
+                name: worker-service
+                port:
+                  number: 47004
+          - path: /workflow
+            pathType: Prefix
+            backend:
+              service:
+                name: workflow-service
+                port:
+                  number: 47005

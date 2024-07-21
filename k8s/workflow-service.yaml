@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: workflow-service
+  labels:
+    app: workflow-service
+    spring-boot: "true"
+spec:
+  ports:
+    - port: 47005
+      protocol: TCP
+  selector:
+    app: workflow-service
+  type: ClusterIP

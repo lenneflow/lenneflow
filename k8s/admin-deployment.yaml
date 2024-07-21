@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-service
+spec:
+  selector:
+    matchLabels:
+      app: admin-service
+  template:
+    metadata:
+      labels:
+        app: admin-service
+    spec:
+      serviceAccountName: lenneflow-sa
+      containers:
+      - name: admin
+        image: lenneflow/admin-service
+        ports:
+        - containerPort: 8080
+        env:
+          - name: SPRING_CLOUD_BOOTSTRAP_ENABLED
+            value: "true"
