@@ -2,8 +2,8 @@ cd ..
 
 cd ..
 
-kubectl create namespace lenneflow
+sudo kubectl create namespace lenneflow
 
-kubectl apply -f k8s/ -n lenneflow
+sudo kubectl apply -f k8s/ -n lenneflow
 
-kubectl get pods -n lenneflow
+sudo kubectl get pods -n lenneflow
