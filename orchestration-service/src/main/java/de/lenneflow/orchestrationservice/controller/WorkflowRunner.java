@@ -288,12 +288,12 @@ public class WorkflowRunner {
             case SIMPLE, START:
                 return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
             case DO_WHILE:
-                if (task.isDoWhileStop())
+                if (task.getOutputData().get("DoWhileStop").toString().equals("true"))
                     return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
                 else
                     return stepInstance;
             case SWITCH:
-                String stepInstanceId = stepInstance.getDecisionCases().get(task.getSwitchCase());
+                String stepInstanceId = stepInstance.getDecisionCases().get("task.getSwitchCase()");
                 return workflowStepInstanceRepository.findByUid(stepInstanceId);
             default:
                 return null;
