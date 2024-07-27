@@ -32,15 +32,13 @@ public class Task {
 
     private String taskType;
 
+    private String repositoryUrl;
+
+    private String imageName;
+
     private String errorMessage;
 
     private int taskPriority;
-
-    private int loopCount;
-
-    private String switchCase;
-
-    private boolean doWhileStop;
 
     private long creationTime;
 
