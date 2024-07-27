@@ -1,12 +1,12 @@
 
-docker push lenneflow/account-service
+sudo docker push lenneflow/account-service
 
-docker push lenneflow/orchestration-service
+sudo docker push lenneflow/orchestration-service
 
-docker push lenneflow/task-service
+sudo docker push lenneflow/task-service
 
-docker push lenneflow/worker-service
+sudo docker push lenneflow/worker-service
 
-docker push lenneflow/workflow-service
+sudo docker push lenneflow/workflow-service
 
-docker push lenneflow/gateway-service
+sudo docker push lenneflow/gateway-service
