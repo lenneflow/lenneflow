@@ -11,6 +11,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,49 +23,32 @@ import java.util.Map;
 @NoArgsConstructor
 @Document
 public class WorkflowStep {
-    @Id
-    private String stepId;
+
+    private String uid;
+
+    private String stepName;
 
     private String workflowId;
 
     private String description;
 
-    private boolean start;
+    private WorkFlowStepType workFlowStepType;
 
-    private boolean end;
+    private boolean retriable;
 
-    private WorkflowStepStatus status;
+    private String nextStepId;
 
-    private WorkflowStep nextStep;
+    private String previousStepId;
 
-    private WorkflowStep previousStep;
-
-    private WorkFlowStepType stepType;
+    private String errorMessage;
 
     private String taskId;
 
-    @DocumentReference
-    private Map<String, List<WorkflowStep>> decisionCases = new LinkedHashMap<>();
+    private Map<String, String> decisionCases = new LinkedHashMap<>();
 
     private Integer retryCount;
 
-    private long scheduledTime;
+    private LocalDateTime creationTime;
 
-    private long startTime;
-
-    private long endTime;
-
-    private long updateTime;
-
-    @JsonIgnore
-    private Map<String, Object> inputPayload = new HashMap<>();
-
-    @JsonIgnore
-    private Map<String, Object> outputPayload = new HashMap<>();
-
-    @JsonIgnore
-    private Map<String, Object> inputData = new HashMap<>();
-
-    @JsonIgnore
-    private Map<String, Object> outputData = new HashMap<>();
+    private LocalDateTime updateTime;
 }

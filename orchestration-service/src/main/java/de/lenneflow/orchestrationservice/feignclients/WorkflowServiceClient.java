@@ -14,10 +14,10 @@ public interface WorkflowServiceClient {
     @GetMapping("/workflow/get/{uuid}")
     public Workflow getWorkflow(@PathVariable("uuid") String uuid);
 
-    @GetMapping("/workflow/get_step/{stepId}")
+    @GetMapping("/workflow/get-step/{stepId}")
     public WorkflowStep getWorkflowStep(@PathVariable("stepId") String stepId);
 
-    @GetMapping("/workflow/get_workflow_steps/{workflowId}")
+    @GetMapping("/workflow/get-workflow-steps/{workflowId}")
     public List<WorkflowStep> getWorkflowSteps(@PathVariable("workflowId") String workflowId);
 
 }

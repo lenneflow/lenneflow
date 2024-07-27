@@ -1,6 +1,5 @@
-package de.lenneflow.orchestrationservice.rest;
+package de.lenneflow.orchestrationservice.controller;
 
-import de.lenneflow.orchestrationservice.controller.WorkflowRunner;
 import de.lenneflow.orchestrationservice.feignclients.TaskServiceClient;
 import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
@@ -16,7 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/orchestration")
-public class ExecutionRestController {
+public class OrchestrationRestController {
 
     final WorkflowExecutionRepository workflowExecutionRepository;
     final WorkflowServiceClient workflowServiceClient;
@@ -25,13 +24,18 @@ public class ExecutionRestController {
     final WorkflowStepInstanceRepository workflowStepInstanceRepository;
     final WorkflowRunner workflowRunner;
 
-    public ExecutionRestController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient, TaskServiceClient taskServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowRunner workflowRunner) {
+    public OrchestrationRestController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient, TaskServiceClient taskServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowRunner workflowRunner) {
         this.workflowExecutionRepository = workflowExecutionRepository;
         this.workflowServiceClient = workflowServiceClient;
         this.taskServiceClient = taskServiceClient;
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.workflowStepInstanceRepository = workflowStepInstanceRepository;
         this.workflowRunner = workflowRunner;
+    }
+
+    @GetMapping("/")
+    public String home(@PathVariable String uuid) {
+        return "Orchestration service is working!";
     }
 
     @GetMapping("/start-workflow/{workflowId}")

@@ -17,27 +17,27 @@ public class WorkflowStepController {
         this.workflowStepRepository = workflowStepRepository;
     }
 
-    @GetMapping("/get_step/{uuid}")
+    @GetMapping("/get-step/{uuid}")
     public WorkflowStep getStep(@PathVariable String uuid) {
         return workflowStepRepository.findByStepId(uuid);
     }
 
-    @GetMapping("/get_workflow_steps/{workflowId}")
+    @GetMapping("/get-workflow-steps/{workflowId}")
     public List<WorkflowStep> getAllWorkflowSteps(@PathVariable String workflowId) {
         return workflowStepRepository.findByWorkflowId(workflowId);
     }
 
-    @GetMapping("/get_all_steps")
+    @GetMapping("/get-all-steps")
     public List<WorkflowStep> getAllWorkflows() {
         return workflowStepRepository.findAll();
     }
 
-    @PostMapping("/add")
+    @PostMapping("/add-step")
     public WorkflowStep addNewWorkflow(WorkflowStep workflowStep) {
         return workflowStepRepository.save(workflowStep);
     }
 
-    @PatchMapping("/update")
+    @PatchMapping("/update-step")
     public WorkflowStep patchWorkflow(WorkflowStep workflowStep) {
         return workflowStepRepository.save(workflowStep);
     }

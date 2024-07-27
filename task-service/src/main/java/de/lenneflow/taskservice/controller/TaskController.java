@@ -10,13 +10,18 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/task")
-public class WorkerTaskController {
+public class TaskController {
 
     final
     TaskRepository taskRepository;
 
-    public WorkerTaskController(TaskRepository taskRepository) {
+    public TaskController(TaskRepository taskRepository) {
         this.taskRepository = taskRepository;
+    }
+
+    @GetMapping("/")
+    public String home(@PathVariable String uuid) {
+        return "Task service is working!";
     }
 
     @GetMapping("/get/{id}")

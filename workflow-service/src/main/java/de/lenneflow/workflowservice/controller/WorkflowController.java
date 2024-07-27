@@ -17,12 +17,17 @@ public class WorkflowController {
         this.workflowRepository = workflowRepository;
     }
 
+    @GetMapping("/")
+    public String home(@PathVariable String uuid) {
+        return "Workflow service is working!";
+    }
+
     @GetMapping("/get/{uuid}")
     public Workflow getWorkflow(@PathVariable String uuid) {
         return workflowRepository.findByWorkflowId(uuid);
     }
 
-    @GetMapping("/get/all")
+    @GetMapping("/get-all")
     public List<Workflow> getAllWorkflows() {
         return workflowRepository.findAll();
     }
