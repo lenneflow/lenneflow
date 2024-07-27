@@ -123,12 +123,12 @@ public class InstanceController {
         List<String> stepInstanceIds = new ArrayList<>();
         for (WorkflowStep step : steps) {
             WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getUid()));
-            WorkflowStep nextStep = workflowServiceClient.getWorkflowStep(workflowId, step.getNextStepId());
+            WorkflowStep nextStep = workflowServiceClient.getWorkflowStep(step.getNextStepId());
             if (nextStep != null) {
                 WorkflowStepInstance nextStepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getNextStepId()));
                 stepInstance.setNextStepId(nextStepInstance.getUid());
             }
-            WorkflowStep previousStep = workflowServiceClient.getWorkflowStep(workflowId, step.getPreviousStepId());
+            WorkflowStep previousStep = workflowServiceClient.getWorkflowStep(step.getPreviousStepId());
             if (previousStep != null) {
                 WorkflowStepInstance previousStepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getPreviousStepId()));
                 stepInstance.setPreviousStepId(previousStepInstance.getUid());

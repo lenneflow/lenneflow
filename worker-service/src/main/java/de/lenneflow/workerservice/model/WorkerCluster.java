@@ -25,7 +25,7 @@ public class WorkerCluster {
 
     private String description;
 
-    private List<WorkerNode> workerNodes;
+    private List<Worker> workers;
 
     private String ipAddress;
 

@@ -29,7 +29,7 @@ public class WorkerTaskController {
         return taskRepository.findAll();
     }
 
-    @PostMapping("/new")
+    @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
     public Task addWorkerTask(@RequestBody Task task) {
         task.setTaskID(UUID.randomUUID().toString());
