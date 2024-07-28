@@ -12,19 +12,19 @@ cd ..
 #cd ..
 
 cd orchestration-service
-sudo docker build -t lenneflow/orchestration-service .
+docker build -t lenneflow/orchestration-service .
 cd ..
 
 cd task-service
-sudo docker build -t lenneflow/task-service .
+docker build -t lenneflow/task-service .
 cd ..
 
 cd worker-service
-sudo docker build -t lenneflow/worker-service .
+docker build -t lenneflow/worker-service .
 cd ..
 
 cd workflow-service
-sudo docker build -t lenneflow/workflow-service .
+docker build -t lenneflow/workflow-service .
 cd ..
 
 #cd gateway-service
