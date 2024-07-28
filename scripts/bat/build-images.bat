@@ -2,10 +2,6 @@ cd..
 
 cd..
 
-cd account-service
-docker build -t lenneflow/account-service .
-cd..
-
 cd admin-service
 docker build -t lenneflow/admin-service .
 cd..
@@ -24,10 +20,6 @@ cd..
 
 cd workflow-service
 docker build -t lenneflow/workflow-service .
-cd..
-
-cd gateway-service
-docker build -t lenneflow/gateway-service .
 cd..
 
 docker images
