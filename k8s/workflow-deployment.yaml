@@ -15,11 +15,13 @@ spec:
         app: workflow-service
     spec:
       serviceAccountName: lenneflow-sa
+      hostNetwork: true
       containers:
       - name: workflow-service
         image: lenneflow/workflow-service
         ports:
         - containerPort: 47005
+          hostPort: 47005
         resources:
           requests:
             cpu: "0.2"

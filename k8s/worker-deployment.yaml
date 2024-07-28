@@ -15,11 +15,13 @@ spec:
         app: worker-service
     spec:
       serviceAccountName: lenneflow-sa
+      hostNetwork: true
       containers:
       - name: worker-service
         image: lenneflow/worker-service
         ports:
         - containerPort: 47004
+          hostPort: 47004
         resources:
           requests:
             cpu: "0.2"

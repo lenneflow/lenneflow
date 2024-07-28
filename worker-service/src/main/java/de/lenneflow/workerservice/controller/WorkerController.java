@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/worker_node")
+@RequestMapping("/worker")
 public class WorkerController {
 
     final

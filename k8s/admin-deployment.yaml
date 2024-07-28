@@ -12,11 +12,13 @@ spec:
         app: admin-service
     spec:
       serviceAccountName: lenneflow-sa
+      hostNetwork: true
       containers:
       - name: admin
         image: lenneflow/admin-service
         ports:
-        - containerPort: 8080
+        - containerPort: 47000
+          hostPort: 47000
         env:
           - name: SPRING_CLOUD_BOOTSTRAP_ENABLED
             value: "true"

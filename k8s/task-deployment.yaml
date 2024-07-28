@@ -15,11 +15,13 @@ spec:
         app: task-service
     spec:
       serviceAccountName: lenneflow-sa
+      hostNetwork: true
       containers:
       - name: task-service
         image: lenneflow/task-service
         ports:
         - containerPort: 47003
+          hostPort: 47003
         resources:
           requests:
             cpu: "0.2"
