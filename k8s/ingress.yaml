@@ -8,16 +8,9 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: lenneflow.local
+    - host: lenneflow
       http:
         paths:
-          - path: /account
-            pathType: Prefix
-            backend:
-              service:
-                name: account-service
-                port:
-                  number: 47001
           - path: /orchestration
             pathType: Prefix
             backend:
