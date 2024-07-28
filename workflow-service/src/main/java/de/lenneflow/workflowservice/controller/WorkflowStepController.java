@@ -19,7 +19,7 @@ public class WorkflowStepController {
 
     @GetMapping("/get-step/{uuid}")
     public WorkflowStep getStep(@PathVariable String uuid) {
-        return workflowStepRepository.findByStepId(uuid);
+        return workflowStepRepository.findByUid(uuid);
     }
 
     @GetMapping("/get-workflow-steps/{workflowId}")
