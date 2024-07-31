@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/orchestration")
+//@RequestMapping("/orchestration")
 public class OrchestrationRestController {
 
     final WorkflowExecutionRepository workflowExecutionRepository;
@@ -34,16 +34,16 @@ public class OrchestrationRestController {
     }
 
     @GetMapping("/")
-    public String home(@PathVariable String uuid) {
+    public String home() {
         return "Orchestration service is working!";
     }
 
-    @GetMapping("/start-workflow/{workflowId}")
+    @GetMapping("/engine/start-workflow/{workflowId}")
     public ResponseEntity<WorkflowExecution>  startWorkflowGet(@PathVariable String workflowId) {
         return new ResponseEntity<>(workflowRunner.start(workflowId, null), HttpStatus.OK);
     }
 
-    @PostMapping("/start-workflow/{workflowId}")
+    @PostMapping("/engine/start-workflow/{workflowId}")
     public ResponseEntity<WorkflowExecution> startWorkflowPost(@PathVariable String workflowId, @RequestBody Map<String, Object> inputParameters) {
         if(inputParametersValid(workflowId, inputParameters)){
             return new ResponseEntity<>(workflowRunner.start(workflowId, inputParameters), HttpStatus.OK);
@@ -51,23 +51,23 @@ public class OrchestrationRestController {
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
-    @GetMapping("/stop-workflow/{executionId}")
+    @GetMapping("/engine/stop-workflow/{executionId}")
     public WorkflowExecution stopWorkflow(@PathVariable String executionId) {
         return workflowRunner.stop(executionId);
     }
 
-    @GetMapping("/pause-workflow/{executionId}")
+    @GetMapping("/engine/pause-workflow/{executionId}")
     @ResponseStatus(HttpStatus.OK)
     public WorkflowExecution pauseWorkflow(@PathVariable String executionId) {
         return workflowRunner.pause(executionId);
     }
 
-    @GetMapping("/resume-workflow/{executionId}")
+    @GetMapping("/engine/resume-workflow/{executionId}")
     public WorkflowExecution resumeWorkflow(@PathVariable String executionId) {
         return workflowRunner.resume(executionId);
     }
 
-    @GetMapping("/workflow-state/{executionId}")
+    @GetMapping("/engine/workflow-state/{executionId}")
     public WorkflowExecution workflowRunState(@PathVariable String executionId) {
         return workflowRunner.executionState(executionId);
     }

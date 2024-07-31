@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/task")
+//@RequestMapping("/task")
 public class TaskController {
 
     final
@@ -20,28 +20,28 @@ public class TaskController {
     }
 
     @GetMapping("/")
-    public String home(@PathVariable String uuid) {
+    public String home() {
         return "Task service is working!";
     }
 
-    @GetMapping("/get/{id}")
+    @GetMapping("task/get/{id}")
     public Task getWorkerTaskById(@PathVariable String id) {
         return taskRepository.findById(id).orElse(null);
     }
 
-    @GetMapping("/get/all")
+    @GetMapping("task/get/all")
     public List<Task> getAllWorkerTasks() {
         return taskRepository.findAll();
     }
 
-    @PostMapping("/create")
+    @PostMapping("task/create")
     @ResponseStatus(HttpStatus.CREATED)
     public Task addWorkerTask(@RequestBody Task task) {
         task.setTaskID(UUID.randomUUID().toString());
         return taskRepository.save(task);
     }
 
-    @PatchMapping("/update")
+    @PatchMapping("task/update")
     @ResponseStatus(HttpStatus.OK)
     public void updateWorkerTask(@RequestBody Task task) {
         taskRepository.save(task);
