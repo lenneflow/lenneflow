@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: task-service
+  name: function-service
   labels:
-    app: task-service
+    app: function-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: task-service
+      app: function-service
   template:
     metadata:
       labels:
-        app: task-service
+        app: function-service
     spec:
       serviceAccountName: lenneflow-sa
       hostNetwork: true
       containers:
-      - name: task-service
-        image: lenneflow/task-service
+      - name: function-service
+        image: lenneflow/function-service
         ports:
         - containerPort: 47003
           hostPort: 47003
@@ -60,7 +60,7 @@ spec:
       volumes:
             - name: mongodb
               secret:
-                secretName: task-service
+                secretName: function-service
           #        - name: config
           #          configMap:
           #            name: department
