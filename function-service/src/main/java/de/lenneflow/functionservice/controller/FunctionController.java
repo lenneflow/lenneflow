@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-//@RequestMapping("/function")
+@RequestMapping("/function")
 public class FunctionController {
 
     final
@@ -20,29 +20,24 @@ public class FunctionController {
         this.functionRepository = functionRepository;
     }
 
-    @GetMapping("/")
-    public String home() {
-        return "Function service is working!";
-    }
-
-    @GetMapping("function/get/{id}")
+    @GetMapping("/get/{id}")
     public Function getWorkerFunctionById(@PathVariable String id) {
         return functionRepository.findById(id).orElse(null);
     }
 
-    @GetMapping("function/get/all")
+    @GetMapping("/get/all")
     public List<Function> getAllWorkerFunctions() {
         return functionRepository.findAll();
     }
 
-    @PostMapping("function/create")
+    @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
     public Function addWorkerFunction(@RequestBody Function function) {
         function.setFunctionID(UUID.randomUUID().toString());
         return functionRepository.save(function);
     }
 
-    @PatchMapping("function/update")
+    @PatchMapping("/update")
     @ResponseStatus(HttpStatus.OK)
     public void updateWorkerFunction(@RequestBody Function function) {
         functionRepository.save(function);

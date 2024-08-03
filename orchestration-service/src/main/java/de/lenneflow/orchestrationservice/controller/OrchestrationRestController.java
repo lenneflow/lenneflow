@@ -1,6 +1,6 @@
 package de.lenneflow.orchestrationservice.controller;
 
-import de.lenneflow.orchestrationservice.feignclients.TaskServiceClient;
+import de.lenneflow.orchestrationservice.feignclients.FunctionServiceClient;
 import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
 import de.lenneflow.orchestrationservice.model.WorkflowExecution;
@@ -14,28 +14,23 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-//@RequestMapping("/orchestration")
+@RequestMapping("/orchestration")
 public class OrchestrationRestController {
 
     final WorkflowExecutionRepository workflowExecutionRepository;
     final WorkflowServiceClient workflowServiceClient;
-    final TaskServiceClient taskServiceClient;
+    final FunctionServiceClient functionServiceClient;
     final WorkflowInstanceRepository workflowInstanceRepository;
     final WorkflowStepInstanceRepository workflowStepInstanceRepository;
     final WorkflowRunner workflowRunner;
 
-    public OrchestrationRestController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient, TaskServiceClient taskServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowRunner workflowRunner) {
+    public OrchestrationRestController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient, FunctionServiceClient functionServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowRunner workflowRunner) {
         this.workflowExecutionRepository = workflowExecutionRepository;
         this.workflowServiceClient = workflowServiceClient;
-        this.taskServiceClient = taskServiceClient;
+        this.functionServiceClient = functionServiceClient;
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.workflowStepInstanceRepository = workflowStepInstanceRepository;
         this.workflowRunner = workflowRunner;
-    }
-
-    @GetMapping("/")
-    public String home() {
-        return "Orchestration service is working!";
     }
 
     @GetMapping("/engine/start-workflow/{workflowId}")

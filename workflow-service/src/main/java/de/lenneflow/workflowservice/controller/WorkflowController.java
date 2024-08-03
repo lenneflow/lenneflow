@@ -17,11 +17,6 @@ public class WorkflowController {
         this.workflowRepository = workflowRepository;
     }
 
-    @GetMapping("/")
-    public String home(@PathVariable String uuid) {
-        return "Workflow service is working!";
-    }
-
     @GetMapping("/get/{uuid}")
     public Workflow getWorkflow(@PathVariable String uuid) {
         return workflowRepository.findByWorkflowId(uuid);
@@ -33,12 +28,12 @@ public class WorkflowController {
     }
 
     @PostMapping("/add")
-    public Workflow addNewWorkflow(Workflow workflow) {
+    public Workflow addNewWorkflow(@RequestBody Workflow workflow) {
         return workflowRepository.save(workflow);
     }
 
     @PatchMapping("/update")
-    public Workflow patchWorkflow(Workflow workflow) {
+    public Workflow patchWorkflow(@RequestBody Workflow workflow) {
         return workflowRepository.save(workflow);
     }
 }

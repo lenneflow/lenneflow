@@ -19,11 +19,6 @@ public class WorkerController {
         this.workerRepository = workerRepository;
     }
 
-    @GetMapping("/")
-    public String home(@PathVariable String uuid) {
-        return "Worker service is working!";
-    }
-
     @PostMapping("/create")
     public ResponseEntity<Worker> createNewWorkerNode(@RequestBody Worker worker) {
         worker.setUuid(UUID.randomUUID().toString());

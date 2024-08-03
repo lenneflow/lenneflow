@@ -33,12 +33,12 @@ public class WorkflowStepController {
     }
 
     @PostMapping("/add-step")
-    public WorkflowStep addNewWorkflow(WorkflowStep workflowStep) {
+    public WorkflowStep addNewWorkflow(@RequestBody WorkflowStep workflowStep) {
         return workflowStepRepository.save(workflowStep);
     }
 
     @PatchMapping("/update-step")
-    public WorkflowStep patchWorkflow(WorkflowStep workflowStep) {
+    public WorkflowStep patchWorkflow(@RequestBody WorkflowStep workflowStep) {
         return workflowStepRepository.save(workflowStep);
     }
 }
