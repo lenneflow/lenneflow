@@ -3,7 +3,7 @@ package de.lenneflow.orchestrationservice.enums;
 import java.io.Serializable;
 
 
-public enum TaskStatus implements Serializable {
+public enum FunctionStatus implements Serializable {
     IN_PROGRESS,
     CANCELED,
     FAILED,

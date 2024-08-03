@@ -1,6 +1,6 @@
 package de.lenneflow.orchestrationservice.feignmodels;
 
-import de.lenneflow.orchestrationservice.enums.TaskStatus;
+import de.lenneflow.orchestrationservice.enums.FunctionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,7 +14,7 @@ import java.util.Map;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Task implements Serializable {
+public class Function implements Serializable {
 
     public static final String METADATA_KEY_EXECUTION_ID = "executionId";
     public static final String METADATA_KEY_STEP_INSTANCE_ID = "stepInstanceId";
@@ -22,13 +22,13 @@ public class Task implements Serializable {
 
     private Map<String, String> metaData = new HashMap<>();
 
-    private String taskName;
+    private String functionName;
 
-    private String taskDescription;
+    private String functionDescription;
 
-    private TaskStatus  taskStatus;
+    private FunctionStatus  functionStatus;
 
-    private String taskType;
+    private String functionType;
 
     private String repositoryUrl;
 
@@ -36,7 +36,7 @@ public class Task implements Serializable {
 
     private String errorMessage;
 
-    private int taskPriority;
+    private int functionPriority;
 
     private long creationTime;
 

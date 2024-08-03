@@ -1,7 +1,7 @@
 package de.lenneflow.orchestrationservice.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.lenneflow.orchestrationservice.enums.TaskStatus;
+import de.lenneflow.orchestrationservice.enums.FunctionStatus;
 import de.lenneflow.orchestrationservice.enums.WorkFlowStepType;
 import de.lenneflow.orchestrationservice.feignmodels.WorkflowStep;
 import lombok.AllArgsConstructor;
@@ -37,7 +37,7 @@ public class WorkflowStepInstance {
 
     private boolean retriable;
 
-    private TaskStatus taskStatus;
+    private FunctionStatus functionStatus;
 
     private String nextStepId;
 
@@ -45,7 +45,7 @@ public class WorkflowStepInstance {
 
     private WorkFlowStepType workFlowStepType;
 
-    private String taskId;
+    private String functionId;
 
     private Map<String, String> decisionCases = new LinkedHashMap<>();
 
@@ -71,9 +71,9 @@ public class WorkflowStepInstance {
 
     public WorkflowStepInstance(WorkflowStep step, String workflowInstanceId) {
         this.uid = UUID.randomUUID().toString();
-        this.taskStatus = step.getStatus();
+        this.functionStatus = step.getStatus();
         this.description = step.getDescription();
-        this.taskId = step.getTaskId();
+        this.functionId = step.getFunctionId();
         this.retriable = step.isRetriable();
         this.workflowInstanceId = workflowInstanceId;
         this.workflowStepId = step.getUid();

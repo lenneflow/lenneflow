@@ -1,6 +1,6 @@
 package de.lenneflow.orchestrationservice.feignmodels;
 
-import de.lenneflow.orchestrationservice.enums.TaskStatus;
+import de.lenneflow.orchestrationservice.enums.FunctionStatus;
 import de.lenneflow.orchestrationservice.enums.WorkFlowStepType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -29,7 +29,7 @@ public class WorkflowStep {
 
     private boolean retriable;
 
-    private TaskStatus status;
+    private FunctionStatus status;
 
     private String nextStepId;
 
@@ -37,7 +37,7 @@ public class WorkflowStep {
 
     private String errorMessage;
 
-    private String taskId;
+    private String functionId;
 
     private Map<String, String> decisionCases = new LinkedHashMap<>();
 

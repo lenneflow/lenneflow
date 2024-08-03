@@ -1,12 +1,12 @@
 package de.lenneflow.orchestrationservice.controller;
 
 import de.lenneflow.orchestrationservice.OrchestrationServiceApplication;
-import de.lenneflow.orchestrationservice.enums.TaskStatus;
+import de.lenneflow.orchestrationservice.enums.FunctionStatus;
 import de.lenneflow.orchestrationservice.enums.WorkFlowStepType;
 import de.lenneflow.orchestrationservice.enums.WorkflowStatus;
-import de.lenneflow.orchestrationservice.feignclients.TaskServiceClient;
+import de.lenneflow.orchestrationservice.feignclients.FunctionServiceClient;
 import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
-import de.lenneflow.orchestrationservice.feignmodels.Task;
+import de.lenneflow.orchestrationservice.feignmodels.Function;
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
 import de.lenneflow.orchestrationservice.model.WorkflowExecution;
 import de.lenneflow.orchestrationservice.model.WorkflowInstance;
@@ -26,7 +26,7 @@ import java.util.Map;
 @Component
 public class WorkflowRunner {
 
-    final TaskServiceClient taskServiceClient;
+    final FunctionServiceClient functionServiceClient;
     final WorkflowServiceClient workflowServiceClient;
     final WorkflowExecutionRepository workflowExecutionRepository;
     final WorkflowInstanceRepository workflowInstanceRepository;
@@ -34,8 +34,8 @@ public class WorkflowRunner {
     final QueueController queueController;
     final InstanceController instanceController;
 
-    WorkflowRunner(TaskServiceClient taskServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowExecutionRepository workflowExecutionRepository, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController, InstanceController instanceController) {
-        this.taskServiceClient = taskServiceClient;
+    WorkflowRunner(FunctionServiceClient functionServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowExecutionRepository workflowExecutionRepository, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController, InstanceController instanceController) {
+        this.functionServiceClient = functionServiceClient;
         this.workflowServiceClient = workflowServiceClient;
         this.workflowExecutionRepository = workflowExecutionRepository;
         this.workflowInstanceRepository = workflowInstanceRepository;
@@ -45,42 +45,42 @@ public class WorkflowRunner {
     }
 
     /**
-     * Implementation of the Task results listener. This method will listen on the task results queue and process
-     * the result task
+     * Implementation of the Function results listener. This method will listen on the function results queue and process
+     * the result function
      *
-     * @param serializedTask serialized task object
+     * @param serializedFunction serialized function object
      */
     @RabbitListener(queues = OrchestrationServiceApplication.TASKRESULTQUEUE)
-    public void processTaskResult(byte[] serializedTask) {
-        Task resultTask = Util.deserializeTask(serializedTask);
-        WorkflowExecution execution = workflowExecutionRepository.findByRunId(resultTask.getMetaData().get(Task.METADATA_KEY_EXECUTION_ID));
-        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(resultTask.getMetaData().get(Task.METADATA_KEY_WORKFlOW_INSTANCE_ID));
-        WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(resultTask.getMetaData().get(Task.METADATA_KEY_STEP_INSTANCE_ID));
+    public void processFunctionResult(byte[] serializedFunction) {
+        Function resultFunction = Util.deserializeFunction(serializedFunction);
+        WorkflowExecution execution = workflowExecutionRepository.findByRunId(resultFunction.getMetaData().get(Function.METADATA_KEY_EXECUTION_ID));
+        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(resultFunction.getMetaData().get(Function.METADATA_KEY_WORKFlOW_INSTANCE_ID));
+        WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(resultFunction.getMetaData().get(Function.METADATA_KEY_STEP_INSTANCE_ID));
 
-        instanceController.updateWorkflowStepInstance(stepInstance, resultTask);
+        instanceController.updateWorkflowStepInstance(stepInstance, resultFunction);
 
         if (stepInstance.getWorkFlowStepType() == WorkFlowStepType.TERMINATE) {
             terminateWorkflowRun(execution, workflowInstance, stepInstance);
         } else {
-            switch (resultTask.getTaskStatus()) {
+            switch (resultFunction.getFunctionStatus()) {
                 case COMPLETED, SKIPPED:
-                    WorkflowStepInstance nextStepInstance = getNextStepInstance(stepInstance, resultTask);
+                    WorkflowStepInstance nextStepInstance = getNextStepInstance(stepInstance, resultFunction);
                     if (nextStepInstance != null) {
-                        Task task = taskServiceClient.getTask(nextStepInstance.getTaskId());
-                        Map<String, String> metadata = generateTaskMetaData(execution, workflowInstance, nextStepInstance);
-                        task.setMetaData(metadata);
-                        runStep(task, nextStepInstance);
+                        Function function = functionServiceClient.getFunction(nextStepInstance.getFunctionId());
+                        Map<String, String> metadata = generateFunctionMetaData(execution, workflowInstance, nextStepInstance);
+                        function.setMetaData(metadata);
+                        runStep(function, nextStepInstance);
                     }
                     break;
                 case FAILED, TIMED_OUT:
                     workflowInstance.setErrorsPresent(true);
-                    stepInstance.setErrorMessage(resultTask.getErrorMessage());
+                    stepInstance.setErrorMessage(resultFunction.getErrorMessage());
                     workflowStepInstanceRepository.save(stepInstance);
                     if (stepInstance.isRetriable() && stepInstance.getRetryCount() > 0) {
                         stepInstance.setRetryCount(stepInstance.getRetryCount() - 1);
                         workflowStepInstanceRepository.save(stepInstance);
-                        Task task = taskServiceClient.getTask(stepInstance.getTaskId());
-                        runStep(task, stepInstance);
+                        Function function = functionServiceClient.getFunction(stepInstance.getFunctionId());
+                        runStep(function, stepInstance);
                         break;
                     }
                     terminateWorkflowRun(execution, workflowInstance, stepInstance);
@@ -90,7 +90,7 @@ public class WorkflowRunner {
                     terminateWorkflowRun(execution, workflowInstance, stepInstance);
                     break;
                 default:
-                    throw new IllegalStateException("Unexpected value: " + resultTask.getTaskStatus());
+                    throw new IllegalStateException("Unexpected value: " + resultFunction.getFunctionStatus());
             }
         }
     }
@@ -113,7 +113,7 @@ public class WorkflowRunner {
             }
             workflowInstance.setErrorMessages(errorMessages);
             workflowInstanceRepository.save(workflowInstance);
-            switch (stepInstance.getTaskStatus()) {
+            switch (stepInstance.getFunctionStatus()) {
                 case FAILED, FAILED_WITH_TERMINAL_ERROR:
                     instanceController.updateWorkflowInstanceStatus(workflowInstance, WorkflowStatus.FAILED);
                     instanceController.updateWorkflowExecutionStatus(execution, WorkflowStatus.FAILED);
@@ -141,7 +141,7 @@ public class WorkflowRunner {
 
 
     /**
-     * This is the start method of every workflow run. This method searches for the starting workflow step, gets the task
+     * This is the start method of every workflow run. This method searches for the starting workflow step, gets the function
      * associated to the step and run the workflow step.
      *
      * @param workflowId      The ID od the workflow to run.
@@ -157,10 +157,10 @@ public class WorkflowRunner {
 
         WorkflowStepInstance firstStep = getStartStep(workflowInstance);
         assert firstStep != null;
-        Task task = taskServiceClient.getTask(firstStep.getTaskId());
-        Map<String, String> metadata = generateTaskMetaData(execution, workflowInstance, firstStep);
-        task.setMetaData(metadata);
-        runStep(task, firstStep);
+        Function function = functionServiceClient.getFunction(firstStep.getFunctionId());
+        Map<String, String> metadata = generateFunctionMetaData(execution, workflowInstance, firstStep);
+        function.setMetaData(metadata);
+        runStep(function, firstStep);
         return workflowExecutionRepository.findByRunId(execution.getRunId());
     }
 
@@ -231,20 +231,20 @@ public class WorkflowRunner {
     }
 
     /**
-     * In order to enqueue the task it is necessary the group the important parameters in a metadata map, so the worker just
+     * In order to enqueue the function it is necessary the group the important parameters in a metadata map, so the worker just
      * have to put it in the result object. The information are necessary to locate which running instance belongs to
-     * the result task.
+     * the result function.
      *
      * @param execution            the workflow execution ID.
      * @param workflowInstance     The running workflow instance
      * @param workflowStepInstance the running workflow step
      * @return the generated map of metadata.
      */
-    private Map<String, String> generateTaskMetaData(WorkflowExecution execution, WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance) {
+    private Map<String, String> generateFunctionMetaData(WorkflowExecution execution, WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance) {
         Map<String, String> metaData = new HashMap<>();
-        metaData.put(Task.METADATA_KEY_EXECUTION_ID, execution.getRunId());
-        metaData.put(Task.METADATA_KEY_WORKFlOW_INSTANCE_ID, workflowInstance.getUid());
-        metaData.put(Task.METADATA_KEY_STEP_INSTANCE_ID, workflowStepInstance.getUid());
+        metaData.put(Function.METADATA_KEY_EXECUTION_ID, execution.getRunId());
+        metaData.put(Function.METADATA_KEY_WORKFlOW_INSTANCE_ID, workflowInstance.getUid());
+        metaData.put(Function.METADATA_KEY_STEP_INSTANCE_ID, workflowStepInstance.getUid());
         return metaData;
     }
 
@@ -267,12 +267,12 @@ public class WorkflowRunner {
     /**
      * Runs a workflow step by adding it to the queue.
      *
-     * @param task task to process.
+     * @param function function to process.
      * @param step workflow step to run
      */
-    private void runStep(Task task, WorkflowStepInstance step) {
-        queueController.addWorkerTaskToQueue(task);
-        instanceController.updateWorkflowStepInstanceStatus(step, TaskStatus.IN_PROGRESS);
+    private void runStep(Function function, WorkflowStepInstance step) {
+        queueController.addWorkerFunctionToQueue(function);
+        instanceController.updateWorkflowStepInstanceStatus(step, FunctionStatus.IN_PROGRESS);
     }
 
 
@@ -280,20 +280,20 @@ public class WorkflowRunner {
      * Finds the next workflow step instance to run.
      *
      * @param stepInstance the current step instance.
-     * @param task         the current executed task.
+     * @param function         the current executed function.
      * @return the next workflow step instance.
      */
-    private WorkflowStepInstance getNextStepInstance(WorkflowStepInstance stepInstance, Task task) {
+    private WorkflowStepInstance getNextStepInstance(WorkflowStepInstance stepInstance, Function function) {
         switch (stepInstance.getWorkFlowStepType()) {
             case SIMPLE, START:
                 return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
             case DO_WHILE:
-                if (task.getOutputData().get("DoWhileStop").toString().equals("true"))
+                if (function.getOutputData().get("DoWhileStop").toString().equals("true"))
                     return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
                 else
                     return stepInstance;
             case SWITCH:
-                String stepInstanceId = stepInstance.getDecisionCases().get("task.getSwitchCase()");
+                String stepInstanceId = stepInstance.getDecisionCases().get("function.getSwitchCase()");
                 return workflowStepInstanceRepository.findByUid(stepInstanceId);
             default:
                 return null;

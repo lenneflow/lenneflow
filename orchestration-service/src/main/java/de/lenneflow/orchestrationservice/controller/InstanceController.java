@@ -1,10 +1,10 @@
 package de.lenneflow.orchestrationservice.controller;
 
-import de.lenneflow.orchestrationservice.enums.TaskStatus;
+import de.lenneflow.orchestrationservice.enums.FunctionStatus;
 import de.lenneflow.orchestrationservice.enums.WorkflowStatus;
-import de.lenneflow.orchestrationservice.feignclients.TaskServiceClient;
+import de.lenneflow.orchestrationservice.feignclients.FunctionServiceClient;
 import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
-import de.lenneflow.orchestrationservice.feignmodels.Task;
+import de.lenneflow.orchestrationservice.feignmodels.Function;
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
 import de.lenneflow.orchestrationservice.feignmodels.WorkflowStep;
 import de.lenneflow.orchestrationservice.model.WorkflowExecution;
@@ -23,15 +23,15 @@ import java.util.Map;
 @Controller
 public class InstanceController {
 
-    final TaskServiceClient taskServiceClient;
+    final FunctionServiceClient functionServiceClient;
     final WorkflowServiceClient workflowServiceClient;
     final WorkflowExecutionRepository workflowExecutionRepository;
     final WorkflowInstanceRepository workflowInstanceRepository;
     final WorkflowStepInstanceRepository workflowStepInstanceRepository;
     final QueueController queueController;
 
-    public InstanceController(TaskServiceClient taskServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowExecutionRepository workflowExecutionRepository, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController) {
-        this.taskServiceClient = taskServiceClient;
+    public InstanceController(FunctionServiceClient functionServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowExecutionRepository workflowExecutionRepository, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController) {
+        this.functionServiceClient = functionServiceClient;
         this.workflowServiceClient = workflowServiceClient;
         this.workflowExecutionRepository = workflowExecutionRepository;
         this.workflowInstanceRepository = workflowInstanceRepository;
@@ -69,14 +69,14 @@ public class InstanceController {
     /**
      * Updates the workflow step instance status and output data.
      * @param workflowStepInstance the workflow step instance to update.
-     * @param task the executed task belonging to the workflow instance.
+     * @param function the executed function belonging to the workflow instance.
      */
-    public void updateWorkflowStepInstance(WorkflowStepInstance workflowStepInstance, Task task) {
+    public void updateWorkflowStepInstance(WorkflowStepInstance workflowStepInstance, Function function) {
 
-        workflowStepInstance.setTaskStatus(task.getTaskStatus());
+        workflowStepInstance.setFunctionStatus(function.getFunctionStatus());
         workflowStepInstanceRepository.save(workflowStepInstance);
 
-        Map<String, Object> output = task.getOutputData();
+        Map<String, Object> output = function.getOutputData();
         workflowStepInstance.setOutputData(output);
         workflowStepInstanceRepository.save(workflowStepInstance);
     }
@@ -104,10 +104,10 @@ public class InstanceController {
     /**
      * Updated the workflow step instance status
      * @param stepInstance the workflow step instance to update.
-     * @param taskStatus The status to set.
+     * @param functionStatus The status to set.
      */
-    public void updateWorkflowStepInstanceStatus(WorkflowStepInstance stepInstance, TaskStatus taskStatus) {
-        stepInstance.setTaskStatus(taskStatus);
+    public void updateWorkflowStepInstanceStatus(WorkflowStepInstance stepInstance, FunctionStatus functionStatus) {
+        stepInstance.setFunctionStatus(functionStatus);
         workflowStepInstanceRepository.save(stepInstance);
     }
 

@@ -1,6 +1,6 @@
 package de.lenneflow.orchestrationservice.controller;
 
-import de.lenneflow.orchestrationservice.feignmodels.Task;
+import de.lenneflow.orchestrationservice.feignmodels.Function;
 import de.lenneflow.orchestrationservice.utils.Util;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
@@ -20,13 +20,13 @@ public class QueueController {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public void addWorkerTaskToQueue(Task task)  {
-        String serializedTask = Util.serializeTask(task);
-        String queueName = task.getTaskType();
+    public void addWorkerFunctionToQueue(Function function)  {
+        String serializedFunction = Util.serializeFunction(function);
+        String queueName = function.getFunctionType();
         String exchange  = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";
         createQueueAndBinding(queueName, exchange, routingKey);
-        rabbitTemplate.convertAndSend(exchange, routingKey, serializedTask);
+        rabbitTemplate.convertAndSend(exchange, routingKey, serializedFunction);
     }
 
     private void createQueueAndBinding(String queueName, String exchangeName, String routingKey) {

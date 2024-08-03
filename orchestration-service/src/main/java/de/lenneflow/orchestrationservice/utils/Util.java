@@ -2,32 +2,32 @@ package de.lenneflow.orchestrationservice.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.lenneflow.orchestrationservice.feignmodels.Task;
+import de.lenneflow.orchestrationservice.feignmodels.Function;
 
 import java.io.IOException;
 
 public class Util {
 
-    public static Task deserializeTask(byte[] serializedTask) {
+    public static Function deserializeFunction(byte[] serializedFunction) {
         ObjectMapper mapper = new ObjectMapper();
-        Task taskResult = null;
+        Function functionResult = null;
         try {
-            taskResult = mapper.readValue(serializedTask, Task.class);
+            functionResult = mapper.readValue(serializedFunction, Function.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return taskResult;
+        return functionResult;
     }
 
-    public static String serializeTask(Task task) {
+    public static String serializeFunction(Function function) {
         ObjectMapper mapper = new ObjectMapper();
-        String serializedTask = null;
+        String serializedFunction = null;
         try {
-            serializedTask = mapper.writeValueAsString(task);
+            serializedFunction = mapper.writeValueAsString(function);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-        return serializedTask;
+        return serializedFunction;
     }
 
 
