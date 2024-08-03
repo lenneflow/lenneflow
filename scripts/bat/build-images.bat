@@ -10,8 +10,8 @@ cd orchestration-service
 docker build -t lenneflow/orchestration-service .
 cd..
 
-cd task-service
-docker build -t lenneflow/task-service .
+cd function-service
+docker build -t lenneflow/function-service .
 cd..
 
 cd worker-service
