@@ -23,6 +23,7 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-gateway:latest.release'
     implementation 'io.springfox:springfox-swagger-ui:latest.release'
     implementation 'io.springfox:springfox-swagger2:latest.release'
+    implementation 'de.codecentric:spring-boot-admin-starter-client:latest.release'
     testImplementation 'org.springframework.boot:spring-boot-starter-test:latest.release'
     implementation 'org.springframework.cloud:spring-cloud-starter-kubernetes-fabric8-all:latest.release'
 }
