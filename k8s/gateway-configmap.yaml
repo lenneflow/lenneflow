@@ -4,22 +4,3 @@ metadata:
   name: gateway-service
 data:
   spring.cloud.kubernetes.discovery.all-namespaces: "true"
-  application.properties: |-
-    spring.cloud.gateway.routes[0].id=admin-service
-    spring.cloud.gateway.routes[0].filters=RewritePath=/admin/(?<path>.*), /$\{path}
-    spring.cloud.gateway.routes[0].predicates[0]=Path=/admin/**
-    spring.cloud.gateway.routes[1].id=account-service
-    spring.cloud.gateway.routes[1].filters=RewritePath=/account/(?<path>.*), /$\{path}
-    spring.cloud.gateway.routes[1].predicates[0]=Path=/account/**
-    spring.cloud.gateway.routes[2].id=orchestration-service
-    spring.cloud.gateway.routes[2].filters=RewritePath=/orchestration/(?<path>.*), /$\{path}
-    spring.cloud.gateway.routes[2].predicates[0]=Path=/orchestration/**
-    spring.cloud.gateway.routes[3].id=function-service
-    spring.cloud.gateway.routes[3].filters=RewritePath=/function/(?<path>.*), /$\{path}
-    spring.cloud.gateway.routes[3].predicates[0]=Path=/function/**
-    spring.cloud.gateway.routes[4].id=worker-service
-    spring.cloud.gateway.routes[4].filters=RewritePath=/worker/(?<path>.*), /$\{path}
-    spring.cloud.gateway.routes[4].predicates[0]=Path=/worker/**
-    spring.cloud.gateway.routes[5].id=workflow-service
-    spring.cloud.gateway.routes[5].filters=RewritePath=/workflow/(?<path>.*), /$\{path}
-    spring.cloud.gateway.routes[5].predicates[0]=Path=/workflow/**
