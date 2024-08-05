@@ -1,8 +1,6 @@
 
 docker push lenneflow/admin-service
 
-docker push lenneflow/gateway-service
-
 docker push lenneflow/orchestration-service
 
 docker push lenneflow/function-service
