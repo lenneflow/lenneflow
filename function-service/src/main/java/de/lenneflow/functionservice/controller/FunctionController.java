@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/function")
+@RequestMapping("/api/function")
 public class FunctionController {
 
     final
@@ -18,6 +18,11 @@ public class FunctionController {
 
     public FunctionController(FunctionRepository functionRepository) {
         this.functionRepository = functionRepository;
+    }
+
+    @GetMapping("/")
+    public String checkService() {
+        return "Function service is working!";
     }
 
     @GetMapping("/get/{id}")

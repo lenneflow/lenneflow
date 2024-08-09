@@ -1,4 +1,4 @@
-package de.lenneflow.orchestrationservice.controller;
+package de.lenneflow.orchestrationservice.utils;
 
 import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;

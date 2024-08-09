@@ -7,6 +7,7 @@ import de.lenneflow.orchestrationservice.model.WorkflowExecution;
 import de.lenneflow.orchestrationservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
+import de.lenneflow.orchestrationservice.utils.WorkflowRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,8 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/orchestration")
-public class OrchestrationRestController {
+@RequestMapping("/api/orchestration")
+public class OrchestrationController {
 
     final WorkflowExecutionRepository workflowExecutionRepository;
     final WorkflowServiceClient workflowServiceClient;
@@ -24,7 +25,7 @@ public class OrchestrationRestController {
     final WorkflowStepInstanceRepository workflowStepInstanceRepository;
     final WorkflowRunner workflowRunner;
 
-    public OrchestrationRestController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient, FunctionServiceClient functionServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowRunner workflowRunner) {
+    public OrchestrationController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient, FunctionServiceClient functionServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowRunner workflowRunner) {
         this.workflowExecutionRepository = workflowExecutionRepository;
         this.workflowServiceClient = workflowServiceClient;
         this.functionServiceClient = functionServiceClient;
@@ -33,12 +34,17 @@ public class OrchestrationRestController {
         this.workflowRunner = workflowRunner;
     }
 
-    @GetMapping("/engine/start-workflow/{workflowId}")
+    @GetMapping("/")
+    public String checkService() {
+        return "Orchestration service is working!";
+    }
+
+    @GetMapping("/start-workflow/{workflowId}")
     public ResponseEntity<WorkflowExecution>  startWorkflowGet(@PathVariable String workflowId) {
         return new ResponseEntity<>(workflowRunner.start(workflowId, null), HttpStatus.OK);
     }
 
-    @PostMapping("/engine/start-workflow/{workflowId}")
+    @PostMapping("/start-workflow/{workflowId}")
     public ResponseEntity<WorkflowExecution> startWorkflowPost(@PathVariable String workflowId, @RequestBody Map<String, Object> inputParameters) {
         if(inputParametersValid(workflowId, inputParameters)){
             return new ResponseEntity<>(workflowRunner.start(workflowId, inputParameters), HttpStatus.OK);
@@ -46,23 +52,23 @@ public class OrchestrationRestController {
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
-    @GetMapping("/engine/stop-workflow/{executionId}")
+    @GetMapping("/stop-workflow/{executionId}")
     public WorkflowExecution stopWorkflow(@PathVariable String executionId) {
         return workflowRunner.stop(executionId);
     }
 
-    @GetMapping("/engine/pause-workflow/{executionId}")
+    @GetMapping("/pause-workflow/{executionId}")
     @ResponseStatus(HttpStatus.OK)
     public WorkflowExecution pauseWorkflow(@PathVariable String executionId) {
         return workflowRunner.pause(executionId);
     }
 
-    @GetMapping("/engine/resume-workflow/{executionId}")
+    @GetMapping("/resume-workflow/{executionId}")
     public WorkflowExecution resumeWorkflow(@PathVariable String executionId) {
         return workflowRunner.resume(executionId);
     }
 
-    @GetMapping("/engine/workflow-state/{executionId}")
+    @GetMapping("/workflow-state/{executionId}")
     public WorkflowExecution workflowRunState(@PathVariable String executionId) {
         return workflowRunner.executionState(executionId);
     }

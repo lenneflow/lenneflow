@@ -1,7 +1,6 @@
-package de.lenneflow.orchestrationservice.controller;
+package de.lenneflow.orchestrationservice.utils;
 
 import de.lenneflow.orchestrationservice.feignmodels.Function;
-import de.lenneflow.orchestrationservice.utils.Util;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Queue;

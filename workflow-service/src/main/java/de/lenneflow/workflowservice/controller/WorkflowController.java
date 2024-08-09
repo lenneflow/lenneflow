@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/workflow")
+@RequestMapping("/api/workflow")
 public class WorkflowController {
 
     final
@@ -15,6 +15,11 @@ public class WorkflowController {
 
     public WorkflowController(WorkflowRepository workflowRepository) {
         this.workflowRepository = workflowRepository;
+    }
+
+    @GetMapping("/")
+    public String checkService() {
+        return "Workflow service is working!";
     }
 
     @GetMapping("/get/{uuid}")

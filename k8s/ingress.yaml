@@ -11,28 +11,28 @@ spec:
     - host: lenneflow
       http:
         paths:
-          - path: /orchestration
+          - path: /api/orchestration
             pathType: Prefix
             backend:
               service:
                 name: orchestration-service
                 port:
                   number: 47002
-          - path: /function
+          - path: /api/function
             pathType: Prefix
             backend:
               service:
                 name: function-service
                 port:
                   number: 47003
-          - path: /worker
+          - path: /api/worker
             pathType: Prefix
             backend:
               service:
                 name: worker-service
                 port:
                   number: 47004
-          - path: /workflow
+          - path: /api/workflow
             pathType: Prefix
             backend:
               service:

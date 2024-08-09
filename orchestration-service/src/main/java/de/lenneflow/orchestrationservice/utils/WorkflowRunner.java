@@ -1,4 +1,4 @@
-package de.lenneflow.orchestrationservice.controller;
+package de.lenneflow.orchestrationservice.utils;
 
 import de.lenneflow.orchestrationservice.OrchestrationServiceApplication;
 import de.lenneflow.orchestrationservice.enums.FunctionStatus;
@@ -14,7 +14,6 @@ import de.lenneflow.orchestrationservice.model.WorkflowStepInstance;
 import de.lenneflow.orchestrationservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
-import de.lenneflow.orchestrationservice.utils.Util;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 

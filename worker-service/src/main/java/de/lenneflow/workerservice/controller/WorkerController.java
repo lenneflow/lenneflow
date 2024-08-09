@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/worker")
+@RequestMapping("/api/worker")
 public class WorkerController {
 
     final
@@ -17,6 +17,11 @@ public class WorkerController {
 
     public WorkerController(WorkerRepository workerRepository) {
         this.workerRepository = workerRepository;
+    }
+
+    @GetMapping("/")
+    public String checkService() {
+        return "Worker service is working!";
     }
 
     @PostMapping("/create")
