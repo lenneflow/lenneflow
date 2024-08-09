@@ -24,6 +24,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator:latest.release'
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:latest.release'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:latest.release'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:latest.release'
     implementation 'de.codecentric:spring-boot-admin-starter-client:latest.release'
     implementation 'org.springframework.boot:spring-boot-starter-amqp:latest.release'
     compileOnly 'org.projectlombok:lombok'
