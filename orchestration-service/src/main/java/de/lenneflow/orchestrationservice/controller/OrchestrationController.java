@@ -34,9 +34,14 @@ public class OrchestrationController {
         this.workflowRunner = workflowRunner;
     }
 
-    @GetMapping("/")
+    @GetMapping(value={"", "/"})
     public String checkService() {
-        return "Orchestration service is working!";
+        return "Welcome to the Orchestration Service! Everything is working fine!";
+    }
+
+    @GetMapping(value={"/feign"})
+    public String checkFeign() {
+        return functionServiceClient.getFunctionHome();
     }
 
     @GetMapping("/start-workflow/{workflowId}")

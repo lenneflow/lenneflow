@@ -17,9 +17,9 @@ public class WorkflowController {
         this.workflowRepository = workflowRepository;
     }
 
-    @GetMapping("/")
+    @GetMapping(value={"", "/"})
     public String checkService() {
-        return "Workflow service is working!";
+        return "Welcome to the Workflow Service! Everything is working fine!";
     }
 
     @GetMapping("/get/{uuid}")

@@ -11,13 +11,13 @@ import java.util.List;
 @FeignClient(name = "workflow-service")
 public interface WorkflowServiceClient {
 
-    @GetMapping("/workflow/get/{uuid}")
+    @GetMapping("/api/workflow/get/{uuid}")
     public Workflow getWorkflow(@PathVariable("uuid") String uuid);
 
-    @GetMapping("/workflow/get-step/{stepId}")
+    @GetMapping("/api/workflow/get-step/{stepId}")
     public WorkflowStep getWorkflowStep(@PathVariable("stepId") String stepId);
 
-    @GetMapping("/workflow/get-workflow-steps/{workflowId}")
+    @GetMapping("/api/workflow/get-workflow-steps/{workflowId}")
     public List<WorkflowStep> getWorkflowSteps(@PathVariable("workflowId") String workflowId);
 
 }

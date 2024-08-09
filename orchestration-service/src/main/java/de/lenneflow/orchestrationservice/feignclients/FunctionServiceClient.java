@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 @FeignClient(name = "function-service")
 public interface FunctionServiceClient {
 
-    @GetMapping("/function/get/{uuid}")
+    @GetMapping("/api/function/get/{uuid}")
     public Function getFunction(@PathVariable String uuid);
+
+    @GetMapping("/api/function")
+    public String getFunctionHome();
 }

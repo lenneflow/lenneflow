@@ -20,9 +20,9 @@ public class FunctionController {
         this.functionRepository = functionRepository;
     }
 
-    @GetMapping("/")
+    @GetMapping(value={"", "/"})
     public String checkService() {
-        return "Function service is working!";
+        return "Welcome to the Function Service! Everything is working fine!";
     }
 
     @GetMapping("/get/{id}")

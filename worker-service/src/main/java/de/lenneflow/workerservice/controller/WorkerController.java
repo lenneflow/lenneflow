@@ -19,9 +19,9 @@ public class WorkerController {
         this.workerRepository = workerRepository;
     }
 
-    @GetMapping("/")
+    @GetMapping(value={"", "/"})
     public String checkService() {
-        return "Worker service is working!";
+        return "Welcome to the Worker Service! Everything is working fine!";
     }
 
     @PostMapping("/create")
