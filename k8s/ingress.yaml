@@ -18,11 +18,11 @@ spec:
                 name: orchestration-service
                 port:
                   number: 47002
-          - path: /task
+          - path: /function
             pathType: Prefix
             backend:
               service:
-                name: task-service
+                name: function-service
                 port:
                   number: 47003
           - path: /worker
