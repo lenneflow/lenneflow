@@ -1,4 +1,4 @@
-package de.lenneflow.orchestrationservice.utils;
+package de.lenneflow.orchestrationservice.component;
 
 import de.lenneflow.orchestrationservice.OrchestrationServiceApplication;
 import de.lenneflow.orchestrationservice.enums.FunctionStatus;
@@ -14,6 +14,7 @@ import de.lenneflow.orchestrationservice.model.WorkflowStepInstance;
 import de.lenneflow.orchestrationservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
+import de.lenneflow.orchestrationservice.utils.Util;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
@@ -49,7 +50,7 @@ public class WorkflowRunner {
      *
      * @param serializedFunction serialized function object
      */
-    @RabbitListener(queues = OrchestrationServiceApplication.TASKRESULTQUEUE)
+    @RabbitListener(queues = OrchestrationServiceApplication.FUNCTIONRESULTQUEUE)
     public void processFunctionResult(byte[] serializedFunction) {
         Function resultFunction = Util.deserializeFunction(serializedFunction);
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(resultFunction.getMetaData().get(Function.METADATA_KEY_EXECUTION_ID));
@@ -65,7 +66,7 @@ public class WorkflowRunner {
                 case COMPLETED, SKIPPED:
                     WorkflowStepInstance nextStepInstance = getNextStepInstance(stepInstance, resultFunction);
                     if (nextStepInstance != null) {
-                        Function function = functionServiceClient.getFunction(nextStepInstance.getFunctionId());
+                        Function function = functionServiceClient.getFunctionByName(nextStepInstance.getFunctionName());
                         Map<String, String> metadata = generateFunctionMetaData(execution, workflowInstance, nextStepInstance);
                         function.setMetaData(metadata);
                         runStep(function, nextStepInstance);
@@ -78,7 +79,7 @@ public class WorkflowRunner {
                     if (stepInstance.isRetriable() && stepInstance.getRetryCount() > 0) {
                         stepInstance.setRetryCount(stepInstance.getRetryCount() - 1);
                         workflowStepInstanceRepository.save(stepInstance);
-                        Function function = functionServiceClient.getFunction(stepInstance.getFunctionId());
+                        Function function = functionServiceClient.getFunctionByName(stepInstance.getFunctionName());
                         runStep(function, stepInstance);
                         break;
                     }
@@ -156,7 +157,7 @@ public class WorkflowRunner {
 
         WorkflowStepInstance firstStep = getStartStep(workflowInstance);
         assert firstStep != null;
-        Function function = functionServiceClient.getFunction(firstStep.getFunctionId());
+        Function function = functionServiceClient.getFunctionByName(firstStep.getFunctionName());
         Map<String, String> metadata = generateFunctionMetaData(execution, workflowInstance, firstStep);
         function.setMetaData(metadata);
         runStep(function, firstStep);
@@ -270,7 +271,7 @@ public class WorkflowRunner {
      * @param step workflow step to run
      */
     private void runStep(Function function, WorkflowStepInstance step) {
-        queueController.addWorkerFunctionToQueue(function);
+        queueController.addFunctionToQueue(function);
         instanceController.updateWorkflowStepInstanceStatus(step, FunctionStatus.IN_PROGRESS);
     }
 

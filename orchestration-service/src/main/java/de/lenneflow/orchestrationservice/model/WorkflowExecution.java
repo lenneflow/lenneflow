@@ -26,8 +26,6 @@ public class WorkflowExecution {
 
     private String workflowInstanceId;
 
-    private String workflowId;
-
     private String workflowName;
 
     private String workflowDescription;
@@ -51,7 +49,6 @@ public class WorkflowExecution {
 
     public WorkflowExecution(Workflow workflow, WorkflowInstance workflowInstance, List<WorkflowStepInstance> runSteps){
         this.runId = UUID.randomUUID().toString();
-        this.workflowId = workflow.getUid();
         this.workflowInstanceId = workflowInstance.getUid();
         this.workflowName = workflow.getName();
         this.workflowDescription = workflow.getDescription();

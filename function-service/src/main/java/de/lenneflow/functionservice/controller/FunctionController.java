@@ -29,6 +29,10 @@ public class FunctionController {
     public Function getWorkerFunctionById(@PathVariable String id) {
         return functionRepository.findById(id).orElse(null);
     }
+    @GetMapping("/get/name/{name}")
+    public Function getWorkerFunctionByName(@PathVariable String name) {
+        return functionRepository.findByFunctionName(name);
+    }
 
     @GetMapping("/get/all")
     public List<Function> getAllWorkerFunctions() {

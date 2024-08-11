@@ -29,15 +29,11 @@ public class WorkflowStepInstance {
 
     private String stepName;
 
-    private String workflowStepId;
-
     private String workflowInstanceId;
 
     private String description;
 
     private boolean retriable;
-
-    private FunctionStatus functionStatus;
 
     private String nextStepId;
 
@@ -45,7 +41,9 @@ public class WorkflowStepInstance {
 
     private WorkFlowStepType workFlowStepType;
 
-    private String functionId;
+    private String functionName;
+
+    private FunctionStatus functionStatus;
 
     private Map<String, String> decisionCases = new LinkedHashMap<>();
 
@@ -71,12 +69,11 @@ public class WorkflowStepInstance {
 
     public WorkflowStepInstance(WorkflowStep step, String workflowInstanceId) {
         this.uid = UUID.randomUUID().toString();
-        this.functionStatus = step.getStatus();
         this.description = step.getDescription();
-        this.functionId = step.getFunctionId();
+        this.functionName = step.getFunctionName();
+        this.functionStatus = step.getFunctionStatus();
         this.retriable = step.isRetriable();
         this.workflowInstanceId = workflowInstanceId;
-        this.workflowStepId = step.getUid();
         this.stepName = step.getStepName();
         this.workFlowStepType = step.getWorkFlowStepType();
         this.retryCount = step.getRetryCount();

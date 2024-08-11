@@ -17,9 +17,11 @@ import java.util.Map;
 @NoArgsConstructor
 public class WorkflowStep {
 
-    private String uid;
+    //private String uid;
 
     private String stepName;
+
+    private String workflowName;
 
     private String workflowId;
 
@@ -29,17 +31,23 @@ public class WorkflowStep {
 
     private boolean retriable;
 
-    private FunctionStatus status;
-
     private String nextStepId;
+
+    private String nextStepName;
 
     private String previousStepId;
 
+    private String previousStepName;
+
     private String errorMessage;
 
-    private String functionId;
+    private String functionName;
+
+    private FunctionStatus functionStatus;
 
     private Map<String, String> decisionCases = new LinkedHashMap<>();
+
+    private Map<String, Object> inputData = new LinkedHashMap<>();
 
     private Integer retryCount;
 

@@ -36,6 +36,10 @@ public class Function {
 
     private String imageName;
 
+    private String endPointRoot;
+
+    private String endPointPath;
+
     private String errorMessage;
 
     private int functionPriority;

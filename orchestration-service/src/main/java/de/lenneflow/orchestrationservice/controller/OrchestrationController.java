@@ -7,7 +7,7 @@ import de.lenneflow.orchestrationservice.model.WorkflowExecution;
 import de.lenneflow.orchestrationservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
-import de.lenneflow.orchestrationservice.utils.WorkflowRunner;
+import de.lenneflow.orchestrationservice.component.WorkflowRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -80,12 +80,6 @@ public class OrchestrationController {
 
     private boolean inputParametersValid(String workflowId, Map<String, Object> inputParameters) {
         Workflow workflow = workflowServiceClient.getWorkflow(workflowId);
-        Map<String, Object> inputParameterMap = workflow.getInputParameters();
-        for (String key : inputParameterMap.keySet()) {
-            if(!inputParameters.containsKey(key)){
-                return false;
-            }
-        }
         return true;
     }
 

@@ -27,7 +27,12 @@ public class WorkflowController {
         return workflowRepository.findByWorkflowId(uuid);
     }
 
-    @GetMapping("/get-all")
+    @GetMapping("/get/name/{workflowName}")
+    public Workflow getWorkflowByName(@PathVariable String workflowName) {
+        return workflowRepository.findByName(workflowName);
+    }
+
+    @GetMapping("/get/all")
     public List<Workflow> getAllWorkflows() {
         return workflowRepository.findAll();
     }

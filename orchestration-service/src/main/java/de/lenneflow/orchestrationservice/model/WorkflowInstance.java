@@ -22,8 +22,6 @@ public class WorkflowInstance {
     @Id
     private String uid;
 
-    private String workflowId;
-
     private String workflowName;
 
     private boolean errorsPresent;
@@ -51,7 +49,6 @@ public class WorkflowInstance {
     public WorkflowInstance(Workflow workflow, Map<String, Object> inputParameters) {
         this.uid = UUID.randomUUID().toString();
         this.description = workflow.getDescription();
-        this.workflowId = workflow.getUid();
         this.workflowName = workflow.getName();
         this.inputParameters = inputParameters;
         this.status = workflow.getStatus();

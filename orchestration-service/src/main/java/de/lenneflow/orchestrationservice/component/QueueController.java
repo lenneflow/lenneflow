@@ -1,11 +1,14 @@
-package de.lenneflow.orchestrationservice.utils;
+package de.lenneflow.orchestrationservice.component;
 
+import de.lenneflow.orchestrationservice.OrchestrationServiceApplication;
 import de.lenneflow.orchestrationservice.feignmodels.Function;
+import de.lenneflow.orchestrationservice.utils.Util;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -13,18 +16,31 @@ public class QueueController {
 
     private final AmqpAdmin admin;
     private final RabbitTemplate rabbitTemplate;
+    private final RabbitListenerEndpointRegistry endpointRegistry;
 
-    public QueueController(AmqpAdmin admin, RabbitTemplate rabbitTemplate) {
+    public QueueController(AmqpAdmin admin, RabbitTemplate rabbitTemplate, RabbitListenerEndpointRegistry endpointRegistry) {
         this.admin = admin;
         this.rabbitTemplate = rabbitTemplate;
+        this.endpointRegistry = endpointRegistry;
     }
 
-    public void addWorkerFunctionToQueue(Function function)  {
+    public void addFunctionToQueue(Function function)  {
         String serializedFunction = Util.serializeFunction(function);
-        String queueName = function.getFunctionType();
+        String queueName = OrchestrationServiceApplication.FUNCTIONQUEUE;
         String exchange  = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";
         createQueueAndBinding(queueName, exchange, routingKey);
+        //TODO add queue to listener
+        rabbitTemplate.convertAndSend(exchange, routingKey, serializedFunction);
+    }
+
+    public void addFunctionToResultQueue(Function function)  {
+        String serializedFunction = Util.serializeFunction(function);
+        String queueName = OrchestrationServiceApplication.FUNCTIONRESULTQUEUE;
+        String exchange  = queueName + "-Exchange";
+        String routingKey = queueName + "-RoutingKey";
+        createQueueAndBinding(queueName, exchange, routingKey);
+        //TODO add queue to listener
         rabbitTemplate.convertAndSend(exchange, routingKey, serializedFunction);
     }
 

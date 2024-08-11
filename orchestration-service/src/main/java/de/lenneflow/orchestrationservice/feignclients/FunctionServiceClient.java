@@ -5,12 +5,17 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import java.util.List;
+
 @FeignClient(name = "function-service")
 public interface FunctionServiceClient {
 
-    @GetMapping("/api/function/get/{uuid}")
-    public Function getFunction(@PathVariable String uuid);
+    @GetMapping("/api/function/get/name/{name}")
+    public Function getFunctionByName(@PathVariable String uuid);
 
     @GetMapping("/api/function")
     public String getFunctionHome();
+
+    @GetMapping("/api/function/get-types")
+    public List<String> getAllFunctionTypes();
 }

@@ -2,22 +2,28 @@ package de.lenneflow.orchestrationservice;
 
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients
+@EnableRabbit
 public class OrchestrationServiceApplication {
 
-    public static final String TASKRESULTQUEUE = "taskResultQueue";
+    public static final String FUNCTIONRESULTQUEUE = "functionResultQueue";
+    public static final String FUNCTIONQUEUE = "functionQueue";
 
     public static void main(String[] args) {
         SpringApplication.run(OrchestrationServiceApplication.class, args);
@@ -51,8 +57,18 @@ public class OrchestrationServiceApplication {
     }
 
     @Bean
-    public Queue taskResultsQueue() {
-        return new Queue(TASKRESULTQUEUE, true);
+    public Queue functionResultQueue() {
+        return new Queue(FUNCTIONRESULTQUEUE, true);
+    }
+
+    @Bean
+    public Queue functionQueue() {
+        return new Queue(FUNCTIONQUEUE, true);
+    }
+
+    @Bean
+    public RestTemplate restTemplate(RestTemplateBuilder builder) {
+        return builder.build();
     }
 
 }

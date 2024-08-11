@@ -1,20 +1,16 @@
 package de.lenneflow.workflowservice.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.lenneflow.workflowservice.enums.WorkFlowStepType;
-import de.lenneflow.workflowservice.enums.WorkflowStepStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -22,11 +18,15 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document
+@CompoundIndex(def = "{'workflowName': 1, 'stepName': 1}", unique = true)
 public class WorkflowStep {
 
+    @Id
     private String uid;
 
     private String stepName;
+
+    private String workflowName;
 
     private String workflowId;
 
@@ -38,13 +38,19 @@ public class WorkflowStep {
 
     private String nextStepId;
 
+    private String nextStepName;
+
     private String previousStepId;
+
+    private String previousStepName;
 
     private String errorMessage;
 
-    private String taskId;
+    private String functionName;
 
     private Map<String, String> decisionCases = new LinkedHashMap<>();
+
+    private Map<String, Object> inputData = new LinkedHashMap<>();
 
     private Integer retryCount;
 

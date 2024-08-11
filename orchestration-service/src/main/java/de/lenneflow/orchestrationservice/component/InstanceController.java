@@ -1,4 +1,4 @@
-package de.lenneflow.orchestrationservice.utils;
+package de.lenneflow.orchestrationservice.component;
 
 import de.lenneflow.orchestrationservice.enums.FunctionStatus;
 import de.lenneflow.orchestrationservice.enums.WorkflowStatus;
@@ -57,7 +57,7 @@ public class InstanceController {
 
         for (WorkflowStep step : steps) {
             WorkflowStepInstance stepInstance = new WorkflowStepInstance(step, workflowInstance.getUid());
-            stepStepInstanceMapping.put(step.getUid(), stepInstance.getUid());
+            stepStepInstanceMapping.put(step.getStepName(), stepInstance.getUid());
             workflowStepInstanceRepository.save(stepInstance);
         }
         List<String> stepInstanceIds = updateWorkflowStepInstances(workflowId, steps, stepStepInstanceMapping);
@@ -122,7 +122,7 @@ public class InstanceController {
     private List<String> updateWorkflowStepInstances(String workflowId, List<WorkflowStep> steps, Map<String, String> stepStepInstanceMapping) {
         List<String> stepInstanceIds = new ArrayList<>();
         for (WorkflowStep step : steps) {
-            WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getUid()));
+            WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByStepName(stepStepInstanceMapping.get(step.getStepName()));
             WorkflowStep nextStep = workflowServiceClient.getWorkflowStep(step.getNextStepId());
             if (nextStep != null) {
                 WorkflowStepInstance nextStepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getNextStepId()));
