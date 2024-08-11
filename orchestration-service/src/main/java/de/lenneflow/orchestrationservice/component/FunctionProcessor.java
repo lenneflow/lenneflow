@@ -28,6 +28,16 @@ public class FunctionProcessor{
     @RabbitListener(queues = OrchestrationServiceApplication.FUNCTIONQUEUE)
     public void functionListener(byte[] serializedFunction) {
         Function function = Util.deserializeFunction(serializedFunction);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                processFunction(function);
+            }
+        }).start();
+
+    }
+
+    private void processFunction(Function function){
         Map<String, Object> inputData = function.getInputData();
         String endpoint = StringUtils.removeEnd(function.getEndPointRoot(), "/") + "/" + StringUtils.removeStart(function.getEndPointPath(), "/");
         Map<String, Object> outputData = restTemplate.postForObject(endpoint, inputData, Map.class);

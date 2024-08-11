@@ -7,11 +7,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
+//@FeignClient(name = "function-service", url = "http://localhost:47003")
 @FeignClient(name = "function-service")
 public interface FunctionServiceClient {
 
     @GetMapping("/api/function/get/name/{name}")
-    public Function getFunctionByName(@PathVariable String uuid);
+    public Function getFunctionByName(@PathVariable String name);
 
     @GetMapping("/api/function")
     public String getFunctionHome();

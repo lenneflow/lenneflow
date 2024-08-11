@@ -71,6 +71,7 @@ public class WorkflowStepInstance {
         this.uid = UUID.randomUUID().toString();
         this.description = step.getDescription();
         this.functionName = step.getFunctionName();
+        this.inputData = step.getInputData();
         this.functionStatus = step.getFunctionStatus();
         this.retriable = step.isRetriable();
         this.workflowInstanceId = workflowInstanceId;

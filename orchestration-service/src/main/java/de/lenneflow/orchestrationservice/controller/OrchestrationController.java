@@ -43,10 +43,14 @@ public class OrchestrationController {
     public String checkFeign() {
         return functionServiceClient.getFunctionHome();
     }
+    @GetMapping(value={"/feign2"})
+    public String checkFeign2() {
+        return workflowServiceClient.getFunctionHome();
+    }
 
-    @GetMapping("/start-workflow/{workflowId}")
-    public ResponseEntity<WorkflowExecution>  startWorkflowGet(@PathVariable String workflowId) {
-        return new ResponseEntity<>(workflowRunner.start(workflowId, null), HttpStatus.OK);
+    @GetMapping("/start-workflow/{workflowName}")
+    public ResponseEntity<WorkflowExecution>  startWorkflowGet(@PathVariable String workflowName) {
+        return new ResponseEntity<>(workflowRunner.start(workflowName, null), HttpStatus.OK);
     }
 
     @PostMapping("/start-workflow/{workflowId}")
@@ -79,7 +83,6 @@ public class OrchestrationController {
     }
 
     private boolean inputParametersValid(String workflowId, Map<String, Object> inputParameters) {
-        Workflow workflow = workflowServiceClient.getWorkflow(workflowId);
         return true;
     }
 

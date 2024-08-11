@@ -16,11 +16,11 @@ import java.util.Map;
 @NoArgsConstructor
 public class Function implements Serializable {
 
-    public static final String METADATA_KEY_EXECUTION_ID = "executionId";
-    public static final String METADATA_KEY_STEP_INSTANCE_ID = "stepInstanceId";
-    public static final String METADATA_KEY_WORKFlOW_INSTANCE_ID = "workflowInstanceId";
+    private String executionId;
 
-    private Map<String, String> metaData = new HashMap<>();
+    private String stepInstanceId;
+
+    private String workflowInstanceId;
 
     private String functionName;
 

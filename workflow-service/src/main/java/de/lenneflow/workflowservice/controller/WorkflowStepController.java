@@ -30,9 +30,14 @@ public class WorkflowStepController {
         return workflowStepRepository.findByStepName(name);
     }
 
-    @GetMapping("/steps/get-list/workflow-id/{workflowId}")
+    @GetMapping("/step/list/workflow/id/{workflowId}")
     public List<WorkflowStep> getAllWorkflowSteps(@PathVariable String workflowId) {
         return workflowStepRepository.findByWorkflowId(workflowId);
+    }
+
+    @GetMapping("/step/list/workflow/name/{workflowName}")
+    public List<WorkflowStep> getAllWorkflowStepsByWorkflowName(@PathVariable String workflowName) {
+        return workflowStepRepository.findByWorkflowName(workflowName);
     }
 
     @GetMapping("/step/get/all")

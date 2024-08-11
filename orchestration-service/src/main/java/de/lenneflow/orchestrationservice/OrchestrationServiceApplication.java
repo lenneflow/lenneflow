@@ -16,6 +16,8 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
+
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients
@@ -68,7 +70,7 @@ public class OrchestrationServiceApplication {
 
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        return builder.build();
+        return builder.setReadTimeout(Duration.ofMinutes(10)).build();
     }
 
 }

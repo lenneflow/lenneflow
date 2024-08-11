@@ -16,16 +16,14 @@ public class QueueController {
 
     private final AmqpAdmin admin;
     private final RabbitTemplate rabbitTemplate;
-    private final RabbitListenerEndpointRegistry endpointRegistry;
 
-    public QueueController(AmqpAdmin admin, RabbitTemplate rabbitTemplate, RabbitListenerEndpointRegistry endpointRegistry) {
+    public QueueController(AmqpAdmin admin, RabbitTemplate rabbitTemplate) {
         this.admin = admin;
         this.rabbitTemplate = rabbitTemplate;
-        this.endpointRegistry = endpointRegistry;
     }
 
     public void addFunctionToQueue(Function function)  {
-        String serializedFunction = Util.serializeFunction(function);
+        byte[] serializedFunction = Util.serializeFunction(function);
         String queueName = OrchestrationServiceApplication.FUNCTIONQUEUE;
         String exchange  = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";
@@ -35,7 +33,7 @@ public class QueueController {
     }
 
     public void addFunctionToResultQueue(Function function)  {
-        String serializedFunction = Util.serializeFunction(function);
+        byte[] serializedFunction = Util.serializeFunction(function);
         String queueName = OrchestrationServiceApplication.FUNCTIONRESULTQUEUE;
         String exchange  = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";

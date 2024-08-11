@@ -14,4 +14,6 @@ public interface WorkflowStepRepository extends MongoRepository<WorkflowStep, St
 
     List<WorkflowStep> findByWorkflowId(String workflowId);
 
+    List<WorkflowStep> findByWorkflowName(String workflowName);
+
 }

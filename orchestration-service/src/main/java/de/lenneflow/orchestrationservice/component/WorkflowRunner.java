@@ -53,9 +53,9 @@ public class WorkflowRunner {
     @RabbitListener(queues = OrchestrationServiceApplication.FUNCTIONRESULTQUEUE)
     public void processFunctionResult(byte[] serializedFunction) {
         Function resultFunction = Util.deserializeFunction(serializedFunction);
-        WorkflowExecution execution = workflowExecutionRepository.findByRunId(resultFunction.getMetaData().get(Function.METADATA_KEY_EXECUTION_ID));
-        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(resultFunction.getMetaData().get(Function.METADATA_KEY_WORKFlOW_INSTANCE_ID));
-        WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(resultFunction.getMetaData().get(Function.METADATA_KEY_STEP_INSTANCE_ID));
+        WorkflowExecution execution = workflowExecutionRepository.findByRunId(resultFunction.getExecutionId());
+        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(resultFunction.getWorkflowInstanceId());
+        WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(resultFunction.getStepInstanceId());
 
         instanceController.updateWorkflowStepInstance(stepInstance, resultFunction);
 
@@ -67,8 +67,9 @@ public class WorkflowRunner {
                     WorkflowStepInstance nextStepInstance = getNextStepInstance(stepInstance, resultFunction);
                     if (nextStepInstance != null) {
                         Function function = functionServiceClient.getFunctionByName(nextStepInstance.getFunctionName());
-                        Map<String, String> metadata = generateFunctionMetaData(execution, workflowInstance, nextStepInstance);
-                        function.setMetaData(metadata);
+                        function.setStepInstanceId(nextStepInstance.getUid());
+                        function.setExecutionId(execution.getRunId());
+                        function.setWorkflowInstanceId(workflowInstance.getUid());
                         runStep(function, nextStepInstance);
                     }
                     break;
@@ -144,23 +145,24 @@ public class WorkflowRunner {
      * This is the start method of every workflow run. This method searches for the starting workflow step, gets the function
      * associated to the step and run the workflow step.
      *
-     * @param workflowId      The ID od the workflow to run.
+     * @param workflowName      The Name od the workflow to run.
      * @param inputParameters The input parameters for the workflow run.
      * @return a workflow execution object.
      */
-    public WorkflowExecution start(String workflowId, Map<String, Object> inputParameters) {
-        WorkflowInstance workflowInstance = instanceController.newWorkflowInstance(workflowId, inputParameters);
-        Workflow workflow = workflowServiceClient.getWorkflow(workflowId);
+    public WorkflowExecution start(String workflowName, Map<String, Object> inputParameters) {
+        WorkflowInstance workflowInstance = instanceController.newWorkflowInstance(workflowName, inputParameters);
+        Workflow workflow = workflowServiceClient.getWorkflowByName(workflowName);
         WorkflowExecution execution = createWorkflowExecution(workflow, workflowInstance);
         instanceController.updateWorkflowInstanceStatus(workflowInstance, WorkflowStatus.RUNNING);
         instanceController.updateWorkflowExecutionStatus(execution, WorkflowStatus.RUNNING);
 
-        WorkflowStepInstance firstStep = getStartStep(workflowInstance);
-        assert firstStep != null;
-        Function function = functionServiceClient.getFunctionByName(firstStep.getFunctionName());
-        Map<String, String> metadata = generateFunctionMetaData(execution, workflowInstance, firstStep);
-        function.setMetaData(metadata);
-        runStep(function, firstStep);
+        WorkflowStepInstance firstStepInstance = getStartStep(workflowInstance);
+        assert firstStepInstance != null;
+        Function function = functionServiceClient.getFunctionByName(firstStepInstance.getFunctionName());
+        function.setStepInstanceId(firstStepInstance.getUid());
+        function.setExecutionId(execution.getRunId());
+        function.setWorkflowInstanceId(workflowInstance.getUid());
+        runStep(function, firstStepInstance);
         return workflowExecutionRepository.findByRunId(execution.getRunId());
     }
 
@@ -231,24 +233,6 @@ public class WorkflowRunner {
     }
 
     /**
-     * In order to enqueue the function it is necessary the group the important parameters in a metadata map, so the worker just
-     * have to put it in the result object. The information are necessary to locate which running instance belongs to
-     * the result function.
-     *
-     * @param execution            the workflow execution ID.
-     * @param workflowInstance     The running workflow instance
-     * @param workflowStepInstance the running workflow step
-     * @return the generated map of metadata.
-     */
-    private Map<String, String> generateFunctionMetaData(WorkflowExecution execution, WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance) {
-        Map<String, String> metaData = new HashMap<>();
-        metaData.put(Function.METADATA_KEY_EXECUTION_ID, execution.getRunId());
-        metaData.put(Function.METADATA_KEY_WORKFlOW_INSTANCE_ID, workflowInstance.getUid());
-        metaData.put(Function.METADATA_KEY_STEP_INSTANCE_ID, workflowStepInstance.getUid());
-        return metaData;
-    }
-
-    /**
      * This method creates a workflow execution instance.
      *
      * @param workflow         The workflow object.
@@ -271,6 +255,7 @@ public class WorkflowRunner {
      * @param step workflow step to run
      */
     private void runStep(Function function, WorkflowStepInstance step) {
+        function.setInputData(step.getInputData());
         queueController.addFunctionToQueue(function);
         instanceController.updateWorkflowStepInstanceStatus(step, FunctionStatus.IN_PROGRESS);
     }

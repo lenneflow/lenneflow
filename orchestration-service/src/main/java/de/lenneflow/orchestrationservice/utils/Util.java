@@ -4,31 +4,32 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.lenneflow.orchestrationservice.feignmodels.Function;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 
 public class Util {
 
     public static Function deserializeFunction(byte[] serializedFunction) {
         ObjectMapper mapper = new ObjectMapper();
-        Function functionResult = null;
+        Function function = null;
         try {
-            functionResult = mapper.readValue(serializedFunction, Function.class);
+            function = mapper.readValue(serializedFunction, Function.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return functionResult;
+        return function;
     }
 
-    public static String serializeFunction(Function function) {
+    public static byte[] serializeFunction(Function function) {
         ObjectMapper mapper = new ObjectMapper();
-        String serializedFunction = null;
+        byte[] serializedFunction = null;
         try {
-            serializedFunction = mapper.writeValueAsString(function);
+            serializedFunction = mapper.writeValueAsBytes(function);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
         return serializedFunction;
     }
-
 
 }

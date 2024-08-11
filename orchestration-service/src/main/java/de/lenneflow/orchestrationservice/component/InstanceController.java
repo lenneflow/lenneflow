@@ -43,16 +43,16 @@ public class InstanceController {
      * From a workflow ID, this method will create a new workflow instance to run.
      * It will also create all the workflow step instances.
      *
-     * @param workflowId      workflow ID.
+     * @param workflowName      workflow ID.
      * @param inputParameters the specific input parameters.
      * @return the created workflow instance.
      */
-    public WorkflowInstance newWorkflowInstance(String workflowId, Map<String, Object> inputParameters) {
-        Workflow workflow = workflowServiceClient.getWorkflow(workflowId);
+    public WorkflowInstance newWorkflowInstance(String workflowName, Map<String, Object> inputParameters) {
+        Workflow workflow = workflowServiceClient.getWorkflowByName(workflowName);
         WorkflowInstance workflowInstance = new WorkflowInstance(workflow, inputParameters);
         workflowInstanceRepository.save(workflowInstance);
         workflowInstance.setStatus(WorkflowStatus.NOT_RUN);
-        List<WorkflowStep> steps = workflowServiceClient.getWorkflowSteps(workflowId);
+        List<WorkflowStep> steps = workflowServiceClient.getStepListByWorkflowName(workflowName);
         Map<String, String> stepStepInstanceMapping = new HashMap<>();
 
         for (WorkflowStep step : steps) {
@@ -60,7 +60,7 @@ public class InstanceController {
             stepStepInstanceMapping.put(step.getStepName(), stepInstance.getUid());
             workflowStepInstanceRepository.save(stepInstance);
         }
-        List<String> stepInstanceIds = updateWorkflowStepInstances(workflowId, steps, stepStepInstanceMapping);
+        List<String> stepInstanceIds = updateWorkflowStepInstances(workflowName, steps, stepStepInstanceMapping);
         workflowInstance.setStepInstanceIds(stepInstanceIds);
         return workflowInstanceRepository.save(workflowInstance);
     }
@@ -114,23 +114,21 @@ public class InstanceController {
 
     /**
      * This method sets previous and next step parameters to the steps in the given list.
-     * @param workflowId The workflow ID.
+     * @param workflowName The workflow Name.
      * @param steps The workflow step list to update.
      * @param stepStepInstanceMapping a map of workflow instances
      * @return a list of workflow instance IDs.
      */
-    private List<String> updateWorkflowStepInstances(String workflowId, List<WorkflowStep> steps, Map<String, String> stepStepInstanceMapping) {
+    private List<String> updateWorkflowStepInstances(String workflowName, List<WorkflowStep> steps, Map<String, String> stepStepInstanceMapping) {
         List<String> stepInstanceIds = new ArrayList<>();
         for (WorkflowStep step : steps) {
-            WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByStepName(stepStepInstanceMapping.get(step.getStepName()));
-            WorkflowStep nextStep = workflowServiceClient.getWorkflowStep(step.getNextStepId());
-            if (nextStep != null) {
-                WorkflowStepInstance nextStepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getNextStepId()));
+            WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getStepName()));
+            if (step.getNextStepName() != null && !step.getNextStepName().isEmpty()) {
+                WorkflowStepInstance nextStepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getNextStepName()));
                 stepInstance.setNextStepId(nextStepInstance.getUid());
             }
-            WorkflowStep previousStep = workflowServiceClient.getWorkflowStep(step.getPreviousStepId());
-            if (previousStep != null) {
-                WorkflowStepInstance previousStepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getPreviousStepId()));
+            if (step.getPreviousStepName() != null && !step.getPreviousStepName().isEmpty()) {
+                WorkflowStepInstance previousStepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getPreviousStepName()));
                 stepInstance.setPreviousStepId(previousStepInstance.getUid());
             }
             Map<String, String> decisionCases = step.getDecisionCases();
