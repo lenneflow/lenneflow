@@ -44,7 +44,7 @@ public class WorkflowStep {
 
     private String previousStepName;
 
-    private String errorMessage;
+    //private String errorMessage;
 
     private String functionName;
 

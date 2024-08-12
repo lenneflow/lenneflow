@@ -3,6 +3,7 @@ package de.lenneflow.orchestrationservice.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.lenneflow.orchestrationservice.feignmodels.Function;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -30,6 +31,12 @@ public class Util {
             throw new RuntimeException(e);
         }
         return serializedFunction;
+    }
+
+    public static String getFunctionEndpointUrl(Function function) {
+        String url = StringUtils.removeEnd(function.getEndPointRoot(), "/") + "/" + StringUtils.removeStart(function.getEndPointPath(), "/");
+        //TODO
+        return url;
     }
 
 }

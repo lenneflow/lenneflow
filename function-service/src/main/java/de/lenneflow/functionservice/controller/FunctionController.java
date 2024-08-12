@@ -3,6 +3,7 @@ package de.lenneflow.functionservice.controller;
 
 import de.lenneflow.functionservice.model.Function;
 import de.lenneflow.functionservice.repository.FunctionRepository;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +21,7 @@ public class FunctionController {
         this.functionRepository = functionRepository;
     }
 
+    @Hidden
     @GetMapping(value={"", "/"})
     public String checkService() {
         return "Welcome to the Function Service! Everything is working fine!";

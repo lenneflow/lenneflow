@@ -2,6 +2,7 @@ package de.lenneflow.workflowservice.controller;
 
 import de.lenneflow.workflowservice.model.Workflow;
 import de.lenneflow.workflowservice.repository.WorkflowRepository;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,6 +18,7 @@ public class WorkflowController {
         this.workflowRepository = workflowRepository;
     }
 
+    @Hidden
     @GetMapping(value={"", "/"})
     public String checkService() {
         return "Welcome to the Workflow Service! Everything is working fine!";

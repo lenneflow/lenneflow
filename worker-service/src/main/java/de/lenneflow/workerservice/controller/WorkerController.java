@@ -2,6 +2,7 @@ package de.lenneflow.workerservice.controller;
 
 import de.lenneflow.workerservice.model.Worker;
 import de.lenneflow.workerservice.repository.WorkerRepository;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,7 @@ public class WorkerController {
         this.workerRepository = workerRepository;
     }
 
+    @Hidden
     @GetMapping(value={"", "/"})
     public String checkService() {
         return "Welcome to the Worker Service! Everything is working fine!";

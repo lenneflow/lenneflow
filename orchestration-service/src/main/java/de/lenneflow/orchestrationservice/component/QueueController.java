@@ -1,21 +1,26 @@
 package de.lenneflow.orchestrationservice.component;
 
 import de.lenneflow.orchestrationservice.OrchestrationServiceApplication;
+import de.lenneflow.orchestrationservice.configuration.AppConfiguration;
 import de.lenneflow.orchestrationservice.feignmodels.Function;
 import de.lenneflow.orchestrationservice.utils.Util;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.rabbit.annotation.EnableRabbit;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 @Component
+@EnableRabbit
 public class QueueController {
 
     private final AmqpAdmin admin;
     private final RabbitTemplate rabbitTemplate;
+
 
     public QueueController(AmqpAdmin admin, RabbitTemplate rabbitTemplate) {
         this.admin = admin;
@@ -24,7 +29,7 @@ public class QueueController {
 
     public void addFunctionToQueue(Function function)  {
         byte[] serializedFunction = Util.serializeFunction(function);
-        String queueName = OrchestrationServiceApplication.FUNCTIONQUEUE;
+        String queueName = AppConfiguration.FUNCTIONQUEUE;
         String exchange  = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";
         createQueueAndBinding(queueName, exchange, routingKey);
@@ -34,7 +39,7 @@ public class QueueController {
 
     public void addFunctionToResultQueue(Function function)  {
         byte[] serializedFunction = Util.serializeFunction(function);
-        String queueName = OrchestrationServiceApplication.FUNCTIONRESULTQUEUE;
+        String queueName = AppConfiguration.FUNCTIONRESULTQUEUE;
         String exchange  = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";
         createQueueAndBinding(queueName, exchange, routingKey);

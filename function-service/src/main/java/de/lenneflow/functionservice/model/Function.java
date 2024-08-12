@@ -1,6 +1,5 @@
 package de.lenneflow.functionservice.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.lenneflow.functionservice.enums.FunctionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,22 +35,11 @@ public class Function {
 
     private String imageName;
 
-    private String endPointRoot;
-
-    private String endPointPath;
-
-    private String errorMessage;
-
-    private int functionPriority;
-
     private long creationTime;
 
     private long updateTime;
 
-    @JsonIgnore
-    private Map<String, Object> inputData = new HashMap<>();
+    private Map<String, String> inputDataSchema = new HashMap<>();
 
-    @JsonIgnore
-    private Map<String, Object> outputData = new HashMap<>();
 }
 

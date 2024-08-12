@@ -1,6 +1,7 @@
 package de.lenneflow.orchestrationservice.component;
 
 import de.lenneflow.orchestrationservice.enums.FunctionStatus;
+import de.lenneflow.orchestrationservice.enums.WorkFlowStepType;
 import de.lenneflow.orchestrationservice.enums.WorkflowStatus;
 import de.lenneflow.orchestrationservice.feignclients.FunctionServiceClient;
 import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
@@ -60,7 +61,7 @@ public class InstanceController {
             stepStepInstanceMapping.put(step.getStepName(), stepInstance.getUid());
             workflowStepInstanceRepository.save(stepInstance);
         }
-        List<String> stepInstanceIds = updateWorkflowStepInstances(workflowName, steps, stepStepInstanceMapping);
+        List<String> stepInstanceIds = updateWorkflowStepInstances(steps, stepStepInstanceMapping);
         workflowInstance.setStepInstanceIds(stepInstanceIds);
         return workflowInstanceRepository.save(workflowInstance);
     }
@@ -79,6 +80,11 @@ public class InstanceController {
         Map<String, Object> output = function.getOutputData();
         workflowStepInstance.setOutputData(output);
         workflowStepInstanceRepository.save(workflowStepInstance);
+    }
+
+    public void updateWorkflowInstanceAndExecutionStatus(WorkflowInstance workflowInstance, WorkflowExecution execution,  WorkflowStatus workflowStatus) {
+        updateWorkflowInstanceStatus(workflowInstance, workflowStatus);
+        updateWorkflowExecutionStatus(execution, workflowStatus);
     }
 
     /**
@@ -111,15 +117,52 @@ public class InstanceController {
         workflowStepInstanceRepository.save(stepInstance);
     }
 
+    /**
+     * Finds the next workflow step instance to run.
+     *
+     * @param stepInstance the current step instance.
+     * @param function         the current executed function.
+     * @return the next workflow step instance.
+     */
+    public WorkflowStepInstance getNextWorkflowStepInstance(WorkflowStepInstance stepInstance, Function function) {
+        switch (stepInstance.getWorkFlowStepType()) {
+            case SIMPLE, START:
+                return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
+            case DO_WHILE:
+                if (function.getOutputData().get("DoWhileStop").toString().equals("true"))
+                    return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
+                else
+                    return stepInstance;
+            case SWITCH:
+                String stepInstanceId = stepInstance.getDecisionCases().get("function.getSwitchCase()");
+                return workflowStepInstanceRepository.findByUid(stepInstanceId);
+            default:
+                return null;
+        }
+
+    }
+
+    /**
+     * Receives a workflow instance, searches for the start step and returns it.
+     *
+     * @param workflowInstance The workflow instance
+     * @return the start step of the workflow.
+     */
+    public WorkflowStepInstance getStartStep(WorkflowInstance workflowInstance) {
+        for (WorkflowStepInstance step : workflowStepInstanceRepository.findByWorkflowInstanceId(workflowInstance.getUid())) {
+            if (step.getWorkFlowStepType() == WorkFlowStepType.START) return step;
+        }
+        return null;
+    }
+
 
     /**
      * This method sets previous and next step parameters to the steps in the given list.
-     * @param workflowName The workflow Name.
      * @param steps The workflow step list to update.
      * @param stepStepInstanceMapping a map of workflow instances
      * @return a list of workflow instance IDs.
      */
-    private List<String> updateWorkflowStepInstances(String workflowName, List<WorkflowStep> steps, Map<String, String> stepStepInstanceMapping) {
+    private List<String> updateWorkflowStepInstances(List<WorkflowStep> steps, Map<String, String> stepStepInstanceMapping) {
         List<String> stepInstanceIds = new ArrayList<>();
         for (WorkflowStep step : steps) {
             WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getStepName()));
