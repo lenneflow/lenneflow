@@ -8,7 +8,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: lenneflowserver
+    - host: lenneflowserver2
       http:
         paths:
           - path: /api/orchestration
