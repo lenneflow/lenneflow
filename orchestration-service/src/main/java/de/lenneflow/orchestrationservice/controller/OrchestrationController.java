@@ -48,36 +48,36 @@ public class OrchestrationController {
         return workflowServiceClient.getFunctionHome();
     }
 
-    @GetMapping("/start-workflow/{workflowName}")
+    @GetMapping("/workflow/start/name/{workflowName}")
     public ResponseEntity<WorkflowExecution>  startWorkflowGet(@PathVariable String workflowName) {
         return new ResponseEntity<>(workflowRunner.start(workflowName, null), HttpStatus.OK);
     }
 
-    @PostMapping("/start-workflow/{workflowId}")
-    public ResponseEntity<WorkflowExecution> startWorkflowPost(@PathVariable String workflowId, @RequestBody Map<String, Object> inputParameters) {
-        if(inputParametersValid(workflowId, inputParameters)){
-            return new ResponseEntity<>(workflowRunner.start(workflowId, inputParameters), HttpStatus.OK);
+    @PostMapping("/workflow/start/name/{workflowName}")
+    public ResponseEntity<WorkflowExecution> startWorkflowPost(@PathVariable String workflowName, @RequestBody Map<String, Object> inputParameters) {
+        if(inputParametersValid(workflowName, inputParameters)){
+            return new ResponseEntity<>(workflowRunner.start(workflowName, inputParameters), HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
-    @GetMapping("/stop-workflow/{executionId}")
+    @GetMapping("/workflow/stop/run-id/{executionId}")
     public WorkflowExecution stopWorkflow(@PathVariable String executionId) {
         return workflowRunner.stop(executionId);
     }
 
-    @GetMapping("/pause-workflow/{executionId}")
+    @GetMapping("/workflow/pause/run-id/{executionId}")
     @ResponseStatus(HttpStatus.OK)
     public WorkflowExecution pauseWorkflow(@PathVariable String executionId) {
         return workflowRunner.pause(executionId);
     }
 
-    @GetMapping("/resume-workflow/{executionId}")
+    @GetMapping("/workflow/resume/run-id/{executionId}")
     public WorkflowExecution resumeWorkflow(@PathVariable String executionId) {
         return workflowRunner.resume(executionId);
     }
 
-    @GetMapping("/workflow-state/{executionId}")
+    @GetMapping("/workflow/state/run-id/{executionId}")
     public WorkflowExecution workflowRunState(@PathVariable String executionId) {
         return workflowRunner.executionState(executionId);
     }
