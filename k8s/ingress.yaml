@@ -18,21 +18,21 @@ spec:
                 name: orchestration-service
                 port:
                   number: 47002
-          - path: /api/functions
+          - path: /api/function
             pathType: Prefix
             backend:
               service:
                 name: function-service
                 port:
                   number: 47003
-          - path: /api/workers
+          - path: /api/worker
             pathType: Prefix
             backend:
               service:
                 name: worker-service
                 port:
                   number: 47004
-          - path: /api/workflows
+          - path: /api/workflow
             pathType: Prefix
             backend:
               service:
