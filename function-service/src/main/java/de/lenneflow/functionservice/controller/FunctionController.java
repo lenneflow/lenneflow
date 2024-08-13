@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/function")
+@RequestMapping("/api/functions")
 public class FunctionController {
 
     final
@@ -22,35 +22,42 @@ public class FunctionController {
     }
 
     @Hidden
-    @GetMapping(value={"", "/"})
+    @GetMapping(value={ "/check"})
     public String checkService() {
         return "Welcome to the Function Service! Everything is working fine!";
     }
 
-    @GetMapping("/get/{id}")
-    public Function getWorkerFunctionById(@PathVariable String id) {
+    @GetMapping("/{id}")
+    public Function getFunctionById(@PathVariable String id) {
         return functionRepository.findById(id).orElse(null);
     }
-    @GetMapping("/get/name/{name}")
-    public Function getWorkerFunctionByName(@PathVariable String name) {
+    @GetMapping
+    public Function getWorkerFunctionByName(@RequestParam(value = "name") String name) {
         return functionRepository.findByFunctionName(name);
     }
 
-    @GetMapping("/get/all")
+    @GetMapping
     public List<Function> getAllWorkerFunctions() {
         return functionRepository.findAll();
     }
 
-    @PostMapping("/create")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Function addWorkerFunction(@RequestBody Function function) {
         function.setFunctionID(UUID.randomUUID().toString());
         return functionRepository.save(function);
     }
 
-    @PatchMapping("/update")
-    @ResponseStatus(HttpStatus.OK)
+    @PatchMapping
     public void updateWorkerFunction(@RequestBody Function function) {
         functionRepository.save(function);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteWorkerFunction(@PathVariable String id) {
+        Function function = functionRepository.findById(id).orElse(null);
+        if (function != null) {
+            functionRepository.delete(function);
+        }
     }
 }

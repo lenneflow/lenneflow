@@ -8,7 +8,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: lenneflowserver2
+    - host: lenneflowserver
       http:
         paths:
           - path: /api/orchestration
@@ -18,21 +18,21 @@ spec:
                 name: orchestration-service
                 port:
                   number: 47002
-          - path: /api/function
+          - path: /api/functions
             pathType: Prefix
             backend:
               service:
                 name: function-service
                 port:
                   number: 47003
-          - path: /api/worker
+          - path: /api/workers
             pathType: Prefix
             backend:
               service:
                 name: worker-service
                 port:
                   number: 47004
-          - path: /api/workflow
+          - path: /api/workflows
             pathType: Prefix
             backend:
               service:
