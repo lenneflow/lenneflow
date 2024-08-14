@@ -21,7 +21,7 @@ import java.util.List;
 public class Workflow {
 
     @Id
-    private String workflowId;
+    private String uid;
 
     @Indexed(unique = true)
     private String name;

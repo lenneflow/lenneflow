@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/worker")
+@RequestMapping("/api/workers")
 public class WorkerController {
 
     final
@@ -21,30 +21,30 @@ public class WorkerController {
     }
 
     @Hidden
-    @GetMapping(value={"", "/"})
+    @GetMapping(value={ "/check"})
     public String checkService() {
-        return "Welcome to the Worker Service! Everything is working fine!";
+        return "Welcome to the Worker Service!";
     }
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<Worker> createNewWorkerNode(@RequestBody Worker worker) {
         worker.setUuid(UUID.randomUUID().toString());
         return new ResponseEntity<>(workerRepository.save(worker), HttpStatus.CREATED);
     }
 
-    @PostMapping("/update")
+    @PatchMapping
     public ResponseEntity<Worker> updateWorkerNode(@RequestBody Worker worker) {
         return new ResponseEntity<>(workerRepository.save(worker), HttpStatus.OK);
     }
 
-    @GetMapping("/get/{workerId}")
-    public ResponseEntity<Worker> getWorkerNode(@PathVariable String workerId) {
-        return new ResponseEntity<>(workerRepository.findByUuid(workerId), HttpStatus.OK);
+    @GetMapping("/{id}")
+    public ResponseEntity<Worker> getWorkerNode(@PathVariable String id) {
+        return new ResponseEntity<>(workerRepository.findByUuid(id), HttpStatus.OK);
     }
 
-    @GetMapping("/delete/{workerId}")
-    public ResponseEntity<Worker> deleteWorkerNode(@PathVariable String workerId) {
-        workerRepository.delete(workerRepository.findByUuid(workerId));
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Worker> deleteWorkerNode(@PathVariable String id) {
+        workerRepository.delete(workerRepository.findByUuid(id));
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }

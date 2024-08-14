@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/worker")
+@RequestMapping("/api/workers/clusters")
 public class WorkerClusterController {
 
     final
@@ -19,25 +19,25 @@ public class WorkerClusterController {
         this.workerClusterRepository = workerClusterRepository;
     }
 
-    @PostMapping("/create-cluster")
+    @PostMapping
     public ResponseEntity<WorkerCluster> createNewCluster(@RequestBody WorkerCluster workerCluster) {
         workerCluster.setUuid(UUID.randomUUID().toString());
         return new ResponseEntity<>(workerClusterRepository.save(workerCluster), HttpStatus.CREATED);
     }
 
-    @PostMapping("/update-cluster")
+    @PatchMapping
     public ResponseEntity<WorkerCluster> updateCluster(@RequestBody WorkerCluster workerCluster) {
         return new ResponseEntity<>(workerClusterRepository.save(workerCluster), HttpStatus.OK);
     }
 
-    @GetMapping("/get-cluster/{workerId}")
-    public ResponseEntity<WorkerCluster> getCluster(@PathVariable String workerId) {
-        return new ResponseEntity<>(workerClusterRepository.findByUuid(workerId), HttpStatus.OK);
+    @GetMapping("/{id}")
+    public ResponseEntity<WorkerCluster> getCluster(@PathVariable String id) {
+        return new ResponseEntity<>(workerClusterRepository.findByUuid(id), HttpStatus.OK);
     }
 
-    @GetMapping("/delete-cluster/{workerId}")
-    public ResponseEntity<WorkerCluster> deleteCluster(@PathVariable String workerId) {
-        workerClusterRepository.delete(workerClusterRepository.findByUuid(workerId));
+    @DeleteMapping("/{id}")
+    public ResponseEntity<WorkerCluster> deleteCluster(@PathVariable String id) {
+        workerClusterRepository.delete(workerClusterRepository.findByUuid(id));
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/orchestration")
+@RequestMapping("/api/control")
 public class OrchestrationController {
 
     final WorkflowExecutionRepository workflowExecutionRepository;
@@ -34,9 +34,10 @@ public class OrchestrationController {
         this.workflowRunner = workflowRunner;
     }
 
-    @GetMapping(value={"", "/"})
+    @Hidden
+    @GetMapping(value={"/check"})
     public String checkService() {
-        return "Welcome to the Orchestration Service! Everything is working fine!";
+        return "Welcome to the Orchestration Service!";
     }
 
     @Hidden
@@ -45,43 +46,38 @@ public class OrchestrationController {
         return functionServiceClient.getFunctionHome();
     }
 
-    @Hidden
-    @GetMapping(value={"/feign2"})
-    public String checkFeign2() {
-        return workflowServiceClient.getFunctionHome();
-    }
 
-    @GetMapping("/workflow/start/name/{workflowName}")
-    public ResponseEntity<WorkflowExecution>  startWorkflowGet(@PathVariable String workflowName) {
+    @GetMapping("/workflows/{workflow-name}/start")
+    public ResponseEntity<WorkflowExecution>  startWorkflowGet(@PathVariable(name = "workflow-name") String workflowName) {
         return new ResponseEntity<>(workflowRunner.startWorkflow(workflowName, null), HttpStatus.OK);
     }
 
-    @PostMapping("/workflow/start/name/{workflowName}")
-    public ResponseEntity<WorkflowExecution> startWorkflowPost(@PathVariable String workflowName, @RequestBody Map<String, Object> inputParameters) {
+    @PostMapping("/workflows/{workflow-name}/start")
+    public ResponseEntity<WorkflowExecution> startWorkflowPost(@PathVariable(name = "workflow-name") String workflowName, @RequestBody Map<String, Object> inputParameters) {
         if(inputParametersValid(workflowName, inputParameters)){
             return new ResponseEntity<>(workflowRunner.startWorkflow(workflowName, inputParameters), HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
-    @GetMapping("/workflow/stop/run-id/{executionId}")
-    public WorkflowExecution stopWorkflow(@PathVariable String executionId) {
+    @GetMapping("/workflows/executions/{execution-id}/stop")
+    public WorkflowExecution stopWorkflow(@PathVariable(name = "execution-id") String executionId) {
         return workflowRunner.stopWorkflow(executionId);
     }
 
-    @GetMapping("/workflow/pause/run-id/{executionId}")
+    @GetMapping("/workflows/executions/{execution-id}/pause")
     @ResponseStatus(HttpStatus.OK)
-    public WorkflowExecution pauseWorkflow(@PathVariable String executionId) {
+    public WorkflowExecution pauseWorkflow(@PathVariable(name = "execution-id") String executionId) {
         return workflowRunner.pauseWorkflow(executionId);
     }
 
-    @GetMapping("/workflow/resume/run-id/{executionId}")
-    public WorkflowExecution resumeWorkflow(@PathVariable String executionId) {
+    @GetMapping("/workflows/executions/{execution-id}/resume")
+    public WorkflowExecution resumeWorkflow(@PathVariable(name = "execution-id") String executionId) {
         return workflowRunner.resumeWorkflow(executionId);
     }
 
-    @GetMapping("/workflow/state/run-id/{executionId}")
-    public WorkflowExecution workflowRunState(@PathVariable String executionId) {
+    @GetMapping("/workflows/executions/{execution-id}/state")
+    public WorkflowExecution workflowRunState(@PathVariable(name = "execution-id") String executionId) {
         return workflowRunner.executionState(executionId);
     }
 

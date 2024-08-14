@@ -5,8 +5,6 @@ public enum WorkFlowStepType {
     SWITCH,
     DO_WHILE,
     SUB_WORKFLOW,
-    START,
     EVENT,
-    HUMAN,
-    TERMINATE
+    HUMAN
 }

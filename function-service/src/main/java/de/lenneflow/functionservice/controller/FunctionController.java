@@ -31,6 +31,7 @@ public class FunctionController {
     public Function getFunctionById(@PathVariable String id) {
         return functionRepository.findById(id).orElse(null);
     }
+
     @GetMapping
     public Function getWorkerFunctionByName(@RequestParam(value = "name") String name) {
         return functionRepository.findByFunctionName(name);

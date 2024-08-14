@@ -1,15 +1,19 @@
 package de.lenneflow.workflowservice.controller;
 
+import de.lenneflow.workflowservice.dto.SimpleWorkflowStep;
 import de.lenneflow.workflowservice.model.Workflow;
 import de.lenneflow.workflowservice.model.WorkflowStep;
 import de.lenneflow.workflowservice.repository.WorkflowRepository;
 import de.lenneflow.workflowservice.repository.WorkflowStepRepository;
+import de.lenneflow.workflowservice.util.DTOMapper;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/workflow")
+@RequestMapping("/api/workflows/steps")
 public class WorkflowStepController {
 
     final WorkflowStepRepository workflowStepRepository;
@@ -20,35 +24,55 @@ public class WorkflowStepController {
         this.workflowRepository = workflowRepository;
     }
 
-    @GetMapping("/step/get/id/{uuid}")
-    public WorkflowStep getStep(@PathVariable String uuid) {
-        return workflowStepRepository.findByUid(uuid);
+    @GetMapping("/{id}")
+    public WorkflowStep getStep(@PathVariable String id) {
+        return workflowStepRepository.findByUid(id);
     }
 
-    @GetMapping("/step/get/name/{name}")
-    public WorkflowStep getStepByName(@PathVariable String name) {
+    @GetMapping
+    public WorkflowStep getStepByName(@RequestParam String name) {
         return workflowStepRepository.findByStepName(name);
     }
 
-    @GetMapping("/step/list/workflow/id/{workflowId}")
-    public List<WorkflowStep> getAllWorkflowSteps(@PathVariable String workflowId) {
+    @GetMapping
+    public List<WorkflowStep> getWorkflowStepsByWorkflowID(@RequestParam(name = "workflow-id") String workflowId) {
         return workflowStepRepository.findByWorkflowId(workflowId);
     }
 
-    @GetMapping("/step/list/workflow/name/{workflowName}")
-    public List<WorkflowStep> getAllWorkflowStepsByWorkflowName(@PathVariable String workflowName) {
+    @GetMapping
+    public List<WorkflowStep> getAllWorkflowStepsByWorkflowName(@RequestParam(name = "workflow-name") String workflowName) {
         return workflowStepRepository.findByWorkflowName(workflowName);
     }
 
-    @GetMapping("/step/get/all")
-    public List<WorkflowStep> getAllWorkflows() {
+    @GetMapping
+    public List<WorkflowStep> getAllWorkflowSteps() {
         return workflowStepRepository.findAll();
     }
 
-    @PostMapping("/step/add")
-    public WorkflowStep addNewWorkflow(@RequestBody WorkflowStep workflowStep) {
+    @PostMapping("/simple")
+    public SimpleWorkflowStep addNewWorkflowStep(@RequestBody SimpleWorkflowStep simpleWorkflowStep) {
+        WorkflowStep workflowStep = DTOMapper.fromSimpleStep(simpleWorkflowStep);
+        WorkflowStep savedWorkflowStep = saveWorkflowStep(workflowStep);
+        return DTOMapper.toSimpleStep(savedWorkflowStep);
+    }
+
+    @PatchMapping("/{id}")
+    public WorkflowStep patchWorkflowStep(@PathVariable String id, @RequestBody WorkflowStep workflowStep) {
+        return workflowStepRepository.save(workflowStep);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteWorkflowStep(@PathVariable String id) {
+        WorkflowStep workflowStep = workflowStepRepository.findByUid(id);
+        workflowStepRepository.delete(workflowStep);
+    }
+
+    private WorkflowStep saveWorkflowStep(WorkflowStep workflowStep) {
+        workflowStep.setUid(UUID.randomUUID().toString());
+        workflowStep.setCreationTime(LocalDateTime.now());
+        workflowStep.setUpdateTime(LocalDateTime.now());
         WorkflowStep saved = workflowStepRepository.save(workflowStep);
-        Workflow workflow = workflowRepository.findByName(saved.getWorkflowName());
+        Workflow workflow = workflowRepository.findByUid(saved.getWorkflowUid());
         List<WorkflowStep> stepList = workflow.getSteps();
         stepList.add(saved);
         workflow.setSteps(stepList);
@@ -56,8 +80,9 @@ public class WorkflowStepController {
         return saved;
     }
 
-    @PatchMapping("/step/update")
-    public WorkflowStep patchWorkflow(@RequestBody WorkflowStep workflowStep) {
-        return workflowStepRepository.save(workflowStep);
+    private WorkflowStep patchWorkflowStep(WorkflowStep workflowStep) {
+        workflowStep.setUpdateTime(LocalDateTime.now());
+        WorkflowStep saved = workflowStepRepository.save(workflowStep);
+        return saved;
     }
 }

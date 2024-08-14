@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/workflow")
+@RequestMapping("/api/workflows")
 public class WorkflowController {
 
     final
@@ -19,33 +19,39 @@ public class WorkflowController {
     }
 
     @Hidden
-    @GetMapping(value={"", "/"})
+    @GetMapping(value={ "/check"})
     public String checkService() {
         return "Welcome to the Workflow Service! Everything is working fine!";
     }
 
-    @GetMapping("/get/{uuid}")
-    public Workflow getWorkflow(@PathVariable String uuid) {
-        return workflowRepository.findByWorkflowId(uuid);
+    @GetMapping("/{id}")
+    public Workflow getWorkflow(@PathVariable String id) {
+        return workflowRepository.findByUid(id);
     }
 
-    @GetMapping("/get/name/{workflowName}")
-    public Workflow getWorkflowByName(@PathVariable String workflowName) {
-        return workflowRepository.findByName(workflowName);
+    @GetMapping
+    public Workflow getWorkflowByName(@RequestParam String name) {
+        return workflowRepository.findByName(name);
     }
 
-    @GetMapping("/get/all")
+    @GetMapping
     public List<Workflow> getAllWorkflows() {
         return workflowRepository.findAll();
     }
 
-    @PostMapping("/add")
+    @PostMapping
     public Workflow addNewWorkflow(@RequestBody Workflow workflow) {
         return workflowRepository.save(workflow);
     }
 
-    @PatchMapping("/update")
+    @PatchMapping("/{id}")
     public Workflow patchWorkflow(@RequestBody Workflow workflow) {
         return workflowRepository.save(workflow);
+    }
+
+    @DeleteMapping
+    public void deleteWorkflow(@PathVariable String id) {
+        Workflow workflow = workflowRepository.findByUid(id);
+        workflowRepository.delete(workflow);
     }
 }
