@@ -22,13 +22,6 @@ spec:
         ports:
         - containerPort: 47002
           hostPort: 47002
-        resources:
-          requests:
-            cpu: "0.2"
-            memory: 300Mi
-          limits:
-            cpu: "1.0"
-            memory: 300Mi
         readinessProbe:
             httpGet:
               port: 47002
@@ -45,22 +38,3 @@ spec:
             timeoutSeconds: 2
             periodSeconds: 20
             failureThreshold: 5
-        volumeMounts:
-            - name: mongodb
-              mountPath: /etc/secretspot
-          #            - name: config
-          #              mountPath: /etc/appconfig
-        env:
-            - name: SPRING_CLOUD_BOOTSTRAP_ENABLED
-              value: "true"
-            - name: SPRING_CLOUD_KUBERNETES_SECRETS_ENABLEAPI
-              value: "true"
-          #          - name: SPRING_CONFIG_IMPORT
-          #            value: "kubernetes:"
-      volumes:
-            - name: mongodb
-              secret:
-                secretName: orchestration-service
-          #        - name: config
-          #          configMap:
-          #            name: department
