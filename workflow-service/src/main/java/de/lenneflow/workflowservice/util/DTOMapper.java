@@ -6,9 +6,9 @@ import de.lenneflow.workflowservice.enums.WorkFlowStepType;
 import de.lenneflow.workflowservice.model.WorkflowStep;
 import org.modelmapper.ModelMapper;
 
-import java.time.LocalDateTime;
-
 public class DTOMapper {
+
+    static ModelMapper modelMapper = new ModelMapper();
 
     public static WorkflowStep fromSimpleStep(SimpleWorkflowStep simpleWorkflowStep) {
         WorkflowStep workflowStep = new WorkflowStep();
@@ -57,26 +57,8 @@ public class DTOMapper {
     }
 
     public static SwitchWorkflowStep toSwitchStep(WorkflowStep workflowStep) {
-        ModelMapper mapper = new ModelMapper();
-        return mapper.map(workflowStep, SwitchWorkflowStep.class);
+        return modelMapper.map(workflowStep, SwitchWorkflowStep.class);
     }
 
-    public static void main(String[] args) {
-        SimpleWorkflowStep simpleWorkflowStep = new SimpleWorkflowStep();
-        simpleWorkflowStep.setUid("jkfjklfkfklfe");
-        simpleWorkflowStep.setWorkflowUid("workflowStep.getWorkflowUid()");
-        simpleWorkflowStep.setDescription("workflowStep.getDescription()");
-        simpleWorkflowStep.setStepName("workflowStep.getStepName()");
-        simpleWorkflowStep.setFunctionId("workflowStep.getFunctionId()");
-        simpleWorkflowStep.setExecutionOrder(1);
-        simpleWorkflowStep.setRetryCount(0);
-        simpleWorkflowStep.setCreationTime(LocalDateTime.now());
-        simpleWorkflowStep.setUpdateTime(LocalDateTime.now());
-        ModelMapper mapper = new ModelMapper();
-        WorkflowStep workflowStep = mapper.map(simpleWorkflowStep, WorkflowStep.class);
-
-        System.out.println(workflowStep.getDecisionCases());
-        System.out.println(workflowStep.getSwitchCondition());
-
-    }
 }
+

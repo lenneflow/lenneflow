@@ -21,7 +21,7 @@ public class WorkflowController {
     @Hidden
     @GetMapping(value={ "/check"})
     public String checkService() {
-        return "Welcome to the Workflow Service! Everything is working fine!";
+        return "Welcome to the Workflow Service!";
     }
 
     @GetMapping("/{id}")

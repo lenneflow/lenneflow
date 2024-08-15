@@ -6,6 +6,7 @@ import de.lenneflow.workflowservice.model.WorkflowStep;
 import de.lenneflow.workflowservice.repository.WorkflowRepository;
 import de.lenneflow.workflowservice.repository.WorkflowStepRepository;
 import de.lenneflow.workflowservice.util.DTOMapper;
+import org.modelmapper.ModelMapper;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -18,6 +19,8 @@ public class WorkflowStepController {
 
     final WorkflowStepRepository workflowStepRepository;
     final WorkflowRepository workflowRepository;
+
+    private ModelMapper modelMapper = new ModelMapper();
 
     public WorkflowStepController(WorkflowStepRepository workflowStepRepository, WorkflowRepository workflowRepository) {
         this.workflowStepRepository = workflowStepRepository;
@@ -50,10 +53,10 @@ public class WorkflowStepController {
     }
 
     @PostMapping("/simple")
-    public SimpleWorkflowStep addNewWorkflowStep(@RequestBody SimpleWorkflowStep simpleWorkflowStep) {
-        WorkflowStep workflowStep = DTOMapper.fromSimpleStep(simpleWorkflowStep);
+    public SimpleWorkflowStep addSimpleWorkflowStep(@RequestBody SimpleWorkflowStep simpleWorkflowStep) {
+        WorkflowStep workflowStep = modelMapper.map(simpleWorkflowStep, WorkflowStep.class);
         WorkflowStep savedWorkflowStep = saveWorkflowStep(workflowStep);
-        return DTOMapper.toSimpleStep(savedWorkflowStep);
+        return modelMapper.map(savedWorkflowStep, SimpleWorkflowStep.class);
     }
 
     @PatchMapping("/{id}")
