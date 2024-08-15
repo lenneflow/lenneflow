@@ -31,6 +31,8 @@ public class WhileWorkflowStep {
 
     private String functionId;
 
+    private String stopCondition;
+
     private Map<String, Object> inputData = new LinkedHashMap<>();
 
     private Integer retryCount;

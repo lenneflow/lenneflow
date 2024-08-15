@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface FunctionRepository extends MongoRepository<Function, String> {
 
-    Function findByFunctionID(String functionId);
+    Function findByUid(String Uid);
 
     Function findByFunctionName(String functionName);
 

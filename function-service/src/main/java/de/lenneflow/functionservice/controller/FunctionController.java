@@ -45,7 +45,7 @@ public class FunctionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Function addWorkerFunction(@RequestBody Function function) {
-        function.setFunctionID(UUID.randomUUID().toString());
+        function.setUid(UUID.randomUUID().toString());
         return functionRepository.save(function);
     }
 
@@ -56,7 +56,7 @@ public class FunctionController {
 
     @DeleteMapping("/{id}")
     public void deleteWorkerFunction(@PathVariable String id) {
-        Function function = functionRepository.findById(id).orElse(null);
+        Function function = functionRepository.findByUid(id);
         if (function != null) {
             functionRepository.delete(function);
         }

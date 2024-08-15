@@ -18,15 +18,13 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document
-@CompoundIndex(def = "{'workflowName': 1, 'stepName': 1}", unique = true)
+@CompoundIndex(def = "{'workflowUid': 1, 'stepName': 1}", unique = true)
 public class WorkflowStep {
 
     @Id
     private String uid;
 
     private String stepName;
-
-    //private String workflowName;
 
     private String workflowUid;
 
@@ -43,6 +41,8 @@ public class WorkflowStep {
     private Map<String, WorkflowStep> decisionCases = new LinkedHashMap<>();
 
     private String switchCondition;
+
+    private String stopCondition;
 
     private Map<String, Object> inputData = new LinkedHashMap<>();
 

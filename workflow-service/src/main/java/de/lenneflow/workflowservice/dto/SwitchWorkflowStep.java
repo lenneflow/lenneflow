@@ -28,6 +28,8 @@ public class SwitchWorkflowStep {
 
     private String description;
 
+    private Integer retryCount = 0;
+
     private WorkFlowStepType workFlowStepType = WorkFlowStepType.SWITCH;
 
     private int executionOrder;

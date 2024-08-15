@@ -1,10 +1,14 @@
 package de.lenneflow.workflowservice.controller;
 
+import de.lenneflow.workflowservice.dto.WorkflowDTO;
 import de.lenneflow.workflowservice.model.Workflow;
 import de.lenneflow.workflowservice.repository.WorkflowRepository;
+import de.lenneflow.workflowservice.util.Validator;
 import io.swagger.v3.oas.annotations.Hidden;
+import org.modelmapper.ModelMapper;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -13,9 +17,12 @@ public class WorkflowController {
 
     final
     WorkflowRepository workflowRepository;
+    private final Validator validator;
+    private final ModelMapper modelMapper = new ModelMapper();
 
-    public WorkflowController(WorkflowRepository workflowRepository) {
+    public WorkflowController(WorkflowRepository workflowRepository, Validator validator) {
         this.workflowRepository = workflowRepository;
+        this.validator = validator;
     }
 
     @Hidden
@@ -40,16 +47,24 @@ public class WorkflowController {
     }
 
     @PostMapping
-    public Workflow addNewWorkflow(@RequestBody Workflow workflow) {
-        return workflowRepository.save(workflow);
+    public WorkflowDTO addNewWorkflow(@RequestBody WorkflowDTO workflowDTO) {
+        Workflow workflow = modelMapper.map(workflowDTO, Workflow.class);
+        validator.validateWorkflow(workflow);
+        workflow.setCreationTime(LocalDateTime.now());
+        workflow.setUpdateTime(LocalDateTime.now());
+        return modelMapper.map(workflowRepository.save(workflow), WorkflowDTO.class);
     }
 
     @PatchMapping("/{id}")
-    public Workflow patchWorkflow(@RequestBody Workflow workflow) {
-        return workflowRepository.save(workflow);
+    public WorkflowDTO patchWorkflow(@RequestBody WorkflowDTO workflowDTO, @PathVariable String id) {
+        Workflow workflow = workflowRepository.findByUid(id);
+        modelMapper.map(workflowDTO, workflow);
+        validator.validateWorkflow(workflow);
+        workflow.setUpdateTime(LocalDateTime.now());
+        return modelMapper.map(workflowRepository.save(workflow), WorkflowDTO.class);
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{id}")
     public void deleteWorkflow(@PathVariable String id) {
         Workflow workflow = workflowRepository.findByUid(id);
         workflowRepository.delete(workflow);

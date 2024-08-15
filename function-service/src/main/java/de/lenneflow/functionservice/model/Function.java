@@ -20,7 +20,7 @@ import java.util.Map;
 public class Function {
 
     @Id
-    private String functionID;
+    private String Uid;
 
     @Indexed(unique = true)
     private String functionName;
