@@ -134,8 +134,8 @@ public class WorkflowStepController {
 
     private WorkflowStep saveWorkflowStep(WorkflowStep workflowStep) {
         workflowStep.setUid(UUID.randomUUID().toString());
-        workflowStep.setCreationTime(LocalDateTime.now());
-        workflowStep.setUpdateTime(LocalDateTime.now());
+        workflowStep.setCreated(LocalDateTime.now());
+        workflowStep.setUpdated(LocalDateTime.now());
         WorkflowStep saved = workflowStepRepository.save(workflowStep);
         Workflow workflow = workflowRepository.findByUid(saved.getWorkflowUid());
         List<WorkflowStep> stepList = workflow.getSteps();
@@ -146,7 +146,7 @@ public class WorkflowStepController {
     }
 
     private WorkflowStep patchWorkflowStep(WorkflowStep workflowStep) {
-        workflowStep.setUpdateTime(LocalDateTime.now());
+        workflowStep.setUpdated(LocalDateTime.now());
         return workflowStepRepository.save(workflowStep);
     }
 }

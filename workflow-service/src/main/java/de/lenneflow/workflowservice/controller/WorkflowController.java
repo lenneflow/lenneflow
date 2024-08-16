@@ -53,8 +53,8 @@ public class WorkflowController {
     public WorkflowDTO addNewWorkflow(@RequestBody WorkflowDTO workflowDTO) {
         Workflow workflow = modelMapper.map(workflowDTO, Workflow.class);
         validator.validateWorkflow(workflow);
-        workflow.setCreationTime(LocalDateTime.now());
-        workflow.setUpdateTime(LocalDateTime.now());
+        workflow.setCreated(LocalDateTime.now());
+        workflow.setUpdated(LocalDateTime.now());
         return modelMapper.map(workflowRepository.save(workflow), WorkflowDTO.class);
     }
 
@@ -63,7 +63,7 @@ public class WorkflowController {
         Workflow workflow = workflowRepository.findByUid(id);
         modelMapper.map(workflowDTO, workflow);
         validator.validateWorkflow(workflow);
-        workflow.setUpdateTime(LocalDateTime.now());
+        workflow.setUpdated(LocalDateTime.now());
         return modelMapper.map(workflowRepository.save(workflow), WorkflowDTO.class);
     }
 

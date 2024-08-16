@@ -12,8 +12,7 @@ import java.util.UUID;
 @RequestMapping("/api/workers/clusters")
 public class WorkerClusterController {
 
-    final
-    WorkerClusterRepository workerClusterRepository;
+    final WorkerClusterRepository workerClusterRepository;
 
     public WorkerClusterController(WorkerClusterRepository workerClusterRepository) {
         this.workerClusterRepository = workerClusterRepository;

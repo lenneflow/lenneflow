@@ -40,8 +40,8 @@ public class Workflow {
 
     private long timeOutInSeconds = Long.MAX_VALUE;
 
-    private LocalDateTime creationTime;
+    private LocalDateTime created;
 
-    private LocalDateTime updateTime;
+    private LocalDateTime updated;
 
 }

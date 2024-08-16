@@ -27,6 +27,8 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:latest.release'
     implementation 'de.codecentric:spring-boot-admin-starter-client:latest.release'
     implementation 'org.springframework.boot:spring-boot-starter-amqp:latest.release'
+    implementation 'com.ezylang:EvalEx:3.3.0'
+    implementation 'org.modelmapper:modelmapper:3.2.1'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

@@ -1,5 +1,6 @@
-package de.lenneflow.workerservice.model;
+package de.lenneflow.workerservice.dto;
 
+import de.lenneflow.workerservice.model.Worker;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -8,14 +9,14 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Document
-public class Worker {
+public class WorkerClusterDTO {
 
     @Id
     private String uuid;
@@ -25,13 +26,9 @@ public class Worker {
 
     private String description;
 
-    private WorkerCluster cluster;
+    private List<Worker> workers;
 
     private String ipAddress;
 
     private String hostName;
-
-    private LocalDateTime created;
-
-    private LocalDateTime updated;
 }

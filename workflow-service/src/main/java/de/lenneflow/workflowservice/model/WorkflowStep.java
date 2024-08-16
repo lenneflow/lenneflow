@@ -50,7 +50,7 @@ public class WorkflowStep {
 
     private Integer retryCount;
 
-    private LocalDateTime creationTime;
+    private LocalDateTime created;
 
-    private LocalDateTime updateTime;
+    private LocalDateTime updated;
 }
