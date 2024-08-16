@@ -17,10 +17,6 @@ public class WorkflowDTO {
 
     private String description;
 
-    private int version = 1;
-
-    private boolean statusListenerEnabled = false;
-
     private boolean restartable = true;
 
     private long timeOutInSeconds;

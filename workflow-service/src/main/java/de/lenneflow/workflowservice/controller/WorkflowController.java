@@ -3,6 +3,7 @@ package de.lenneflow.workflowservice.controller;
 import de.lenneflow.workflowservice.dto.WorkflowDTO;
 import de.lenneflow.workflowservice.model.Workflow;
 import de.lenneflow.workflowservice.repository.WorkflowRepository;
+import de.lenneflow.workflowservice.repository.WorkflowStepRepository;
 import de.lenneflow.workflowservice.util.Validator;
 import io.swagger.v3.oas.annotations.Hidden;
 import org.modelmapper.ModelMapper;
@@ -17,11 +18,13 @@ public class WorkflowController {
 
     final
     WorkflowRepository workflowRepository;
+    final WorkflowStepRepository workflowStepRepository;
     private final Validator validator;
     private final ModelMapper modelMapper = new ModelMapper();
 
-    public WorkflowController(WorkflowRepository workflowRepository, Validator validator) {
+    public WorkflowController(WorkflowRepository workflowRepository, WorkflowStepRepository workflowStepRepository, Validator validator) {
         this.workflowRepository = workflowRepository;
+        this.workflowStepRepository = workflowStepRepository;
         this.validator = validator;
     }
 
@@ -67,6 +70,7 @@ public class WorkflowController {
     @DeleteMapping("/{id}")
     public void deleteWorkflow(@PathVariable String id) {
         Workflow workflow = workflowRepository.findByUid(id);
+        workflowStepRepository.deleteAll(workflow.getSteps());
         workflowRepository.delete(workflow);
     }
 }

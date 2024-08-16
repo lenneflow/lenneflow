@@ -31,8 +31,6 @@ public class Workflow {
 
     private WorkflowStatus status;
 
-    private int version = 1;
-
     @DocumentReference
     private List<WorkflowStep> steps = new LinkedList<>();
 
@@ -42,7 +40,7 @@ public class Workflow {
 
     private boolean restartable = true;
 
-    private long timeOutInSeconds;
+    private long timeOutInSeconds = Long.MAX_VALUE;
 
     private LocalDateTime creationTime;
 

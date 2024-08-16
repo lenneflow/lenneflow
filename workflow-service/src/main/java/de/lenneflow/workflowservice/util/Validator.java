@@ -1,5 +1,6 @@
 package de.lenneflow.workflowservice.util;
 
+import com.ezylang.evalex.Expression;
 import de.lenneflow.workflowservice.exception.InternalServiceException;
 import de.lenneflow.workflowservice.exception.PayloadNotValidException;
 import de.lenneflow.workflowservice.exception.ResourceNotFoundException;
@@ -7,6 +8,7 @@ import de.lenneflow.workflowservice.model.Workflow;
 import de.lenneflow.workflowservice.model.WorkflowStep;
 import de.lenneflow.workflowservice.repository.WorkflowRepository;
 import de.lenneflow.workflowservice.repository.WorkflowStepRepository;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -28,10 +30,18 @@ public class Validator {
         checkMandatoryFields(workflowStep);
         checkUniqueValues(workflowStep);
         checkWorkflowExists(workflowStep);
+        checkExpressions(workflowStep);
     }
 
+
     public void validateWorkflow(Workflow workflow){
-        //TODO
+        String workflowName = workflow.getName();
+        if(workflowName == null || workflowName.isEmpty()){
+            throw new PayloadNotValidException("Workflow name is empty");
+        }
+        if(workflowRepository.findByName(workflowName) != null){
+            throw new PayloadNotValidException("Workflow with name " + workflowName + " already exists");
+        }
     }
 
     private void checkUniqueValues(WorkflowStep workflowStep) {
@@ -39,6 +49,36 @@ public class Validator {
             throw new PayloadNotValidException("The workflow step name already exists for the associated workflow uid: " + workflowStep.getWorkflowUid());
         }
     }
+
+    private void checkExpressions(WorkflowStep workflowStep) {
+        switch (workflowStep.getWorkFlowStepType()){
+            case SWITCH:
+                String switchCondition = workflowStep.getSwitchCondition();
+                validateExpression(switchCondition);
+                break;
+            case DO_WHILE:
+                String stopCondition = workflowStep.getStopCondition();
+                validateExpression(stopCondition);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void validateExpression(String expression) {
+        String[] subStrings = StringUtils.substringsBetween(expression, "[", "]");
+        for(String s : subStrings) {
+            expression = expression.replace(s, "0");
+        }
+        expression = expression.replace("[", "").replace("]", "");
+        Expression exp = new Expression(expression);
+        try {
+            exp.evaluate();
+        } catch (Exception e) {
+            throw new PayloadNotValidException("Invalid expression in Payload: " + expression);
+        }
+    }
+
 
 
     private void checkWorkflowExists(WorkflowStep workflowStep) {
