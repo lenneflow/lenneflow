@@ -1,6 +1,6 @@
 package de.lenneflow.workflowservice.dto;
 
-import de.lenneflow.workflowservice.enums.WorkFlowStepType;
+import de.lenneflow.workflowservice.enums.ControlFlow;
 import de.lenneflow.workflowservice.model.WorkflowStep;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.AllArgsConstructor;
@@ -30,7 +30,7 @@ public class SwitchWorkflowStep {
 
     private Integer retryCount = 0;
 
-    private WorkFlowStepType workFlowStepType = WorkFlowStepType.SWITCH;
+    private ControlFlow controlFlow = ControlFlow.SWITCH;
 
     private int executionOrder;
 

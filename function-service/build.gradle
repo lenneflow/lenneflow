@@ -26,6 +26,7 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:latest.release'
     implementation 'de.codecentric:spring-boot-admin-starter-client:latest.release'
     implementation 'org.springframework.boot:spring-boot-starter-amqp:latest.release'
+    implementation 'org.modelmapper:modelmapper:3.2.1'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:latest.release'
     compileOnly 'org.projectlombok:lombok:latest.release'
     annotationProcessor 'org.projectlombok:lombok:latest.release'

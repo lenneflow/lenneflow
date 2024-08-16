@@ -1,6 +1,6 @@
 package de.lenneflow.workflowservice.dto;
 
-import de.lenneflow.workflowservice.enums.WorkFlowStepType;
+import de.lenneflow.workflowservice.enums.ControlFlow;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,7 +25,7 @@ public class WhileWorkflowStep {
 
     private String description;
 
-    private WorkFlowStepType workFlowStepType = WorkFlowStepType.DO_WHILE;
+    private ControlFlow controlFlow = ControlFlow.DO_WHILE;
 
     private int executionOrder;
 

@@ -1,12 +1,17 @@
 package de.lenneflow.functionservice.controller;
 
 
+import de.lenneflow.functionservice.dto.FunctionDTO;
+import de.lenneflow.functionservice.exception.ResourceNotFoundException;
 import de.lenneflow.functionservice.model.Function;
 import de.lenneflow.functionservice.repository.FunctionRepository;
+import de.lenneflow.functionservice.util.Validator;
 import io.swagger.v3.oas.annotations.Hidden;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,9 +21,13 @@ public class FunctionController {
 
     final
     FunctionRepository functionRepository;
+    final Validator validator;
+    final ModelMapper modelMapper;
 
-    public FunctionController(FunctionRepository functionRepository) {
+    public FunctionController(FunctionRepository functionRepository, Validator validator) {
         this.functionRepository = functionRepository;
+        this.validator = validator;
+        modelMapper = new ModelMapper();
     }
 
     @Hidden
@@ -34,7 +43,7 @@ public class FunctionController {
 
     @GetMapping
     public Function getWorkerFunctionByName(@RequestParam(value = "name") String name) {
-        return functionRepository.findByFunctionName(name);
+        return functionRepository.findByName(name);
     }
 
     @GetMapping
@@ -44,13 +53,25 @@ public class FunctionController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Function addWorkerFunction(@RequestBody Function function) {
+    public FunctionDTO addWorkerFunction(@RequestBody FunctionDTO functionDTO) {
+        Function function = modelMapper.map(functionDTO, Function.class);
         function.setUid(UUID.randomUUID().toString());
-        return functionRepository.save(function);
+        validator.validateFunction(function);
+        function.setCreationTime(LocalDateTime.now());
+        function.setUpdateTime(LocalDateTime.now());
+        functionRepository.save(function);
+        return modelMapper.map(function, FunctionDTO.class);
     }
 
-    @PatchMapping
-    public void updateWorkerFunction(@RequestBody Function function) {
+    @PatchMapping("/{id}")
+    public void updateWorkerFunction(@RequestBody FunctionDTO functionDTO, @PathVariable String id) {
+        Function mapped = modelMapper.map(functionDTO, Function.class);
+        Function function = functionRepository.findByUid(id);
+        modelMapper.map(mapped, function);
+        if(function == null) {
+            throw new ResourceNotFoundException("Function not found");
+        }
+        function.setUpdateTime(LocalDateTime.now());
         functionRepository.save(function);
     }
 

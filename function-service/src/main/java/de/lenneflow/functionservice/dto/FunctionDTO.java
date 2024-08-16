@@ -1,4 +1,4 @@
-package de.lenneflow.functionservice.model;
+package de.lenneflow.functionservice.dto;
 
 
 import lombok.AllArgsConstructor;
@@ -9,17 +9,15 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Document
-public class Function {
+public class FunctionDTO {
 
     @Id
-    private String uid;
+    private String Uid;
 
     @Indexed(unique = true)
     private String name;
@@ -31,10 +29,6 @@ public class Function {
     private String packageRepository;
 
     private String imageName;
-
-    private LocalDateTime creationTime;
-
-    private LocalDateTime updateTime;
 
     private String inputSchema;
 

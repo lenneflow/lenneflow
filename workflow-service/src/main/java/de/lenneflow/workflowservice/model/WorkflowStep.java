@@ -1,6 +1,6 @@
 package de.lenneflow.workflowservice.model;
 
-import de.lenneflow.workflowservice.enums.WorkFlowStepType;
+import de.lenneflow.workflowservice.enums.ControlFlow;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,13 +24,15 @@ public class WorkflowStep {
     @Id
     private String uid;
 
-    private String stepName;
+    private String name;
 
     private String workflowUid;
 
+    private String workflowName;
+
     private String description;
 
-    private WorkFlowStepType workFlowStepType;
+    private ControlFlow controlFlow;
 
     private int executionOrder;
 

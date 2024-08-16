@@ -38,12 +38,12 @@ public class WorkflowStepController {
 
     @GetMapping
     public WorkflowStep getStepByName(@RequestParam String name, @RequestParam(name = "workflow-id") String workflowId) {
-        return workflowStepRepository.findByStepNameAndWorkflowUid(name, workflowId);
+        return workflowStepRepository.findByNameAndWorkflowUid(name, workflowId);
     }
 
     @GetMapping
     public List<WorkflowStep> getWorkflowStepsByWorkflowID(@RequestParam(name = "workflow-id") String workflowId) {
-        return workflowStepRepository.findByWorkflowId(workflowId);
+        return workflowStepRepository.findByWorkflowUid(workflowId);
     }
 
     @GetMapping

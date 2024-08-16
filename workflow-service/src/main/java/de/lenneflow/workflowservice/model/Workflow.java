@@ -36,8 +36,6 @@ public class Workflow {
 
     private boolean statusListenerEnabled = false;
 
-    private String ownerEmail;
-
     private boolean restartable = true;
 
     private long timeOutInSeconds = Long.MAX_VALUE;

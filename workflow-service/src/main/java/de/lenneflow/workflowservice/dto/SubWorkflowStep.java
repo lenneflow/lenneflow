@@ -1,6 +1,6 @@
 package de.lenneflow.workflowservice.dto;
 
-import de.lenneflow.workflowservice.enums.WorkFlowStepType;
+import de.lenneflow.workflowservice.enums.ControlFlow;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,7 +25,7 @@ public class SubWorkflowStep {
 
     private String description;
 
-    private WorkFlowStepType workFlowStepType = WorkFlowStepType.SUB_WORKFLOW;
+    private ControlFlow controlFlow = ControlFlow.SUB_WORKFLOW;
 
     private String subWorkflowId;
 }
