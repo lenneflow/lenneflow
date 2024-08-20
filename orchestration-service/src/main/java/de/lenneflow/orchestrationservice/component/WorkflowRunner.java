@@ -119,7 +119,6 @@ public class WorkflowRunner {
                 instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.COMPLETED_WITH_ERRORS);
                 break;
         }
-
         //TODO delete workflow and step instances
     }
 

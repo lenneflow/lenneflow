@@ -28,14 +28,16 @@ public class InstanceController {
     final WorkflowInstanceRepository workflowInstanceRepository;
     final WorkflowStepInstanceRepository workflowStepInstanceRepository;
     final QueueController queueController;
+    final ExpressionEvaluator expressionEvaluator;
 
-    public InstanceController(FunctionServiceClient functionServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowExecutionRepository workflowExecutionRepository, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController) {
+    public InstanceController(FunctionServiceClient functionServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowExecutionRepository workflowExecutionRepository, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController, ExpressionEvaluator expressionEvaluator) {
         this.functionServiceClient = functionServiceClient;
         this.workflowServiceClient = workflowServiceClient;
         this.workflowExecutionRepository = workflowExecutionRepository;
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.workflowStepInstanceRepository = workflowStepInstanceRepository;
         this.queueController = queueController;
+        this.expressionEvaluator = expressionEvaluator;
     }
 
     /**
@@ -152,12 +154,12 @@ public class InstanceController {
             case SIMPLE, SUB_WORKFLOW:
                 return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
             case DO_WHILE:
-                if (ExpressionEvaluator.evaluateStopCondition(stepInstance.getStopCondition()))
+                if (expressionEvaluator.evaluateBooleanExpression(stepInstance, stepInstance.getStopCondition()))
                     return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
                 else
                     return stepInstance;
             case SWITCH:
-                String switchCondition = ExpressionEvaluator.evaluateSwitchCondition(stepInstance.getSwitchCondition()).toString();
+                String switchCondition = expressionEvaluator.evaluateExpression(stepInstance, stepInstance.getSwitchCondition()).toString();
                 WorkflowStepInstance foundStepInstance = stepInstance.getDecisionCases().get(switchCondition);
                 if (foundStepInstance == null) {
                     WorkflowStepInstance defaultStepInstance = stepInstance.getDecisionCases().get("Default");
