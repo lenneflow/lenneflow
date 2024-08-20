@@ -159,7 +159,7 @@ public class InstanceController {
                 else
                     return stepInstance;
             case SWITCH:
-                String switchCondition = expressionEvaluator.evaluateExpression(stepInstance, stepInstance.getSwitchCondition()).toString();
+                String switchCondition = expressionEvaluator.evaluateStringExpression(stepInstance, stepInstance.getSwitchCondition());
                 WorkflowStepInstance foundStepInstance = stepInstance.getDecisionCases().get(switchCondition);
                 if (foundStepInstance == null) {
                     WorkflowStepInstance defaultStepInstance = stepInstance.getDecisionCases().get("Default");

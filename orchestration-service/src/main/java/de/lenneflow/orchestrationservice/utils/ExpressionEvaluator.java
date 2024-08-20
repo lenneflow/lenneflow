@@ -25,7 +25,19 @@ public class ExpressionEvaluator {
         return Boolean.parseBoolean(result.toString());
     }
 
-    public Object evaluateExpression(WorkflowStepInstance stepInstance, String expression) {
+    public String evaluateStringExpression(WorkflowStepInstance stepInstance, String expression) {
+        Object result = evaluateExpression(stepInstance, expression);
+        return result.toString();
+
+    }
+
+    public double evaluateDoubleExpression(WorkflowStepInstance stepInstance, String expression) {
+        Object result = evaluateExpression(stepInstance, expression);
+        return Double.parseDouble(result.toString());
+
+    }
+
+    private Object evaluateExpression(WorkflowStepInstance stepInstance, String expression) {
         String[] subStrings = StringUtils.substringsBetween(expression, "[", "]");
         for(String s : subStrings) {
             expression = expression.replace(s, getDataFromSubstring(stepInstance, s));
