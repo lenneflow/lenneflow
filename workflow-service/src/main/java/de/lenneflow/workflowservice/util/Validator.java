@@ -51,7 +51,7 @@ public class Validator {
     }
 
     private void checkExpressions(WorkflowStep workflowStep) {
-        switch (workflowStep.getControlFlow()){
+        switch (workflowStep.getControlStructure()){
             case SWITCH:
                 String switchCondition = workflowStep.getSwitchCondition();
                 validateExpression(switchCondition);
@@ -91,7 +91,7 @@ public class Validator {
 
         checkGeneralMandatoryFields(workflowStep);
 
-        switch (workflowStep.getControlFlow()){
+        switch (workflowStep.getControlStructure()){
             case SIMPLE:
                 if(workflowStep.getFunctionId() == null || workflowStep.getFunctionId().isEmpty()){
                     logger.info("Simple Workflow step {} has no function ID", workflowStep.getName());

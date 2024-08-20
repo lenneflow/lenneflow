@@ -1,5 +1,6 @@
 package de.lenneflow.workerservice.model;
 
+import de.lenneflow.workerservice.enums.WorkerStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,18 +19,24 @@ import java.time.LocalDateTime;
 public class Worker {
 
     @Id
-    private String uuid;
+    private String uid;
 
     @Indexed(unique = true)
     private String name;
 
     private String description;
 
-    private WorkerCluster cluster;
-
     private String ipAddress;
 
+    private int apiPort;
+
     private String hostName;
+
+    private WorkerStatus status;
+
+    private String serviceUser;
+
+    private String bearerToken;
 
     private LocalDateTime created;
 

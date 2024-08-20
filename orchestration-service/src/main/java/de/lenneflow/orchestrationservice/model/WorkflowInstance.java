@@ -1,15 +1,18 @@
 package de.lenneflow.orchestrationservice.model;
 
 
-import de.lenneflow.orchestrationservice.enums.WorkflowStatus;
+import de.lenneflow.orchestrationservice.enums.RunStatus;
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
+import de.lenneflow.orchestrationservice.feignmodels.WorkflowStep;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Getter
@@ -22,40 +25,41 @@ public class WorkflowInstance {
     @Id
     private String uid;
 
-    private String workflowName;
+    private String workflowUid;
 
-    private boolean errorsPresent;
+    private String name;
 
-    private Map<String, String> errorMessages = new HashMap<>();
+    private RunStatus runStatus;
 
     private String description;
 
-    private WorkflowStatus status;
-
-    private int version = 1;
-
-    private Map<String, Object> inputParameters = new HashMap<>();
-
-    private List<String> stepInstanceIds = new LinkedList<>();
+    @DocumentReference
+    private List<WorkflowStepInstance> stepInstances = new LinkedList<>();
 
     private boolean statusListenerEnabled = false;
 
-    private String ownerEmail;
-
     private boolean restartable = true;
 
-    private long timeOutInSeconds;
+    private long timeOutInSeconds = Long.MAX_VALUE;
 
-    public WorkflowInstance(Workflow workflow, Map<String, Object> inputParameters) {
+    private LocalDateTime created;
+
+    private LocalDateTime updated;
+
+    private LocalDateTime startTime;
+
+    private LocalDateTime endTime;
+
+    public WorkflowInstance(Workflow workflow) {
         this.uid = UUID.randomUUID().toString();
+        this.name = workflow.getName();
         this.description = workflow.getDescription();
-        this.workflowName = workflow.getName();
-        this.inputParameters = inputParameters;
-        this.status = workflow.getStatus();
-        this.version = workflow.getVersion();
-        this.ownerEmail = workflow.getOwnerEmail();
+        this.workflowUid = workflow.getUid();
+        this.runStatus = RunStatus.NEW;
         this.restartable = workflow.isRestartable();
         this.timeOutInSeconds = workflow.getTimeOutInSeconds();
+        this.created = LocalDateTime.now();
+        this.updated = LocalDateTime.now();
 
     }
 

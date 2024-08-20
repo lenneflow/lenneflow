@@ -1,12 +1,10 @@
 package de.lenneflow.orchestrationservice.enums;
 
-public enum WorkFlowStepType {
+public enum ControlStructure {
     SIMPLE,
     SWITCH,
     DO_WHILE,
     SUB_WORKFLOW,
-    START,
     EVENT,
-    HUMAN,
-    TERMINATE
+    HUMAN
 }

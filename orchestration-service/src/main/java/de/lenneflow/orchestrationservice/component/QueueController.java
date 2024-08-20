@@ -1,6 +1,5 @@
 package de.lenneflow.orchestrationservice.component;
 
-import de.lenneflow.orchestrationservice.OrchestrationServiceApplication;
 import de.lenneflow.orchestrationservice.configuration.AppConfiguration;
 import de.lenneflow.orchestrationservice.feignmodels.Function;
 import de.lenneflow.orchestrationservice.utils.Util;
@@ -9,10 +8,8 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
 @Component
 @EnableRabbit

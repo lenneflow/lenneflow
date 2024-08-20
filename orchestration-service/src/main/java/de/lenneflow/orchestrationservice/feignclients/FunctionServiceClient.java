@@ -11,12 +11,12 @@ import java.util.List;
 @FeignClient(name = "function-service")
 public interface FunctionServiceClient {
 
-    @GetMapping("/api/function/get/name/{name}")
-    public Function getFunctionByName(@PathVariable String name);
+    @GetMapping("/api/functions/{id}")
+    public Function getFunctionById(@PathVariable String id);
 
-    @GetMapping("/api/function")
+    @GetMapping("/api/functions/check")
     public String getFunctionHome();
 
-    @GetMapping("/api/function/get-types")
-    public List<String> getAllFunctionTypes();
+    @GetMapping("/api/functions")
+    public List<Function> getAllFunctions();
 }

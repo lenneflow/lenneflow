@@ -1,6 +1,6 @@
 package de.lenneflow.orchestrationservice.component;
 
-import de.lenneflow.orchestrationservice.enums.FunctionStatus;
+import de.lenneflow.orchestrationservice.enums.RunStatus;
 import de.lenneflow.orchestrationservice.feignmodels.Function;
 import de.lenneflow.orchestrationservice.utils.Util;
 import org.springframework.scheduling.annotation.Async;
@@ -28,9 +28,9 @@ public class FunctionService {
         Map<String, Object> outputData = restTemplate.postForObject(endpoint, inputData, Map.class);
         if (outputData != null) {
             function.setOutputData(outputData);
-            function.setFunctionStatus(FunctionStatus.COMPLETED);
+            function.setRunStatus(RunStatus.COMPLETED);
         } else {
-            function.setFunctionStatus(FunctionStatus.FAILED);
+            function.setRunStatus(RunStatus.FAILED);
         }
         queueController.addFunctionToResultQueue(function);
         return CompletableFuture.completedFuture(null);

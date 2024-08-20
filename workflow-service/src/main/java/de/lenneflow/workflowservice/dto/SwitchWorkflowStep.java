@@ -1,6 +1,6 @@
 package de.lenneflow.workflowservice.dto;
 
-import de.lenneflow.workflowservice.enums.ControlFlow;
+import de.lenneflow.workflowservice.enums.ControlStructure;
 import de.lenneflow.workflowservice.model.WorkflowStep;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.AllArgsConstructor;
@@ -18,7 +18,6 @@ import java.util.Map;
 @NoArgsConstructor
 public class SwitchWorkflowStep {
 
-
     @Hidden
     private String uid;
 
@@ -30,7 +29,7 @@ public class SwitchWorkflowStep {
 
     private Integer retryCount = 0;
 
-    private ControlFlow controlFlow = ControlFlow.SWITCH;
+    private ControlStructure controlStructure = ControlStructure.SWITCH;
 
     private int executionOrder;
 
@@ -45,6 +44,5 @@ public class SwitchWorkflowStep {
 
     @Hidden
     private LocalDateTime updateTime;
-
 
 }

@@ -1,6 +1,6 @@
 package de.lenneflow.workflowservice.model;
 
-import de.lenneflow.workflowservice.enums.ControlFlow;
+import de.lenneflow.workflowservice.enums.ControlStructure;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,7 +32,7 @@ public class WorkflowStep {
 
     private String description;
 
-    private ControlFlow controlFlow;
+    private ControlStructure controlStructure;
 
     private int executionOrder;
 

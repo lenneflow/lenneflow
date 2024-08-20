@@ -1,6 +1,6 @@
 package de.lenneflow.orchestrationservice.model;
 
-import de.lenneflow.orchestrationservice.enums.WorkflowStatus;
+import de.lenneflow.orchestrationservice.enums.RunStatus;
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,7 +30,7 @@ public class WorkflowExecution {
 
     private String workflowDescription;
 
-    private WorkflowStatus workflowStatus;
+    private RunStatus runStatus;
 
     @DocumentReference
     private List<WorkflowStepInstance> runSteps;
@@ -39,25 +39,22 @@ public class WorkflowExecution {
 
     private int workflowVersion;
 
-    private String runStartTime;
+    private LocalDateTime startTime;
 
-    private String runEndTime;
+    private LocalDateTime endTime;
 
-    private String runErrors;
+    private String errors;
 
     private String runOutput;
 
-    public WorkflowExecution(Workflow workflow, WorkflowInstance workflowInstance, List<WorkflowStepInstance> runSteps){
+    public WorkflowExecution(Workflow workflow, WorkflowInstance workflowInstance){
         this.runId = UUID.randomUUID().toString();
         this.workflowInstanceId = workflowInstance.getUid();
         this.workflowName = workflow.getName();
         this.workflowDescription = workflow.getDescription();
-        this.workflowStatus = workflow.getStatus();
-        this.runSteps = runSteps;
-        this.workflowVersion = workflow.getVersion();
-        this.runStartTime = LocalDateTime.now().toString();
-
-
+        this.runStatus = workflowInstance.getRunStatus();
+        this.runSteps = workflowInstance.getStepInstances();
+        this.startTime = workflowInstance.getStartTime();
     }
 
 }

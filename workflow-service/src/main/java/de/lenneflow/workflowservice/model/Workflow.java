@@ -1,6 +1,5 @@
 package de.lenneflow.workflowservice.model;
 
-import de.lenneflow.workflowservice.enums.WorkflowStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,8 +27,6 @@ public class Workflow {
     private String name;
 
     private String description;
-
-    private WorkflowStatus status;
 
     @DocumentReference
     private List<WorkflowStep> steps = new LinkedList<>();

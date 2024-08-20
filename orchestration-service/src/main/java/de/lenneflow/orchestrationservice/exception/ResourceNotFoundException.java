@@ -1,4 +1,4 @@
-package de.lenneflow.workerservice.exception;
+package de.lenneflow.orchestrationservice.exception;
 
 import java.io.Serial;
 

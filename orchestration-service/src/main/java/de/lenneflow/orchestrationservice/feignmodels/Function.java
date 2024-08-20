@@ -1,12 +1,13 @@
 package de.lenneflow.orchestrationservice.feignmodels;
 
-import de.lenneflow.orchestrationservice.enums.FunctionStatus;
+import de.lenneflow.orchestrationservice.enums.RunStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,25 +23,23 @@ public class Function implements Serializable {
 
     private String workflowInstanceId;
 
-    private String functionName;
+    private RunStatus runStatus;
 
-    private String functionDescription;
+    private String name;
 
-    private FunctionStatus  functionStatus;
+    private String description;
 
-    private String functionType;
+    private String type;
 
-    private String repositoryUrl;
+    private String packageRepository;
 
     private String imageName;
+
+    private String inputSchema;
 
     private String endPointRoot;
 
     private String endPointPath;
-
-    private String errorMessage;
-
-    private int functionPriority;
 
     private long creationTime;
 

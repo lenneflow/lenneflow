@@ -1,8 +1,8 @@
 package de.lenneflow.orchestrationservice.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.lenneflow.orchestrationservice.enums.FunctionStatus;
-import de.lenneflow.orchestrationservice.enums.WorkFlowStepType;
+import de.lenneflow.orchestrationservice.enums.ControlStructure;
+import de.lenneflow.orchestrationservice.enums.RunStatus;
+import de.lenneflow.orchestrationservice.enums.RunOrderLabel;
 import de.lenneflow.orchestrationservice.feignmodels.WorkflowStep;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,7 +12,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -27,29 +26,43 @@ public class WorkflowStepInstance {
     @Id
     private String uid;
 
-    private String stepName;
+    private String name;
 
-    private String workflowInstanceId;
+    private String workflowUid;
+
+    private String workflowInstanceUid;
+
+    private String workflowName;
 
     private String description;
 
-    private boolean retriable;
+    private ControlStructure controlStructure;
+
+    private int executionOrder;
+
+    private RunStatus runStatus;
+
+    private String functionId;
+
+    private String subWorkflowId;
+
+    private Map<String, WorkflowStepInstance> decisionCases = new LinkedHashMap<>();
+
+    private String switchCondition;
+
+    private String stopCondition;
 
     private String nextStepId;
 
     private String previousStepId;
 
-    private WorkFlowStepType workFlowStepType;
-
-    private String functionName;
-
-    private FunctionStatus functionStatus;
-
-    private Map<String, String> decisionCases = new LinkedHashMap<>();
+    private RunOrderLabel runOrderLabel;
 
     private Integer retryCount;
 
-    private Integer loopCount;
+    private LocalDateTime created;
+
+    private LocalDateTime updated;
 
     private String errorMessage;
 
@@ -61,24 +74,21 @@ public class WorkflowStepInstance {
 
     private LocalDateTime updateTime;
 
-    @JsonIgnore
-    private Map<String, Object> inputData = new HashMap<>();
+    private Map<String, Object> inputData = new LinkedHashMap<>();
 
-    @JsonIgnore
-    private Map<String, Object> outputData = new HashMap<>();
+    private Map<String, Object> outputData = new LinkedHashMap<>();
 
-    public WorkflowStepInstance(WorkflowStep step, String workflowInstanceId) {
+
+    public WorkflowStepInstance(WorkflowStep step, String workflowInstanceUid) {
         this.uid = UUID.randomUUID().toString();
         this.description = step.getDescription();
-        this.functionName = step.getFunctionName();
+        this.name = step.getName();
         this.inputData = step.getInputData();
-        this.functionStatus = step.getFunctionStatus();
-        this.retriable = step.isRetriable();
-        this.workflowInstanceId = workflowInstanceId;
-        this.stepName = step.getStepName();
-        this.workFlowStepType = step.getWorkFlowStepType();
+        this.runStatus = RunStatus.NEW;
+        this.workflowInstanceUid = workflowInstanceUid;
+        this.controlStructure = step.getControlStructure();
         this.retryCount = step.getRetryCount();
-        this.errorMessage = step.getErrorMessage();
+        this.errorMessage = "";
 
     }
 }

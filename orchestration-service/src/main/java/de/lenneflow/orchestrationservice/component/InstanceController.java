@@ -1,8 +1,8 @@
 package de.lenneflow.orchestrationservice.component;
 
-import de.lenneflow.orchestrationservice.enums.FunctionStatus;
-import de.lenneflow.orchestrationservice.enums.WorkFlowStepType;
-import de.lenneflow.orchestrationservice.enums.WorkflowStatus;
+import de.lenneflow.orchestrationservice.enums.RunOrderLabel;
+import de.lenneflow.orchestrationservice.enums.RunStatus;
+import de.lenneflow.orchestrationservice.exception.InternalServiceException;
 import de.lenneflow.orchestrationservice.feignclients.FunctionServiceClient;
 import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.orchestrationservice.feignmodels.Function;
@@ -14,12 +14,10 @@ import de.lenneflow.orchestrationservice.model.WorkflowStepInstance;
 import de.lenneflow.orchestrationservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
+import de.lenneflow.orchestrationservice.utils.ExpressionEvaluator;
 import org.springframework.stereotype.Controller;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Controller
 public class InstanceController {
@@ -44,76 +42,102 @@ public class InstanceController {
      * From a workflow ID, this method will create a new workflow instance to run.
      * It will also create all the workflow step instances.
      *
-     * @param workflowName      workflow ID.
-     * @param inputParameters the specific input parameters.
+     * @param workflowId      workflow ID.
+     * @param inputData the specific input parameters.
      * @return the created workflow instance.
      */
-    public WorkflowInstance newWorkflowInstance(String workflowName, Map<String, Object> inputParameters) {
-        Workflow workflow = workflowServiceClient.getWorkflowByName(workflowName);
-        WorkflowInstance workflowInstance = new WorkflowInstance(workflow, inputParameters);
+    public WorkflowInstance createWorkflowInstance(String workflowId, Map<String, Object> inputData) {
+        Workflow workflow = workflowServiceClient.getWorkflowById(workflowId);
+        WorkflowInstance workflowInstance = new WorkflowInstance(workflow);
         workflowInstanceRepository.save(workflowInstance);
-        workflowInstance.setStatus(WorkflowStatus.NOT_RUN);
-        List<WorkflowStep> steps = workflowServiceClient.getStepListByWorkflowName(workflowName);
-        Map<String, String> stepStepInstanceMapping = new HashMap<>();
-
-        for (WorkflowStep step : steps) {
-            WorkflowStepInstance stepInstance = new WorkflowStepInstance(step, workflowInstance.getUid());
-            stepStepInstanceMapping.put(step.getStepName(), stepInstance.getUid());
-            workflowStepInstanceRepository.save(stepInstance);
-        }
-        List<String> stepInstanceIds = updateWorkflowStepInstances(steps, stepStepInstanceMapping);
-        workflowInstance.setStepInstanceIds(stepInstanceIds);
+        workflowInstance.setRunStatus(RunStatus.NEW);
+        List<WorkflowStepInstance> stepInstances = createWorkflowStepInstances(workflowInstance, inputData);
+        workflowInstance.setStepInstances(stepInstances);
         return workflowInstanceRepository.save(workflowInstance);
+    }
+
+    private List<WorkflowStepInstance> createWorkflowStepInstances(WorkflowInstance workflowInstance, Map<String, Object> inputData) {
+        List<WorkflowStepInstance> workflowStepInstances = new ArrayList<>();
+        List<WorkflowStepInstance> result = new ArrayList<>();
+        List<WorkflowStep> steps = workflowServiceClient.getStepListByWorkflowId(workflowInstance.getWorkflowUid());
+        List<WorkflowStep> sorted = steps.stream().sorted(Comparator.comparing(WorkflowStep::getExecutionOrder)).toList();
+        for (WorkflowStep step : sorted) {
+            WorkflowStepInstance stepInstance = new WorkflowStepInstance(step, workflowInstance.getUid());
+            workflowStepInstances.add(stepInstance);
+        }
+        for (int i = 0; i < sorted.size(); i++) {
+            WorkflowStepInstance stepInstance = workflowStepInstances.get(i);
+            if (i == 0) {
+                stepInstance.setRunOrderLabel(RunOrderLabel.FIRST);
+                stepInstance.setNextStepId(workflowStepInstances.get(i + 1).getUid());
+                if(inputData != null && !inputData.isEmpty()){
+                    stepInstance.setInputData(inputData);
+                }
+                result.add(workflowStepInstanceRepository.save(stepInstance));
+            } else if (i == workflowStepInstances.size() - 1) {
+                stepInstance.setRunOrderLabel(RunOrderLabel.LAST);
+                stepInstance.setPreviousStepId(workflowStepInstances.get(i - 1).getUid());
+                result.add(workflowStepInstanceRepository.save(stepInstance));
+            } else {
+                stepInstance.setRunOrderLabel(RunOrderLabel.INTERMEDIATE);
+                stepInstance.setNextStepId(workflowStepInstances.get(i + 1).getUid());
+                stepInstance.setPreviousStepId(workflowStepInstances.get(i - 1).getUid());
+                result.add(workflowStepInstanceRepository.save(stepInstance));
+            }
+        }
+        return result;
     }
 
 
     /**
      * Updates the workflow step instance status and output data.
+     *
      * @param workflowStepInstance the workflow step instance to update.
-     * @param function the executed function belonging to the workflow instance.
+     * @param function             the executed function belonging to the workflow instance.
      */
     public void updateWorkflowStepInstance(WorkflowStepInstance workflowStepInstance, Function function) {
-
-        workflowStepInstance.setFunctionStatus(function.getFunctionStatus());
+        workflowStepInstance.setRunStatus(function.getRunStatus());
         workflowStepInstanceRepository.save(workflowStepInstance);
-
         Map<String, Object> output = function.getOutputData();
         workflowStepInstance.setOutputData(output);
         workflowStepInstanceRepository.save(workflowStepInstance);
     }
 
-    public void updateWorkflowInstanceAndExecutionStatus(WorkflowInstance workflowInstance, WorkflowExecution execution,  WorkflowStatus workflowStatus) {
-        updateWorkflowInstanceStatus(workflowInstance, workflowStatus);
-        updateWorkflowExecutionStatus(execution, workflowStatus);
+    public void updateWorkflowInstanceAndExecutionStatus(WorkflowInstance workflowInstance, WorkflowExecution execution, RunStatus runStatus) {
+        updateWorkflowInstanceStatus(workflowInstance, runStatus);
+        updateWorkflowExecutionStatus(execution, runStatus);
     }
 
     /**
      * Updated the workflow instance status
+     *
      * @param workflowInstance the workflow instance to update.
-     * @param workflowStatus The status to set.
+     * @param runStatus the run status
      */
-    public void updateWorkflowInstanceStatus(WorkflowInstance workflowInstance, WorkflowStatus workflowStatus) {
-        workflowInstance.setStatus(workflowStatus);
+    public void updateWorkflowInstanceStatus(WorkflowInstance workflowInstance, RunStatus runStatus) {
+        workflowInstance.setRunStatus(runStatus);
         workflowInstanceRepository.save(workflowInstance);
     }
 
     /**
      * Updated the workflow execution status
+     *
      * @param execution the workflow execution to update.
-     * @param workflowStatus The status to set.
+     * @param runStatus The status to set.
      */
-    public void updateWorkflowExecutionStatus(WorkflowExecution execution, WorkflowStatus workflowStatus) {
-        execution.setWorkflowStatus(workflowStatus);
+    public void updateWorkflowExecutionStatus(WorkflowExecution execution, RunStatus runStatus) {
+        execution.setRunStatus(runStatus);
         workflowExecutionRepository.save(execution);
     }
 
     /**
      * Updated the workflow step instance status
+     *
      * @param stepInstance the workflow step instance to update.
-     * @param functionStatus The status to set.
+     * @param runStatus    The status to set.
      */
-    public void updateWorkflowStepInstanceStatus(WorkflowStepInstance stepInstance, FunctionStatus functionStatus) {
-        stepInstance.setFunctionStatus(functionStatus);
+    public void updateWorkflowStepInstanceStatus(WorkflowStepInstance stepInstance, RunStatus runStatus) {
+        stepInstance.setRunStatus(runStatus);
         workflowStepInstanceRepository.save(stepInstance);
     }
 
@@ -121,23 +145,31 @@ public class InstanceController {
      * Finds the next workflow step instance to run.
      *
      * @param stepInstance the current step instance.
-     * @param function         the current executed function.
      * @return the next workflow step instance.
      */
-    public WorkflowStepInstance getNextWorkflowStepInstance(WorkflowStepInstance stepInstance, Function function) {
-        switch (stepInstance.getWorkFlowStepType()) {
-            case SIMPLE, START:
+    public WorkflowStepInstance getNextWorkflowStepInstance(WorkflowStepInstance stepInstance) {
+        switch (stepInstance.getControlStructure()) {
+            case SIMPLE, SUB_WORKFLOW:
                 return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
             case DO_WHILE:
-                if (function.getOutputData().get("DoWhileStop").toString().equals("true"))
+                if (ExpressionEvaluator.evaluateStopCondition(stepInstance.getStopCondition()))
                     return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
                 else
                     return stepInstance;
             case SWITCH:
-                String stepInstanceId = stepInstance.getDecisionCases().get("function.getSwitchCase()");
-                return workflowStepInstanceRepository.findByUid(stepInstanceId);
+                String switchCondition = ExpressionEvaluator.evaluateSwitchCondition(stepInstance.getSwitchCondition()).toString();
+                WorkflowStepInstance foundStepInstance = stepInstance.getDecisionCases().get(switchCondition);
+                if (foundStepInstance == null) {
+                    WorkflowStepInstance defaultStepInstance = stepInstance.getDecisionCases().get("Default");
+                    if (defaultStepInstance == null) {
+                        throw new InternalServiceException("The next workflow step to execute could not be found after the evaluation of the switch condition " + stepInstance.getSwitchCondition());
+                    } else {
+                        return defaultStepInstance;
+                    }
+                }
+                return foundStepInstance;
             default:
-                return null;
+                throw new InternalServiceException("The next workflow step to execute could not be found");
         }
 
     }
@@ -150,43 +182,11 @@ public class InstanceController {
      */
     public WorkflowStepInstance getStartStep(WorkflowInstance workflowInstance) {
         for (WorkflowStepInstance step : workflowStepInstanceRepository.findByWorkflowInstanceId(workflowInstance.getUid())) {
-            if (step.getWorkFlowStepType() == WorkFlowStepType.START) return step;
+            if (step.getRunOrderLabel() == RunOrderLabel.FIRST) return step;
         }
-        return null;
+        throw new InternalServiceException("The first workflow step to execute could not be found");
     }
 
-
-    /**
-     * This method sets previous and next step parameters to the steps in the given list.
-     * @param steps The workflow step list to update.
-     * @param stepStepInstanceMapping a map of workflow instances
-     * @return a list of workflow instance IDs.
-     */
-    private List<String> updateWorkflowStepInstances(List<WorkflowStep> steps, Map<String, String> stepStepInstanceMapping) {
-        List<String> stepInstanceIds = new ArrayList<>();
-        for (WorkflowStep step : steps) {
-            WorkflowStepInstance stepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getStepName()));
-            if (step.getNextStepName() != null && !step.getNextStepName().isEmpty()) {
-                WorkflowStepInstance nextStepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getNextStepName()));
-                stepInstance.setNextStepId(nextStepInstance.getUid());
-            }
-            if (step.getPreviousStepName() != null && !step.getPreviousStepName().isEmpty()) {
-                WorkflowStepInstance previousStepInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(step.getPreviousStepName()));
-                stepInstance.setPreviousStepId(previousStepInstance.getUid());
-            }
-            Map<String, String> decisionCases = step.getDecisionCases();
-            if (decisionCases != null && !decisionCases.isEmpty()) {
-                Map<String, String> decisionCaseInstances = new HashMap<>();
-                for (Map.Entry<String, String> entry : decisionCases.entrySet()) {
-                    String decisionCaseId = entry.getValue();
-                    WorkflowStepInstance decisionCaseInstance = workflowStepInstanceRepository.findByUid(stepStepInstanceMapping.get(decisionCaseId));
-                    decisionCaseInstances.put(entry.getKey(), decisionCaseInstance.getUid());
-                }
-                stepInstance.setDecisionCases(decisionCaseInstances);
-            }
-            workflowStepInstanceRepository.save(stepInstance);
-            stepInstanceIds.add(stepInstance.getUid());
-        }
-        return stepInstanceIds;
-    }
 }
+
+

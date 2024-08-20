@@ -12,8 +12,6 @@ public interface WorkflowRepository extends MongoRepository<Workflow, String> {
 
     Workflow findByName(String name);
 
-    List<Workflow> findByOwnerEmail(String email);
-
     List<Workflow> findByStatusListenerEnabled(boolean enabled);
 
 }

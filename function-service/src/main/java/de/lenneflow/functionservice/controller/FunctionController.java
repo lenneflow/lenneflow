@@ -78,8 +78,9 @@ public class FunctionController {
     @DeleteMapping("/{id}")
     public void deleteWorkerFunction(@PathVariable String id) {
         Function function = functionRepository.findByUid(id);
-        if (function != null) {
-            functionRepository.delete(function);
+        if (function == null) {
+           throw new ResourceNotFoundException("Function not found");
         }
+        functionRepository.delete(function);
     }
 }

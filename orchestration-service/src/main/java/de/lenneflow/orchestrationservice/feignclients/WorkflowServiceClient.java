@@ -5,6 +5,7 @@ import de.lenneflow.orchestrationservice.feignmodels.WorkflowStep;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -12,24 +13,24 @@ import java.util.List;
 @FeignClient(name = "workflow-service")
 public interface WorkflowServiceClient {
 
-    @GetMapping("/api/workflow/get/{uuid}")
-    public Workflow getWorkflow(@PathVariable("uuid") String uuid);
+    @GetMapping("/api/workflows/{id}")
+    public Workflow getWorkflowById(@PathVariable("id") String id);
 
-    @GetMapping("/api/workflow/get/name/{name}")
-    public Workflow getWorkflowByName(@PathVariable("name") String uuid);
+    @GetMapping("/api/workflows")
+    public Workflow getWorkflowByName(@RequestParam("name") String name);
 
-    @GetMapping("/api/workflow/step/get/id/{stepId}")
-    public WorkflowStep getWorkflowStepById(@PathVariable("stepId") String stepId);
+    @GetMapping("/api/workflows/steps/{id}")
+    public WorkflowStep getWorkflowStepById(@PathVariable("id") String stepId);
 
-    @GetMapping("/api/workflow/step/get/name/{stepName}")
-    public WorkflowStep getWorkflowStepByName(@PathVariable("stepName") String stepId);
+    @GetMapping("/api/workflows/steps")
+    public WorkflowStep getWorkflowStepByName(@RequestParam("name")  String stepName);
 
-    @GetMapping("/api/workflow/step/list/workflow/id/{workflowId}")
-    public List<WorkflowStep> getStepListByWorkflowId(@PathVariable("workflowId") String workflowId);
+    @GetMapping("/api/workflows/steps}")
+    public List<WorkflowStep> getStepListByWorkflowId(@RequestParam(name = "workflow-id") String workflowId);
 
-    @GetMapping("/api/workflow/step/list/workflow/name/{workflowName}")
-    public List<WorkflowStep> getStepListByWorkflowName(@PathVariable("workflowName") String workflowId);
+    @GetMapping("/api/workflows/steps")
+    public List<WorkflowStep> getStepListByWorkflowName(@RequestParam("workflow-name") String workflowName);
 
-    @GetMapping("/api/workflow")
+    @GetMapping("/api/workflows/check")
     public String getFunctionHome();
 }
