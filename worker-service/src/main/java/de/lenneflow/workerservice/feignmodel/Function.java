@@ -1,6 +1,7 @@
 package de.lenneflow.workerservice.feignmodel;
 
 
+import de.lenneflow.workerservice.enums.PackageRepository;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,7 +26,9 @@ public class Function {
 
     private String type;
 
-    private String packageRepository;
+    private PackageRepository packageRepository;
+
+    private String deploymentFileUrl;
 
     private String imageName;
 

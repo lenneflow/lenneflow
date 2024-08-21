@@ -1,6 +1,7 @@
 package de.lenneflow.functionservice.dto;
 
 
+import de.lenneflow.functionservice.enums.PackageRepository;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,7 +26,9 @@ public class FunctionDTO {
 
     private String type;
 
-    private String packageRepository;
+    private PackageRepository packageRepository;
+
+    private String deploymentFilePath;
 
     private String imageName;
 

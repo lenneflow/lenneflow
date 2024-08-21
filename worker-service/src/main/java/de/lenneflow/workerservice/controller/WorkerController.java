@@ -2,6 +2,7 @@ package de.lenneflow.workerservice.controller;
 
 import de.lenneflow.workerservice.dto.WorkerDTO;
 import de.lenneflow.workerservice.exception.ResourceNotFoundException;
+import de.lenneflow.workerservice.feignclients.FunctionServiceClient;
 import de.lenneflow.workerservice.model.Worker;
 import de.lenneflow.workerservice.repository.WorkerRepository;
 import de.lenneflow.workerservice.util.Validator;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,10 +24,12 @@ public class WorkerController {
     WorkerRepository workerRepository;
     final ModelMapper modelMapper;
     final Validator validator;
+    final FunctionServiceClient functionServiceClient;
 
-    public WorkerController(WorkerRepository workerRepository, Validator validator) {
+    public WorkerController(WorkerRepository workerRepository, Validator validator, FunctionServiceClient functionServiceClient) {
         this.workerRepository = workerRepository;
         this.validator = validator;
+        this.functionServiceClient = functionServiceClient;
         modelMapper = new ModelMapper();
     }
 
@@ -36,18 +40,18 @@ public class WorkerController {
     }
 
     @PostMapping
-    public ResponseEntity<WorkerDTO> createNewWorker(@RequestBody WorkerDTO workerDTO) {
+    public ResponseEntity<Worker> createNewWorker(@RequestBody WorkerDTO workerDTO) {
         Worker worker = modelMapper.map(workerDTO, Worker.class);
         worker.setUid(UUID.randomUUID().toString());
         worker.setCreated(LocalDateTime.now());
         worker.setUpdated(LocalDateTime.now());
         validator.validate(worker);
         Worker savedWorker = workerRepository.save(worker);
-        return new ResponseEntity<>(modelMapper.map(savedWorker, WorkerDTO.class), HttpStatus.CREATED);
+        return new ResponseEntity<>(savedWorker, HttpStatus.CREATED);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<WorkerDTO> updateWorkerNode(@RequestBody WorkerDTO workerDTO, @PathVariable String id) {
+    public ResponseEntity<Worker> updateWorker(@RequestBody WorkerDTO workerDTO, @PathVariable String id) {
         Worker worker = workerRepository.findByUid(id);
         modelMapper.map(workerDTO, worker);
         if(worker == null) {
@@ -55,20 +59,25 @@ public class WorkerController {
         }
         validator.validate(worker);
         Worker savedWorker = workerRepository.save(worker);
-        return new ResponseEntity<>(modelMapper.map(savedWorker, WorkerDTO.class), HttpStatus.OK);
+        return new ResponseEntity<>(savedWorker, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<WorkerDTO> getWorkerNode(@PathVariable String id) {
+    public ResponseEntity<Worker> getWorker(@PathVariable String id) {
         Worker foundWorker = workerRepository.findByUid(id);
         if(foundWorker == null) {
             throw new ResourceNotFoundException("Worker not found");
         }
-        return new ResponseEntity<>(modelMapper.map(foundWorker, WorkerDTO.class), HttpStatus.OK);
+        return new ResponseEntity<>(foundWorker, HttpStatus.OK);
+    }
+
+    @GetMapping("/all")
+    public List<Worker> getAllWorkers() {
+        return workerRepository.findAll();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Worker> deleteWorkerNode(@PathVariable String id) {
+    public ResponseEntity<Worker> deleteWorker(@PathVariable String id) {
         Worker foundWorker = workerRepository.findByUid(id);
         if(foundWorker == null) {
             throw new ResourceNotFoundException("Worker with id " + id + " not found");

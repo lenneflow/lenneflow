@@ -1,6 +1,7 @@
 package de.lenneflow.functionservice.model;
 
 
+import de.lenneflow.functionservice.enums.PackageRepository;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,7 +29,9 @@ public class Function {
 
     private String type;
 
-    private String packageRepository;
+    private PackageRepository packageRepository;
+
+    private String deploymentFilePath;
 
     private String imageName;
 

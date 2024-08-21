@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -28,15 +29,17 @@ public class Worker {
 
     private String ipAddress;
 
-    private int apiPort;
-
     private String hostName;
 
     private WorkerStatus status;
 
-    private String serviceUser;
+    private List<String> supportedFunctionTypes;
 
-    private String bearerToken;
+    private String kubernetesServiceUser;
+
+    private int kubernetesApiPort;
+
+    private String kubernetesBearerToken;
 
     private LocalDateTime created;
 

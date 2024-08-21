@@ -1,5 +1,6 @@
 package de.lenneflow.orchestrationservice.feignmodels;
 
+import de.lenneflow.orchestrationservice.enums.PackageRepository;
 import de.lenneflow.orchestrationservice.enums.RunStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,7 +32,9 @@ public class Function implements Serializable {
 
     private String type;
 
-    private String packageRepository;
+    private PackageRepository packageRepository;
+
+    private String deploymentFilePath;
 
     private String imageName;
 
