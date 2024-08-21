@@ -4,6 +4,7 @@ import de.lenneflow.workflowservice.dto.SimpleWorkflowStep;
 import de.lenneflow.workflowservice.dto.SubWorkflowStep;
 import de.lenneflow.workflowservice.dto.SwitchWorkflowStep;
 import de.lenneflow.workflowservice.dto.WhileWorkflowStep;
+import de.lenneflow.workflowservice.enums.ControlStructure;
 import de.lenneflow.workflowservice.model.Workflow;
 import de.lenneflow.workflowservice.model.WorkflowStep;
 import de.lenneflow.workflowservice.repository.WorkflowRepository;
@@ -41,17 +42,17 @@ public class WorkflowStepController {
         return workflowStepRepository.findByNameAndWorkflowUid(name, workflowId);
     }
 
-    @GetMapping
+    @GetMapping(params = "workflow-id")
     public List<WorkflowStep> getWorkflowStepsByWorkflowID(@RequestParam(name = "workflow-id") String workflowId) {
         return workflowStepRepository.findByWorkflowUid(workflowId);
     }
 
-    @GetMapping
+    @GetMapping(params = "workflow-name")
     public List<WorkflowStep> getAllWorkflowStepsByWorkflowName(@RequestParam(name = "workflow-name") String workflowName) {
         return workflowStepRepository.findByWorkflowName(workflowName);
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public List<WorkflowStep> getAllWorkflowSteps() {
         return workflowStepRepository.findAll();
     }
@@ -59,6 +60,8 @@ public class WorkflowStepController {
     @PostMapping("/simple")
     public SimpleWorkflowStep addSimpleWorkflowStep(@RequestBody SimpleWorkflowStep simpleWorkflowStep) {
         WorkflowStep workflowStep = modelMapper.map(simpleWorkflowStep, WorkflowStep.class);
+        workflowStep.setUid(UUID.randomUUID().toString());
+        workflowStep.setControlStructure(ControlStructure.SIMPLE);
         validator.validateWorkflowStep(workflowStep);
         WorkflowStep savedWorkflowStep = saveWorkflowStep(workflowStep);
         return modelMapper.map(savedWorkflowStep, SimpleWorkflowStep.class);
@@ -67,6 +70,8 @@ public class WorkflowStepController {
     @PostMapping("/switch")
     public SwitchWorkflowStep addSwitchWorkflowStep(@RequestBody SwitchWorkflowStep switchWorkflowStep) {
         WorkflowStep workflowStep = modelMapper.map(switchWorkflowStep, WorkflowStep.class);
+        workflowStep.setUid(UUID.randomUUID().toString());
+        workflowStep.setControlStructure(ControlStructure.SWITCH);
         validator.validateWorkflowStep(workflowStep);
         WorkflowStep savedWorkflowStep = saveWorkflowStep(workflowStep);
         return modelMapper.map(savedWorkflowStep, SwitchWorkflowStep.class);
@@ -75,6 +80,8 @@ public class WorkflowStepController {
     @PostMapping("/while")
     public WhileWorkflowStep addWhileWorkflowStep(@RequestBody WhileWorkflowStep whileWorkflowStep) {
         WorkflowStep workflowStep = modelMapper.map(whileWorkflowStep, WorkflowStep.class);
+        workflowStep.setUid(UUID.randomUUID().toString());
+        workflowStep.setControlStructure(ControlStructure.DO_WHILE);
         validator.validateWorkflowStep(workflowStep);
         WorkflowStep savedWorkflowStep = saveWorkflowStep(workflowStep);
         return modelMapper.map(savedWorkflowStep, WhileWorkflowStep.class);
@@ -83,6 +90,8 @@ public class WorkflowStepController {
     @PostMapping("/sub-workflow")
     public SubWorkflowStep addSubWorkflowStep(@RequestBody SubWorkflowStep subWorkflowStep) {
         WorkflowStep workflowStep = modelMapper.map(subWorkflowStep, WorkflowStep.class);
+        workflowStep.setUid(UUID.randomUUID().toString());
+        workflowStep.setControlStructure(ControlStructure.SUB_WORKFLOW);
         validator.validateWorkflowStep(workflowStep);
         WorkflowStep savedWorkflowStep = saveWorkflowStep(workflowStep);
         return modelMapper.map(savedWorkflowStep, SubWorkflowStep.class);
@@ -133,7 +142,6 @@ public class WorkflowStepController {
 
 
     private WorkflowStep saveWorkflowStep(WorkflowStep workflowStep) {
-        workflowStep.setUid(UUID.randomUUID().toString());
         workflowStep.setCreated(LocalDateTime.now());
         workflowStep.setUpdated(LocalDateTime.now());
         WorkflowStep saved = workflowStepRepository.save(workflowStep);

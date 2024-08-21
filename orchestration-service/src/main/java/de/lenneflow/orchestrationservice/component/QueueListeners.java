@@ -25,7 +25,7 @@ public class QueueListeners {
     @RabbitListener(queues = AppConfiguration.FUNCTIONQUEUE)
     public void functionListener(byte[] serializedFunction) {
         Function function = Util.deserializeFunction(serializedFunction);
-        new Thread(() -> functionService.processFunctionFromQueue(function)).start();
+        functionService.processFunctionFromQueue(function);
     }
 
     @RabbitListener(queues = AppConfiguration.FUNCTIONRESULTQUEUE)

@@ -46,7 +46,7 @@ public class FunctionController {
         return functionRepository.findByName(name);
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public List<Function> getAllWorkerFunctions() {
         return functionRepository.findAll();
     }

@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-//@FeignClient(name = "workflow-service", url = "http://localhost:47005")
-@FeignClient(name = "workflow-service")
+@FeignClient(name = "workflow-service", url = "http://localhost:47005")
+//@FeignClient(name = "workflow-service")
 public interface WorkflowServiceClient {
 
     @GetMapping("/api/workflows/{id}")

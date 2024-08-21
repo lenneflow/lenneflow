@@ -82,7 +82,7 @@ public class Validator {
 
 
     private void checkWorkflowExists(WorkflowStep workflowStep) {
-        if(workflowRepository.findByUid(workflowStep.getUid()) == null){
+        if(workflowRepository.findByUid(workflowStep.getWorkflowUid()) == null){
             throw new ResourceNotFoundException("The workflow associated with this workflow step does not exist!");
         }
     }
@@ -140,7 +140,7 @@ public class Validator {
         }
         if(workflowStep.getName() == null || workflowStep.getName().isEmpty()){
             logger.info("Workflow step {} has no step name", workflowStep.getName());
-            throw new PayloadNotValidException("The field stepName is mandatory for this payload!");
+            throw new PayloadNotValidException("The field name is mandatory for this payload!");
         }
         if(workflowStep.getExecutionOrder() <= 0){
             logger.info("Workflow step {} has no positive execution order", workflowStep.getName());

@@ -54,7 +54,7 @@ public class ExpressionEvaluator {
 
     private String getDataFromSubstring(WorkflowStepInstance stepInstance, String dataPath) {
         String[] stringParts = dataPath.split("\\.");
-        WorkflowStepInstance step = workflowStepInstanceRepository.findByStepNameAndWorkflowInstanceUid(stringParts[0].trim(), stepInstance.getWorkflowUid());
+        WorkflowStepInstance step = workflowStepInstanceRepository.findByNameAndWorkflowInstanceUid(stringParts[0].trim(), stepInstance.getWorkflowUid());
         return switch (stringParts[1].toLowerCase().trim()) {
             case "output" -> {
                 Map<String, Object> outputData = step.getOutputData();

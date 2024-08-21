@@ -18,7 +18,7 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document
-@CompoundIndex(def = "{'workflowUid': 1, 'stepName': 1}", unique = true)
+@CompoundIndex(def = "{'workflowUid': 1, 'name': 1}", unique = true)
 public class WorkflowStep {
 
     @Id

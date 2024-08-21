@@ -183,7 +183,7 @@ public class InstanceController {
      * @return the start step of the workflow.
      */
     public WorkflowStepInstance getStartStep(WorkflowInstance workflowInstance) {
-        for (WorkflowStepInstance step : workflowStepInstanceRepository.findByWorkflowInstanceId(workflowInstance.getUid())) {
+        for (WorkflowStepInstance step : workflowStepInstanceRepository.findByWorkflowInstanceUid(workflowInstance.getUid())) {
             if (step.getRunOrderLabel() == RunOrderLabel.FIRST) return step;
         }
         throw new InternalServiceException("The first workflow step to execute could not be found");

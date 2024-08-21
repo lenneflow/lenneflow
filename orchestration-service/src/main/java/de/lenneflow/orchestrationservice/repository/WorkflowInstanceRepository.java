@@ -11,10 +11,6 @@ public interface WorkflowInstanceRepository extends MongoRepository<WorkflowInst
 
     WorkflowInstance findByUid(String id);
 
-    WorkflowInstance findByWorkflowName(String name);
-
-    List<WorkflowInstance> findByOwnerEmail(String email);
-
     List<WorkflowInstance> findByStatusListenerEnabled(boolean enabled);
 
 }

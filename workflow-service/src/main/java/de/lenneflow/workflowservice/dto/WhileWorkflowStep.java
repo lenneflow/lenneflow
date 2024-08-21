@@ -19,7 +19,7 @@ public class WhileWorkflowStep {
 
     private String uid;
 
-    private String stepName;
+    private String name;
 
     private String workflowId;
 

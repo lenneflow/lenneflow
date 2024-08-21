@@ -15,7 +15,7 @@ public class SubWorkflowStep {
 
     private String uid;
 
-    private String stepName;
+    private String name;
 
     private int executionOrder;
 

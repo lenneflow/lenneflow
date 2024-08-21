@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/workflows")
@@ -44,7 +45,7 @@ public class WorkflowController {
         return workflowRepository.findByName(name);
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public List<Workflow> getAllWorkflows() {
         return workflowRepository.findAll();
     }
@@ -52,6 +53,7 @@ public class WorkflowController {
     @PostMapping
     public WorkflowDTO addNewWorkflow(@RequestBody WorkflowDTO workflowDTO) {
         Workflow workflow = modelMapper.map(workflowDTO, Workflow.class);
+        workflow.setUid(UUID.randomUUID().toString());
         validator.validateWorkflow(workflow);
         workflow.setCreated(LocalDateTime.now());
         workflow.setUpdated(LocalDateTime.now());

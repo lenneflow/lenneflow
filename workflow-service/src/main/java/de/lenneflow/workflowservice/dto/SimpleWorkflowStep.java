@@ -19,7 +19,7 @@ public class SimpleWorkflowStep {
     @Hidden
     private String uid;
 
-    private String stepName;
+    private String name;
 
     private String workflowUid;
 

@@ -1,6 +1,7 @@
 package de.lenneflow.functionservice.dto;
 
 
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,13 +14,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Document
 public class FunctionDTO {
 
-    @Id
+    @Hidden
     private String Uid;
 
-    @Indexed(unique = true)
     private String name;
 
     private String description;

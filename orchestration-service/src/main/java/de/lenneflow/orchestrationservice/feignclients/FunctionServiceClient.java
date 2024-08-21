@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
-//@FeignClient(name = "function-service", url = "http://localhost:47003")
-@FeignClient(name = "function-service")
+@FeignClient(name = "function-service", url = "http://localhost:47003")
+//@FeignClient(name = "function-service")
 public interface FunctionServiceClient {
 
     @GetMapping("/api/functions/{id}")
@@ -17,6 +17,6 @@ public interface FunctionServiceClient {
     @GetMapping("/api/functions/check")
     public String getFunctionHome();
 
-    @GetMapping("/api/functions")
+    @GetMapping("/api/functions/all")
     public List<Function> getAllFunctions();
 }

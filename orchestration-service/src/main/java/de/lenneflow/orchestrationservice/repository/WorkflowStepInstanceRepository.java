@@ -10,8 +10,8 @@ public interface WorkflowStepInstanceRepository extends MongoRepository<Workflow
 
     WorkflowStepInstance findByUid(String uid);
 
-    WorkflowStepInstance findByStepNameAndWorkflowInstanceUid(String stepName, String workflowInstanceUid);
+    WorkflowStepInstance findByNameAndWorkflowInstanceUid(String stepName, String workflowInstanceUid);
 
-    List<WorkflowStepInstance> findByWorkflowInstanceId(String workflowInstanceId);
+    List<WorkflowStepInstance> findByWorkflowInstanceUid(String workflowInstanceId);
 
 }
