@@ -1,6 +1,7 @@
 package de.lenneflow.workerservice.feignmodel;
 
 
+import de.lenneflow.workerservice.enums.DeploymentState;
 import de.lenneflow.workerservice.enums.PackageRepository;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,6 +12,8 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -28,7 +31,9 @@ public class Function {
 
     private PackageRepository packageRepository;
 
-    private String deploymentFileUrl;
+    private DeploymentState deploymentState;
+
+    private String resourcePath;
 
     private String imageName;
 

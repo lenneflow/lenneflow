@@ -1,5 +1,6 @@
 package de.lenneflow.orchestrationservice.feignmodels;
 
+import de.lenneflow.orchestrationservice.enums.DeploymentState;
 import de.lenneflow.orchestrationservice.enums.PackageRepository;
 import de.lenneflow.orchestrationservice.enums.RunStatus;
 import lombok.AllArgsConstructor;
@@ -9,7 +10,9 @@ import lombok.Setter;
 
 import java.io.Serializable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -34,7 +37,9 @@ public class Function implements Serializable {
 
     private PackageRepository packageRepository;
 
-    private String deploymentFilePath;
+    private DeploymentState deploymentState;
+
+    private String resourcePath;
 
     private String imageName;
 

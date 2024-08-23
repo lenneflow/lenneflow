@@ -4,16 +4,15 @@ import de.lenneflow.workerservice.exception.InternalServiceException;
 import de.lenneflow.workerservice.exception.PayloadNotValidException;
 import de.lenneflow.workerservice.model.Worker;
 import de.lenneflow.workerservice.repository.WorkerRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class Validator {
+public class PayloadValidator {
 
     final
     WorkerRepository workerRepository;
 
-    public Validator(WorkerRepository workerRepository) {
+    public PayloadValidator(WorkerRepository workerRepository) {
         this.workerRepository = workerRepository;
     }
 

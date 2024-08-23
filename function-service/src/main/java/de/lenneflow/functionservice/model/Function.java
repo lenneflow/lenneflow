@@ -1,6 +1,7 @@
 package de.lenneflow.functionservice.model;
 
 
+import de.lenneflow.functionservice.enums.DeploymentState;
 import de.lenneflow.functionservice.enums.PackageRepository;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,7 +32,9 @@ public class Function {
 
     private PackageRepository packageRepository;
 
-    private String deploymentFilePath;
+    private DeploymentState deploymentState;
+
+    private String resourcePath;
 
     private String imageName;
 

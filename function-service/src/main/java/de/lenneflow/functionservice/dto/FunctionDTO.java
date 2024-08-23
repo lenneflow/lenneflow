@@ -11,6 +11,9 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -18,7 +21,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class FunctionDTO {
 
     @Hidden
-    private String Uid;
+    private String uid;
 
     private String name;
 
@@ -28,7 +31,9 @@ public class FunctionDTO {
 
     private PackageRepository packageRepository;
 
-    private String deploymentFilePath;
+    private List<String> deploymentFileUrls = new ArrayList<>();
+
+    private String resourcePath;
 
     private String imageName;
 

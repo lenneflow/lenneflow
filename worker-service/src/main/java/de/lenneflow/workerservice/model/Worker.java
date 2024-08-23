@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -33,7 +34,11 @@ public class Worker {
 
     private WorkerStatus status;
 
-    private List<String> supportedFunctionTypes;
+    private List<String> supportedFunctionTypes = new ArrayList<>();
+
+    private List<Integer> usedHostPorts = new ArrayList<>();
+
+    private String currentIngress = "";
 
     private String kubernetesServiceUser;
 
