@@ -11,8 +11,8 @@ import java.util.List;
 //@FeignClient(name = "function-service")
 public interface FunctionServiceClient {
 
-    @GetMapping("/api/functions/{id}")
-    public Function getFunctionById(@PathVariable String id);
+    @GetMapping("/api/functions/{uid}")
+    public Function getFunctionByUid(@PathVariable String uid);
 
     @GetMapping("/api/functions/check")
     public String getFunctionHome();

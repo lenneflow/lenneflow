@@ -10,6 +10,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,9 +50,9 @@ public class Function implements Serializable {
 
     private String endPointPath;
 
-    private long creationTime;
+    private LocalDateTime creationTime;
 
-    private long updateTime;
+    private LocalDateTime updateTime;
 
     private Map<String, Object> inputData = new HashMap<>();
 

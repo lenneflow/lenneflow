@@ -36,9 +36,9 @@ public class FunctionController {
         return "Welcome to the Function Service! Everything is working fine!";
     }
 
-    @GetMapping("/{id}")
-    public Function getFunctionById(@PathVariable String id) {
-        return functionRepository.findById(id).orElse(null);
+    @GetMapping("/{uid}")
+    public Function getFunctionById(@PathVariable String uid) {
+        return functionRepository.findByUid(uid);
     }
 
     @GetMapping

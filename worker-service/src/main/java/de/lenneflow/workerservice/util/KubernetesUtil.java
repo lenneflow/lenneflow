@@ -56,6 +56,15 @@ public class KubernetesUtil {
         }
     }
 
+    public void checkServiceExists(Worker worker) {
+        KubernetesClient client = getKubernetesClient(worker);
+        String apiVersion = client.getApiVersion();
+        client.close();
+        if(apiVersion == null || apiVersion.isEmpty()){
+            throw new InternalServiceException("The connection to the worker " + worker.getName() + " was not possible");
+        }
+    }
+
     public void deployFunctionImageToWorker(Function function) {
         Worker worker = getWorkerForFunction(function);
         assignHostPortToFunction(worker, function);
@@ -78,7 +87,7 @@ public class KubernetesUtil {
             String deploymentName = function.getName();
             client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).waitUntilCondition(
                     pod -> pod.getStatus().getReadyReplicas() > 0, 5, MINUTES);
-            if(client.pods().inNamespace(NAMESPACE).withName(deploymentName).isReady()){
+            if(client.services().inNamespace(NAMESPACE).withName(deploymentName).isReady()){
                 updateFunction(function, DeploymentState.DEPLOYED);
                 return;
             }

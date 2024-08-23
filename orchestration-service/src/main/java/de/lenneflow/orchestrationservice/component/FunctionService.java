@@ -7,6 +7,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -23,7 +24,9 @@ public class FunctionService {
 
     @Async
     public CompletableFuture<Void> processFunctionFromQueue(Function function) {
-        Map<String, Object> inputData = function.getInputData();
+        //Map<String, Object> inputData = function.getInputData(); //TODO
+        Map<String, Object> inputData = new HashMap<>();
+        inputData.put("processTimeInMillis", 10000);
         String endpoint = Util.getFunctionEndpointUrl(function);
         Map<String, Object> outputData = restTemplate.postForObject(endpoint, inputData, Map.class);
         if (outputData != null) {

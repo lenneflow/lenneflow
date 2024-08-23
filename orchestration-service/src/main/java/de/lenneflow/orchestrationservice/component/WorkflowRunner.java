@@ -72,7 +72,7 @@ public class WorkflowRunner {
     private void processStepCompletedOrSkipped(WorkflowExecution execution, WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance){
         WorkflowStepInstance nextStepInstance = instanceController.getNextWorkflowStepInstance(workflowStepInstance);
         if (nextStepInstance != null) {
-            Function function = functionServiceClient.getFunctionById(nextStepInstance.getFunctionId());
+            Function function = functionServiceClient.getFunctionByUid(nextStepInstance.getFunctionId());
             function.setStepInstanceId(nextStepInstance.getUid());
             function.setExecutionId(execution.getRunId());
             function.setWorkflowInstanceId(workflowInstance.getUid());
@@ -84,7 +84,7 @@ public class WorkflowRunner {
         if (workflowStepInstance.getRetryCount() > 0) {
             workflowStepInstance.setRetryCount(workflowStepInstance.getRetryCount() - 1);
             workflowStepInstanceRepository.save(workflowStepInstance);
-            Function function = functionServiceClient.getFunctionById(workflowStepInstance.getFunctionId());
+            Function function = functionServiceClient.getFunctionByUid(workflowStepInstance.getFunctionId());
             runStep(function, workflowStepInstance);
         }
         terminateWorkflowRun(execution, workflowInstance, workflowStepInstance);
@@ -138,7 +138,7 @@ public class WorkflowRunner {
         instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance,execution,  RunStatus.RUNNING);
 
         WorkflowStepInstance firstStepInstance = instanceController.getStartStep(workflowInstance);
-        Function function = functionServiceClient.getFunctionById(firstStepInstance.getFunctionId());
+        Function function = functionServiceClient.getFunctionByUid(firstStepInstance.getFunctionId());
         function.setStepInstanceId(firstStepInstance.getUid());
         function.setExecutionId(execution.getRunId());
         function.setWorkflowInstanceId(workflowInstance.getUid());

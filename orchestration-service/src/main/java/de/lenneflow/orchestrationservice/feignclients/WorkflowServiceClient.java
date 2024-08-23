@@ -2,6 +2,7 @@ package de.lenneflow.orchestrationservice.feignclients;
 
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
 import de.lenneflow.orchestrationservice.feignmodels.WorkflowStep;
+import feign.Param;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,8 +26,8 @@ public interface WorkflowServiceClient {
     @GetMapping("/api/workflows/steps")
     public WorkflowStep getWorkflowStepByName(@RequestParam("name")  String stepName);
 
-    @GetMapping("/api/workflows/steps}")
-    public List<WorkflowStep> getStepListByWorkflowId(@RequestParam(name = "workflow-id") String workflowId);
+    @GetMapping("/api/workflows/steps/workflow-id/{workflow-id}")
+    public List<WorkflowStep> getStepListByWorkflowId(@PathVariable("workflow-id") String workflowId);
 
     @GetMapping("/api/workflows/steps")
     public List<WorkflowStep> getStepListByWorkflowName(@RequestParam("workflow-name") String workflowName);

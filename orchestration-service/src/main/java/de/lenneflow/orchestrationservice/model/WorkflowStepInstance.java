@@ -84,6 +84,7 @@ public class WorkflowStepInstance {
         this.description = step.getDescription();
         this.name = step.getName();
         this.inputData = step.getInputData();
+        this.functionId = step.getFunctionId();
         this.runStatus = RunStatus.NEW;
         this.workflowInstanceUid = workflowInstanceUid;
         this.controlStructure = step.getControlStructure();

@@ -47,15 +47,15 @@ public class OrchestrationController {
     }
 
 
-    @GetMapping("/workflows/{workflow-name}/start")
-    public ResponseEntity<WorkflowExecution>  startWorkflowGet(@PathVariable(name = "workflow-name") String workflowName) {
-        return new ResponseEntity<>(workflowRunner.startWorkflow(workflowName, null), HttpStatus.OK);
+    @GetMapping("/workflows/{workflow-id}/start")
+    public ResponseEntity<WorkflowExecution>  startWorkflowGet(@PathVariable(name = "workflow-id") String workflowId) {
+        return new ResponseEntity<>(workflowRunner.startWorkflow(workflowId, null), HttpStatus.OK);
     }
 
-    @PostMapping("/workflows/{workflow-name}/start")
-    public ResponseEntity<WorkflowExecution> startWorkflowPost(@PathVariable(name = "workflow-name") String workflowName, @RequestBody Map<String, Object> inputParameters) {
-        if(inputParametersValid(workflowName, inputParameters)){
-            return new ResponseEntity<>(workflowRunner.startWorkflow(workflowName, inputParameters), HttpStatus.OK);
+    @PostMapping("/workflows/{workflow-id}/start")
+    public ResponseEntity<WorkflowExecution> startWorkflowPost(@PathVariable(name = "workflow-id") String workflowId, @RequestBody Map<String, Object> inputParameters) {
+        if(inputParametersValid(workflowId, inputParameters)){
+            return new ResponseEntity<>(workflowRunner.startWorkflow(workflowId, inputParameters), HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }

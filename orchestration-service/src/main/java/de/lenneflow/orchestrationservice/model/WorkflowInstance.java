@@ -3,7 +3,6 @@ package de.lenneflow.orchestrationservice.model;
 
 import de.lenneflow.orchestrationservice.enums.RunStatus;
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
-import de.lenneflow.orchestrationservice.feignmodels.WorkflowStep;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
