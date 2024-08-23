@@ -1,6 +1,7 @@
 package de.lenneflow.workerservice.controller;
 
 import de.lenneflow.workerservice.dto.WorkerDTO;
+import de.lenneflow.workerservice.enums.WorkerStatus;
 import de.lenneflow.workerservice.exception.ResourceNotFoundException;
 import de.lenneflow.workerservice.feignclients.FunctionServiceClient;
 import de.lenneflow.workerservice.feignmodel.Function;
@@ -49,12 +50,14 @@ public class WorkerController {
         worker.setUid(UUID.randomUUID().toString());
         worker.setCreated(LocalDateTime.now());
         worker.setUpdated(LocalDateTime.now());
+        worker.setStatus(WorkerStatus.OFFLINE);
+        worker.setIngressServiceName(worker.getName().toLowerCase() + "-ingress");
         payloadValidator.validate(worker);
         Worker savedWorker = workerRepository.save(worker);
         return new ResponseEntity<>(savedWorker, HttpStatus.CREATED);
     }
 
-    @PatchMapping("/{id}")
+    @PostMapping("/{id}")
     public ResponseEntity<Worker> updateWorker(@RequestBody WorkerDTO workerDTO, @PathVariable String id) {
         Worker worker = workerRepository.findByUid(id);
         modelMapper.map(workerDTO, worker);

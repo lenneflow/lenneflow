@@ -38,7 +38,7 @@ public class Worker {
 
     private List<Integer> usedHostPorts = new ArrayList<>();
 
-    private String currentIngress = "";
+    private String ingressServiceName;
 
     private String kubernetesServiceUser;
 

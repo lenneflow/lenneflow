@@ -8,11 +8,12 @@ import de.lenneflow.workerservice.feignclients.FunctionServiceClient;
 import de.lenneflow.workerservice.feignmodel.Function;
 import de.lenneflow.workerservice.model.Worker;
 import de.lenneflow.workerservice.repository.WorkerRepository;
+import io.fabric8.kubernetes.api.model.Namespace;
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.extensions.Ingress;
-import io.fabric8.kubernetes.api.model.extensions.IngressBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.Config;
@@ -50,35 +51,34 @@ public class KubernetesUtil {
         KubernetesClient client = getKubernetesClient(worker);
         String apiVersion = client.getApiVersion();
         client.close();
-        if(apiVersion == null && apiVersion.isEmpty()){
+        if(apiVersion == null || apiVersion.isEmpty()){
             throw new InternalServiceException("The connection to the worker " + worker.getName() + " was not possible");
         }
     }
 
     public void deployFunctionImageToWorker(Function function) {
         Worker worker = getWorkerForFunction(function);
-        int hostPort = getNextFreeHostPort(worker);
+        assignHostPortToFunction(worker, function);
         KubernetesClient client = getKubernetesClient(worker);
         createNamespace(worker);
         createServiceAccount(worker);
-        Deployment deployment = YamlEditor.createKubernetesDeploymentResource(function,2, SERVICE_ACCOUNT_NAME,hostPort);
-        Service service = YamlEditor.createKubernetesServiceResource(function, "ClusterIP", hostPort);
+        Deployment deployment = YamlEditor.createKubernetesDeploymentResource(function,2, SERVICE_ACCOUNT_NAME);
+        Service service = YamlEditor.createKubernetesServiceResource(function, "ClusterIP");
         client.resource(deployment).inNamespace(NAMESPACE).create();
         client.resource(service).inNamespace(NAMESPACE).create();
         createOrUpdateIngress(worker,function);
-        updateDeploymentState(worker, function, 5);
+        updateDeploymentState(worker, function);
 
     }
 
-    private void updateDeploymentState(Worker worker, Function function, int waitTimeInMinutes) {
+    private void updateDeploymentState(Worker worker, Function function) {
         new Thread(() ->{
             updateFunction(function, DeploymentState.DEPLOYING);
             KubernetesClient client = getKubernetesClient(worker);
-            String realPodName = function.getName() + "_"; //TODO get pod name
-            client.pods().inNamespace(NAMESPACE).withName(realPodName).waitUntilCondition(
-                    pod -> pod.getStatus().getContainerStatuses().stream().allMatch(
-                            containerStatus -> containerStatus.getReady() && containerStatus.getStarted()), waitTimeInMinutes, MINUTES);
-            if(client.pods().inNamespace(NAMESPACE).withName(realPodName).isReady()){
+            String deploymentName = function.getName();
+            client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).waitUntilCondition(
+                    pod -> pod.getStatus().getReadyReplicas() > 0, 5, MINUTES);
+            if(client.pods().inNamespace(NAMESPACE).withName(deploymentName).isReady()){
                 updateFunction(function, DeploymentState.DEPLOYED);
                 return;
             }
@@ -92,19 +92,20 @@ public class KubernetesUtil {
         functionServiceClient.updateFunction(function, function.getUid());
     }
 
-    public int getNextFreeHostPort(Worker worker){
+    public void assignHostPortToFunction(Worker worker, Function function){
+        if(function.getAssignedHostPort() >= 47000){
+            return;
+        }
         List<Integer> ports = worker.getUsedHostPorts();
         if(ports.isEmpty()){
-            ports.add(4000);
-            worker.setUsedHostPorts(ports);
-            workerRepository.save(worker);
-            return ports.get(0);
+            ports.add(47000);
         }
         int nextPort = Collections.max(ports) + 1;
+        function.setAssignedHostPort(nextPort);
+        functionServiceClient.updateFunction(function, function.getUid());
         ports.add(nextPort);
         worker.setUsedHostPorts(ports);
         workerRepository.save(worker);
-        return nextPort;
     }
 
     public void deployFunctionToWorker(Function function, List<String> deploymentFileUrls) {
@@ -130,23 +131,19 @@ public class KubernetesUtil {
 
     private void createOrUpdateIngress(Worker worker, Function function) {
         KubernetesClient client = getKubernetesClient(worker);
-        String currentIngressResource = worker.getCurrentIngress();
-        int hostPort = getNextFreeHostPort(worker);
+        Ingress currentIngress = client.network().v1().ingresses().inNamespace(NAMESPACE).withName(worker.getIngressServiceName()).get();
+        assignHostPortToFunction(worker, function);
         try {
-            if (currentIngressResource == null || currentIngressResource.isEmpty()) {
-                Ingress ingressResource = YamlEditor.createKubernetesIngressResource(worker, function,hostPort);
-                client.resource(ingressResource).inNamespace(NAMESPACE).create();
-                worker.setCurrentIngress(ingressResource.toString());
-                workerRepository.save(worker);
+            if (currentIngress == null) {
+                Ingress ingressResource = YamlEditor.createKubernetesIngressResource(worker, function);
+                currentIngress = client.resource(ingressResource).inNamespace(NAMESPACE).create();
                 return;
             }
-            ObjectMapper mapper = new YAMLMapper();
-            Ingress currentIngress = mapper.readValue(currentIngressResource, Ingress.class);
-            Ingress updatedIngressResource = YamlEditor.addPathToKubernetesIngressResource(currentIngress, function, hostPort);
-            client.resource(updatedIngressResource).inNamespace(NAMESPACE).create();
-            worker.setCurrentIngress(updatedIngressResource.toString());
-            workerRepository.save(worker);
+            assert currentIngress != null;
+            Ingress updatedIngressResource = YamlEditor.addPathToKubernetesIngressResource(currentIngress, function);
+            client.resource(updatedIngressResource).inNamespace(NAMESPACE).patch();
         } catch (Exception e) {
+            e.printStackTrace();
             throw new InternalServiceException("It was not possible to create the ingress service ");
         }
 
@@ -154,30 +151,31 @@ public class KubernetesUtil {
 
     private void createNamespace(Worker worker) {
         KubernetesClient client = getKubernetesClient(worker);
+        Namespace ns = new NamespaceBuilder().withNewMetadata().withName(NAMESPACE)
+                .endMetadata().build();
         try {
-            if (client.namespaces().withName(NAMESPACE).isReady()) {
+            if (client.namespaces().withName(NAMESPACE).get() != null) {
                 return;
             }
-            client.namespaces().withName(NAMESPACE).create();
+            client.namespaces().resource(ns).create();
         } catch (Exception e) {
-            throw new InternalServiceException("It was not possible to create the namespace " + NAMESPACE);
+            throw new InternalServiceException("It was not possible to create the namespace " + NAMESPACE + "\n" + e.getMessage());
         }
     }
 
     private void createServiceAccount(Worker worker) {
         KubernetesClient client = getKubernetesClient(worker);
         try {
-            if (client.serviceAccounts().withName(SERVICE_ACCOUNT_NAME).isReady()) {
-                return;
+            if (client.serviceAccounts().inNamespace(NAMESPACE).withName(SERVICE_ACCOUNT_NAME).get() == null) {
+                ServiceAccount serviceAccountResource = YamlEditor.createKubernetesServiceAccountResource(SERVICE_ACCOUNT_NAME);
+                client.resource(serviceAccountResource).inNamespace(NAMESPACE).create();
+                ClusterRole roleResource = YamlEditor.createKubernetesClusterRoleResource(SERVICE_ACCOUNT_NAME, NAMESPACE);
+                client.resource(roleResource).inNamespace(NAMESPACE).create();
+                ClusterRoleBinding bindingResource = YamlEditor.createKubernetesClusterRoleBindingResource(SERVICE_ACCOUNT_NAME, NAMESPACE);
+                client.resource(bindingResource).inNamespace(NAMESPACE).create();
             }
-            ServiceAccount serviceAccountResource = YamlEditor.createKubernetesServiceAccountResource(SERVICE_ACCOUNT_NAME);
-            client.resource(serviceAccountResource).inNamespace(NAMESPACE).create();
-            ClusterRole roleResource = YamlEditor.createKubernetesClusterRoleResource(SERVICE_ACCOUNT_NAME, NAMESPACE);
-            client.resource(roleResource).inNamespace(NAMESPACE).create();
-            ClusterRoleBinding bindingResource = YamlEditor.createKubernetesClusterRoleBindingResource(SERVICE_ACCOUNT_NAME, NAMESPACE);
-            client.resource(bindingResource).inNamespace(NAMESPACE).create();
         } catch (Exception e) {
-            throw new InternalServiceException("It was not possible to create the service account " + SERVICE_ACCOUNT_NAME);
+            throw new InternalServiceException("It was not possible to create the service account " + SERVICE_ACCOUNT_NAME + "\n" + e.getMessage());
         }
 
     }

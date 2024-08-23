@@ -37,6 +37,10 @@ public class Function {
 
     private String imageName;
 
+    private int servingPort;
+
+    private int assignedHostPort;
+
     private LocalDateTime creationTime;
 
     private LocalDateTime updateTime;

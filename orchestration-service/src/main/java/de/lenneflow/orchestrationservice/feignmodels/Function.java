@@ -10,9 +10,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -40,6 +38,8 @@ public class Function implements Serializable {
     private DeploymentState deploymentState;
 
     private String resourcePath;
+
+    private int servingPort;
 
     private String imageName;
 

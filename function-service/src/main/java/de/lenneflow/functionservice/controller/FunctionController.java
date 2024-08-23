@@ -53,21 +53,20 @@ public class FunctionController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public FunctionDTO addWorkerFunction(@RequestBody FunctionDTO functionDTO) {
+    public Function addWorkerFunction(@RequestBody FunctionDTO functionDTO) {
         Function function = modelMapper.map(functionDTO, Function.class);
         function.setUid(UUID.randomUUID().toString());
         validator.validateFunction(function);
         function.setCreationTime(LocalDateTime.now());
         function.setUpdateTime(LocalDateTime.now());
-        functionRepository.save(function);
-        return modelMapper.map(function, FunctionDTO.class);
+        return functionRepository.save(function);
     }
 
-    @PatchMapping("/{id}")
-    public void updateWorkerFunction(@RequestBody FunctionDTO functionDTO, @PathVariable String id) {
-        Function mapped = modelMapper.map(functionDTO, Function.class);
-        Function function = functionRepository.findByUid(id);
-        modelMapper.map(mapped, function);
+    @PostMapping("/{id}")
+    public void updateWorkerFunction(@RequestBody Function function, @PathVariable String id) {
+        //Function mapped = modelMapper.map(functionDTO, Function.class);
+        //Function function = functionRepository.findByUid(id);
+        //modelMapper.map(mapped, function);
         if(function == null) {
             throw new ResourceNotFoundException("Function not found");
         }

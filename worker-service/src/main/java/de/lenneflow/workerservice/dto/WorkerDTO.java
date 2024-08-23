@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,30 +17,20 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class WorkerDTO {
 
-    @Hidden
-    private String uid;
-
     private String name;
 
     private String description;
 
     private String ipAddress;
 
-    private int apiPort;
+    private int kubernetesApiPort;
 
     private String hostName;
 
-    private String serviceUser;
+    private String kubernetesServiceUser;
 
-    private String bearerToken;
+    private String kubernetesBearerToken;
 
-    @Hidden
-    private WorkerStatus status;
-
-    @Hidden
-    private LocalDateTime created;
-
-    @Hidden
-    private LocalDateTime updated;
+    private List<String> supportedFunctionTypes = new ArrayList<>();
 
 }

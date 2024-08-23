@@ -60,7 +60,7 @@ public class WorkflowController {
         return modelMapper.map(workflowRepository.save(workflow), WorkflowDTO.class);
     }
 
-    @PatchMapping("/{id}")
+    @PostMapping("/{id}")
     public WorkflowDTO patchWorkflow(@RequestBody WorkflowDTO workflowDTO, @PathVariable String id) {
         Workflow workflow = workflowRepository.findByUid(id);
         modelMapper.map(workflowDTO, workflow);

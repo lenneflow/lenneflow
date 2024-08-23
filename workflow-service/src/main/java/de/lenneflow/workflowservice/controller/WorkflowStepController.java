@@ -97,7 +97,7 @@ public class WorkflowStepController {
         return modelMapper.map(savedWorkflowStep, SubWorkflowStep.class);
     }
 
-    @PatchMapping("/simple/{id}")
+    @PostMapping("/simple/{id}")
     public SimpleWorkflowStep updateWorkflowStep(@PathVariable String id, @RequestBody SimpleWorkflowStep simpleWorkflowStep) {
         WorkflowStep workflowStep = workflowStepRepository.findByUid(id);
         modelMapper.map(simpleWorkflowStep, workflowStep);
@@ -106,7 +106,7 @@ public class WorkflowStepController {
         return modelMapper.map(savedWorkflowStep, SimpleWorkflowStep.class);
     }
 
-    @PatchMapping("/switch/{id}")
+    @PostMapping("/switch/{id}")
     public SwitchWorkflowStep updateWorkflowStep(@PathVariable String id, @RequestBody SwitchWorkflowStep switchWorkflowStep) {
         WorkflowStep workflowStep = workflowStepRepository.findByUid(id);
         modelMapper.map(switchWorkflowStep, workflowStep);
@@ -115,7 +115,7 @@ public class WorkflowStepController {
         return modelMapper.map(savedWorkflowStep, SwitchWorkflowStep.class);
     }
 
-    @PatchMapping("/while/{id}")
+    @PostMapping("/while/{id}")
     public WhileWorkflowStep updateWorkflowStep(@PathVariable String id, @RequestBody WhileWorkflowStep whileWorkflowStep) {
         WorkflowStep workflowStep = workflowStepRepository.findByUid(id);
         modelMapper.map(whileWorkflowStep, workflowStep);
@@ -124,7 +124,7 @@ public class WorkflowStepController {
         return modelMapper.map(savedWorkflowStep, WhileWorkflowStep.class);
     }
 
-    @PatchMapping("/sub-workflow/{id}")
+    @PostMapping("/sub-workflow/{id}")
     public SubWorkflowStep updateWorkflowStep(@PathVariable String id, @RequestBody SubWorkflowStep subWorkflowStep) {
         WorkflowStep workflowStep = workflowStepRepository.findByUid(id);
         modelMapper.map(subWorkflowStep, workflowStep);

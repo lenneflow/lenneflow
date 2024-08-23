@@ -2,26 +2,16 @@ package de.lenneflow.functionservice.dto;
 
 
 import de.lenneflow.functionservice.enums.PackageRepository;
-import io.swagger.v3.oas.annotations.Hidden;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class FunctionDTO {
-
-    @Hidden
-    private String uid;
 
     private String name;
 
@@ -31,9 +21,9 @@ public class FunctionDTO {
 
     private PackageRepository packageRepository;
 
-    private List<String> deploymentFileUrls = new ArrayList<>();
-
     private String resourcePath;
+
+    private int servingPort;
 
     private String imageName;
 

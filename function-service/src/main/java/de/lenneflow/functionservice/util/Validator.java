@@ -42,7 +42,7 @@ public class Validator {
         if(function.getImageName() == null || function.getImageName().isEmpty()) {
             throw new PayloadNotValidException("Image Name is required");
         }
-        if(function.getPackageRepository() == null || function.getPackageRepository().isEmpty()) {
+        if(function.getPackageRepository() == null) {
             throw new PayloadNotValidException("Package Repository is required");
         }
         if(function.getType() == null || function.getType().isEmpty()) {

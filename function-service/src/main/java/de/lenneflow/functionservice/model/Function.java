@@ -32,11 +32,15 @@ public class Function {
 
     private PackageRepository packageRepository;
 
-    private DeploymentState deploymentState;
+    private DeploymentState deploymentState = DeploymentState.UNDEPLOYED;
 
     private String resourcePath;
 
     private String imageName;
+
+    private int servingPort;
+
+    private int assignedHostPort;
 
     private LocalDateTime creationTime;
 
