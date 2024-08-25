@@ -2,46 +2,47 @@ package de.lenneflow.orchestrationservice.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import de.lenneflow.orchestrationservice.dto.FunctionDto;
 import de.lenneflow.orchestrationservice.feignmodels.Function;
-import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 
 
 public class Util {
 
-    public static Function deserializeFunction(byte[] serializedFunction) {
-        ObjectMapper mapper = JsonMapper.builder()
-                .addModule(new JavaTimeModule())
-                .build();
-        Function function = null;
+    public static FunctionDto deserializeFunction(byte[] serializedFunctionDto) {
+        ObjectMapper mapper = new ObjectMapper();
+        FunctionDto functionDto = null;
         try {
-            function = mapper.readValue(serializedFunction, Function.class);
+            functionDto = mapper.readValue(serializedFunctionDto, FunctionDto.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return function;
+        return functionDto;
     }
 
-    public static byte[] serializeFunction(Function function) {
-        ObjectMapper mapper = JsonMapper.builder()
-                .addModule(new JavaTimeModule())
-                .build();
+    public static byte[] serializeFunctionDto(FunctionDto functionDto) {
+        ObjectMapper mapper = new ObjectMapper();
         byte[] serializedFunction = null;
         try {
-            serializedFunction = mapper.writeValueAsBytes(function);
+            serializedFunction = mapper.writeValueAsBytes(functionDto);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
         return serializedFunction;
     }
 
-    public static String getFunctionEndpointUrl(Function function) {
-        String url = StringUtils.removeEnd(function.getEndPointRoot(), "/") + "/" + StringUtils.removeStart(function.getEndPointPath(), "/");
-        //TODO
-        return "https://lenneflowworker/api/functionjava/process";
+    public static FunctionDto mapFunctionToDto(Function function) {
+        FunctionDto functionDto = new FunctionDto();
+        functionDto.setName(function.getName());
+        functionDto.setExecutionId(function.getExecutionId());
+        functionDto.setType(functionDto.getType());
+        functionDto.setInputData(function.getInputData());
+        functionDto.setOutputData(function.getOutputData());
+        functionDto.setRunStatus(function.getRunStatus());
+        functionDto.setServiceUrl(function.getServiceUrl());
+        functionDto.setStepInstanceId(function.getStepInstanceId());
+        functionDto.setWorkflowInstanceId(function.getWorkflowInstanceId());
+        return functionDto;
     }
-
 }

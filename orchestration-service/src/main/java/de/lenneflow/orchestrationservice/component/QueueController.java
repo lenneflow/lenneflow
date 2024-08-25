@@ -1,7 +1,7 @@
 package de.lenneflow.orchestrationservice.component;
 
 import de.lenneflow.orchestrationservice.configuration.AppConfiguration;
-import de.lenneflow.orchestrationservice.feignmodels.Function;
+import de.lenneflow.orchestrationservice.dto.FunctionDto;
 import de.lenneflow.orchestrationservice.utils.Util;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
@@ -24,24 +24,24 @@ public class QueueController {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public void addFunctionToQueue(Function function)  {
-        byte[] serializedFunction = Util.serializeFunction(function);
+    public void addFunctionDtoToQueue(FunctionDto functionDto)  {
+        byte[] serializedFunctionDto = Util.serializeFunctionDto(functionDto);
         String queueName = AppConfiguration.FUNCTIONQUEUE;
         String exchange  = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";
         createQueueAndBinding(queueName, exchange, routingKey);
         //TODO add queue to listener
-        rabbitTemplate.convertAndSend(exchange, routingKey, serializedFunction);
+        rabbitTemplate.convertAndSend(exchange, routingKey, serializedFunctionDto);
     }
 
-    public void addFunctionToResultQueue(Function function)  {
-        byte[] serializedFunction = Util.serializeFunction(function);
+    public void addFunctionDtoToResultQueue(FunctionDto functionDto)  {
+        byte[] serializedFunctionDto = Util.serializeFunctionDto(functionDto);
         String queueName = AppConfiguration.FUNCTIONRESULTQUEUE;
         String exchange  = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";
         createQueueAndBinding(queueName, exchange, routingKey);
         //TODO add queue to listener
-        rabbitTemplate.convertAndSend(exchange, routingKey, serializedFunction);
+        rabbitTemplate.convertAndSend(exchange, routingKey, serializedFunctionDto);
     }
 
     private void createQueueAndBinding(String queueName, String exchangeName, String routingKey) {

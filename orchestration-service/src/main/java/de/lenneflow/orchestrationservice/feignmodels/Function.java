@@ -46,9 +46,7 @@ public class Function implements Serializable {
 
     private String inputSchema;
 
-    private String endPointRoot;
-
-    private String endPointPath;
+    private String serviceUrl;
 
     private LocalDateTime creationTime;
 

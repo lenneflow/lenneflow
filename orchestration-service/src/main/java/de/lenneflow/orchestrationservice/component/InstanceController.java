@@ -1,5 +1,6 @@
 package de.lenneflow.orchestrationservice.component;
 
+import de.lenneflow.orchestrationservice.dto.FunctionDto;
 import de.lenneflow.orchestrationservice.enums.RunOrderLabel;
 import de.lenneflow.orchestrationservice.enums.RunStatus;
 import de.lenneflow.orchestrationservice.exception.InternalServiceException;
@@ -95,12 +96,12 @@ public class InstanceController {
      * Updates the workflow step instance status and output data.
      *
      * @param workflowStepInstance the workflow step instance to update.
-     * @param function             the executed function belonging to the workflow instance.
+     * @param functionDto             the executed functionDto belonging to the workflow instance.
      */
-    public void updateWorkflowStepInstance(WorkflowStepInstance workflowStepInstance, Function function) {
-        workflowStepInstance.setRunStatus(function.getRunStatus());
+    public void updateWorkflowStepInstance(WorkflowStepInstance workflowStepInstance, FunctionDto functionDto) {
+        workflowStepInstance.setRunStatus(functionDto.getRunStatus());
         workflowStepInstanceRepository.save(workflowStepInstance);
-        Map<String, Object> output = function.getOutputData();
+        Map<String, Object> output = functionDto.getOutputData();
         workflowStepInstance.setOutputData(output);
         workflowStepInstanceRepository.save(workflowStepInstance);
     }
@@ -154,12 +155,12 @@ public class InstanceController {
             case SIMPLE, SUB_WORKFLOW:
                 return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
             case DO_WHILE:
-                if (expressionEvaluator.evaluateBooleanExpression(stepInstance, stepInstance.getStopCondition()))
+                if (expressionEvaluator.evaluateBooleanExpression(stepInstance.getWorkflowUid(), stepInstance.getStopCondition()))
                     return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
                 else
                     return stepInstance;
             case SWITCH:
-                String switchCondition = expressionEvaluator.evaluateStringExpression(stepInstance, stepInstance.getSwitchCondition());
+                String switchCondition = expressionEvaluator.evaluateStringExpression(stepInstance.getWorkflowUid(), stepInstance.getSwitchCondition());
                 WorkflowStepInstance foundStepInstance = stepInstance.getDecisionCases().get(switchCondition);
                 if (foundStepInstance == null) {
                     WorkflowStepInstance defaultStepInstance = stepInstance.getDecisionCases().get("Default");

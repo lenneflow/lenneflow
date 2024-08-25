@@ -1,7 +1,7 @@
 package de.lenneflow.orchestrationservice.component;
 
 import de.lenneflow.orchestrationservice.configuration.AppConfiguration;
-import de.lenneflow.orchestrationservice.feignmodels.Function;
+import de.lenneflow.orchestrationservice.dto.FunctionDto;
 import de.lenneflow.orchestrationservice.utils.Util;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
@@ -24,13 +24,13 @@ public class QueueListeners {
 
     @RabbitListener(queues = AppConfiguration.FUNCTIONQUEUE)
     public void functionListener(byte[] serializedFunction) {
-        Function function = Util.deserializeFunction(serializedFunction);
-        functionService.processFunctionFromQueue(function);
+        FunctionDto functionDto = Util.deserializeFunction(serializedFunction);
+        functionService.processFunctionDtoFromQueue(functionDto);
     }
 
     @RabbitListener(queues = AppConfiguration.FUNCTIONRESULTQUEUE)
     public void functionResultListener(byte[] serializedFunction) {
-        Function resultFunction = Util.deserializeFunction(serializedFunction);
-        workflowRunner.processFunctionResultFromQueue(resultFunction);
+        FunctionDto resultFunctionDto = Util.deserializeFunction(serializedFunction);
+        workflowRunner.processResultFromQueue(resultFunctionDto);
     }
 }

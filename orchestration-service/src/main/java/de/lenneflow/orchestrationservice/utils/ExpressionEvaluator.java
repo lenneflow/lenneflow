@@ -16,31 +16,52 @@ public class ExpressionEvaluator {
     final
     WorkflowStepInstanceRepository workflowStepInstanceRepository;
 
+    public final static String FORMULA_PREFIX = "@formula#";
+
     public ExpressionEvaluator(WorkflowStepInstanceRepository workflowStepInstanceRepository) {
         this.workflowStepInstanceRepository = workflowStepInstanceRepository;
     }
 
-    public boolean evaluateBooleanExpression(WorkflowStepInstance stepInstance, String expression) {
-        Object result = evaluateExpression(stepInstance, expression);
+    public boolean evaluateBooleanExpression(String workflowUid, String expression) {
+        Object result = evaluateExpression(workflowUid, expression);
         return Boolean.parseBoolean(result.toString());
     }
 
-    public String evaluateStringExpression(WorkflowStepInstance stepInstance, String expression) {
-        Object result = evaluateExpression(stepInstance, expression);
+    public String evaluateStringExpression(String workflowUid, String expression) {
+        Object result = evaluateExpression(workflowUid, expression);
         return result.toString();
 
     }
 
-    public double evaluateDoubleExpression(WorkflowStepInstance stepInstance, String expression) {
-        Object result = evaluateExpression(stepInstance, expression);
+    public double evaluateDoubleExpression(String workflowUid, String expression) {
+        Object result = evaluateExpression(workflowUid, expression);
         return Double.parseDouble(result.toString());
 
     }
 
-    private Object evaluateExpression(WorkflowStepInstance stepInstance, String expression) {
+    public void normalizeInputData(Map<String, Object> inputData, String workflowUid) {
+        for (Map.Entry<String, Object> entry : inputData.entrySet()) {
+            if (entry.getValue() instanceof Map) {
+                normalizeInputData((Map<String, Object>) entry.getValue(), workflowUid);
+            } else if (entry.getValue() instanceof String) {
+                Object newValue = evaluateInputDataEntry(workflowUid, (String) entry.getValue());
+                inputData.put(entry.getKey(), newValue);
+            }
+        }
+    }
+
+    private Object evaluateInputDataEntry(String workflowUid, String value) {
+        if(value.toLowerCase().startsWith(FORMULA_PREFIX)){
+            String expression = value.replace(FORMULA_PREFIX, "").replace("#","");
+            return evaluateExpression(workflowUid, expression);
+        }
+        return value;
+    }
+
+    private Object evaluateExpression(String workflowUid, String expression) {
         String[] subStrings = StringUtils.substringsBetween(expression, "[", "]");
         for(String s : subStrings) {
-            expression = expression.replace(s, getDataFromSubstring(stepInstance, s));
+            expression = expression.replace(s, getDataFromSubstring(workflowUid, s));
         }
         expression = expression.replace("[", "").replace("]", "");
         Expression exp = new Expression(expression);
@@ -52,17 +73,18 @@ public class ExpressionEvaluator {
         }
     }
 
-    private String getDataFromSubstring(WorkflowStepInstance stepInstance, String dataPath) {
+    private String getDataFromSubstring(String workflowUid, String dataPath) {
         String[] stringParts = dataPath.split("\\.");
-        WorkflowStepInstance step = workflowStepInstanceRepository.findByNameAndWorkflowInstanceUid(stringParts[0].trim(), stepInstance.getWorkflowUid());
+        WorkflowStepInstance step = workflowStepInstanceRepository.findByNameAndWorkflowInstanceUid(stringParts[0].trim(), workflowUid);
         return switch (stringParts[1].toLowerCase().trim()) {
-            case "output" -> {
+            case "output", "outputdata" -> {
                 Map<String, Object> outputData = step.getOutputData();
                 yield outputData.get(stringParts[2].trim()).toString();
             }
-            case "input" -> {
+            case "input", "inputdata" -> {
                 Map<String, Object> inputData = step.getInputData();
                 yield inputData.get(stringParts[2].trim()).toString();
+                //TODO get deeper located data
             }
             default -> throw new InternalServiceException("Invalid data path: " + dataPath);
         };

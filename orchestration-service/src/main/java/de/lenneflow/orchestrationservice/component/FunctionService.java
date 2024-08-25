@@ -1,13 +1,11 @@
 package de.lenneflow.orchestrationservice.component;
 
+import de.lenneflow.orchestrationservice.dto.FunctionDto;
 import de.lenneflow.orchestrationservice.enums.RunStatus;
-import de.lenneflow.orchestrationservice.feignmodels.Function;
-import de.lenneflow.orchestrationservice.utils.Util;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -22,21 +20,31 @@ public class FunctionService {
         this.queueController = queueController;
     }
 
-    @Async
-    public CompletableFuture<Void> processFunctionFromQueue(Function function) {
-        //Map<String, Object> inputData = function.getInputData(); //TODO
-        Map<String, Object> inputData = new HashMap<>();
-        inputData.put("processTimeInMillis", 10000);
-        String endpoint = Util.getFunctionEndpointUrl(function);
-        Map<String, Object> outputData = restTemplate.postForObject(endpoint, inputData, Map.class);
+//    @Async
+//    public CompletableFuture<Void> processFunctionDtoFromQueue(FunctionDto functionDto) {
+//        Map<String, Object> inputData = functionDto.getInputData();
+//        Map<String, Object> outputData = restTemplate.postForObject(functionDto.getServiceUrl(), inputData, Map.class);
+//        if (outputData != null) {
+//            functionDto.setOutputData(outputData);
+//            functionDto.setRunStatus(RunStatus.COMPLETED);
+//        } else {
+//            functionDto.setRunStatus(RunStatus.FAILED);
+//        }
+//        queueController.addFunctionDtoToResultQueue(functionDto);
+//        return CompletableFuture.completedFuture(null);
+//    }
+
+    public void processFunctionDtoFromQueue(FunctionDto functionDto) {
+        Map<String, Object> inputData = functionDto.getInputData();
+        //TODO Service url to function
+        Map<String, Object> outputData = restTemplate.postForObject("http://lenneflowworker/api/functionjava/process", inputData, Map.class);
         if (outputData != null) {
-            function.setOutputData(outputData);
-            function.setRunStatus(RunStatus.COMPLETED);
+            functionDto.setOutputData(outputData);
+            functionDto.setRunStatus(RunStatus.COMPLETED);
         } else {
-            function.setRunStatus(RunStatus.FAILED);
+            functionDto.setRunStatus(RunStatus.FAILED);
         }
-        queueController.addFunctionToResultQueue(function);
-        return CompletableFuture.completedFuture(null);
+        queueController.addFunctionDtoToResultQueue(functionDto);
     }
 
 

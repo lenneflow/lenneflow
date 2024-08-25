@@ -1,5 +1,6 @@
 package de.lenneflow.orchestrationservice.component;
 
+import de.lenneflow.orchestrationservice.dto.FunctionDto;
 import de.lenneflow.orchestrationservice.enums.RunOrderLabel;
 import de.lenneflow.orchestrationservice.enums.RunStatus;
 import de.lenneflow.orchestrationservice.feignclients.FunctionServiceClient;
@@ -12,6 +13,8 @@ import de.lenneflow.orchestrationservice.model.WorkflowStepInstance;
 import de.lenneflow.orchestrationservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
+import de.lenneflow.orchestrationservice.utils.ExpressionEvaluator;
+import de.lenneflow.orchestrationservice.utils.Util;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -26,8 +29,9 @@ public class WorkflowRunner {
     final WorkflowStepInstanceRepository workflowStepInstanceRepository;
     final QueueController queueController;
     final InstanceController instanceController;
+    final ExpressionEvaluator expressionEvaluator;
 
-    WorkflowRunner(FunctionServiceClient functionServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowExecutionRepository workflowExecutionRepository, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController, InstanceController instanceController) {
+    WorkflowRunner(FunctionServiceClient functionServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowExecutionRepository workflowExecutionRepository, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController, InstanceController instanceController, ExpressionEvaluator expressionEvaluator) {
         this.functionServiceClient = functionServiceClient;
         this.workflowServiceClient = workflowServiceClient;
         this.workflowExecutionRepository = workflowExecutionRepository;
@@ -35,26 +39,27 @@ public class WorkflowRunner {
         this.workflowStepInstanceRepository = workflowStepInstanceRepository;
         this.queueController = queueController;
         this.instanceController = instanceController;
+        this.expressionEvaluator = expressionEvaluator;
     }
 
     /**
      * Implementation of the Function results listener. This method will listen on the function results queue and process
      * the result function
      *
-     * @param resultFunction function object
+     * @param resultFunctionDto function object
      */
-    public void processFunctionResultFromQueue(Function resultFunction) {
-        WorkflowExecution execution = workflowExecutionRepository.findByRunId(resultFunction.getExecutionId());
-        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(resultFunction.getWorkflowInstanceId());
-        WorkflowStepInstance workflowStepInstance = workflowStepInstanceRepository.findByUid(resultFunction.getStepInstanceId());
+    public void processResultFromQueue(FunctionDto resultFunctionDto) {
+        WorkflowExecution execution = workflowExecutionRepository.findByRunId(resultFunctionDto.getExecutionId());
+        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(resultFunctionDto.getWorkflowInstanceId());
+        WorkflowStepInstance workflowStepInstance = workflowStepInstanceRepository.findByUid(resultFunctionDto.getStepInstanceId());
 
-        instanceController.updateWorkflowStepInstance(workflowStepInstance, resultFunction);
+        instanceController.updateWorkflowStepInstance(workflowStepInstance, resultFunctionDto);
 
         if (workflowStepInstance.getRunOrderLabel() == RunOrderLabel.LAST) {
             terminateWorkflowRun(execution, workflowInstance, workflowStepInstance);
             return;
         }
-        switch (resultFunction.getRunStatus()) {
+        switch (resultFunctionDto.getRunStatus()) {
             case COMPLETED, SKIPPED:
                 processStepCompletedOrSkipped(execution,workflowInstance,workflowStepInstance);
                 break;
@@ -65,7 +70,7 @@ public class WorkflowRunner {
                 processStepCancelledOrFailedWithTerminalError(execution,workflowInstance,workflowStepInstance);
                 break;
             default:
-                throw new IllegalStateException("Unexpected value: " + resultFunction.getRunStatus());
+                throw new IllegalStateException("Unexpected value: " + resultFunctionDto.getRunStatus());
         }
     }
 
@@ -76,7 +81,7 @@ public class WorkflowRunner {
             function.setStepInstanceId(nextStepInstance.getUid());
             function.setExecutionId(execution.getRunId());
             function.setWorkflowInstanceId(workflowInstance.getUid());
-            runStep(function, nextStepInstance);
+            runStep(Util.mapFunctionToDto(function), nextStepInstance);
         }
     }
 
@@ -85,7 +90,7 @@ public class WorkflowRunner {
             workflowStepInstance.setRetryCount(workflowStepInstance.getRetryCount() - 1);
             workflowStepInstanceRepository.save(workflowStepInstance);
             Function function = functionServiceClient.getFunctionByUid(workflowStepInstance.getFunctionId());
-            runStep(function, workflowStepInstance);
+            runStep(Util.mapFunctionToDto(function), workflowStepInstance);
         }
         terminateWorkflowRun(execution, workflowInstance, workflowStepInstance);
     }
@@ -139,10 +144,11 @@ public class WorkflowRunner {
 
         WorkflowStepInstance firstStepInstance = instanceController.getStartStep(workflowInstance);
         Function function = functionServiceClient.getFunctionByUid(firstStepInstance.getFunctionId());
-        function.setStepInstanceId(firstStepInstance.getUid());
-        function.setExecutionId(execution.getRunId());
-        function.setWorkflowInstanceId(workflowInstance.getUid());
-        runStep(function, firstStepInstance);
+        FunctionDto functionDto = Util.mapFunctionToDto(function);
+        functionDto.setStepInstanceId(firstStepInstance.getUid());
+        functionDto.setExecutionId(execution.getRunId());
+        functionDto.setWorkflowInstanceId(workflowInstance.getUid());
+        runStep(functionDto, firstStepInstance);
         return workflowExecutionRepository.findByRunId(execution.getRunId());
     }
 
@@ -212,12 +218,14 @@ public class WorkflowRunner {
     /**
      * Runs a workflow step by adding it to the queue.
      *
-     * @param function function to process.
+     * @param functionDto function to process.
      * @param step     workflow step to run
      */
-    private void runStep(Function function, WorkflowStepInstance step) {
-        function.setInputData(step.getInputData());
-        queueController.addFunctionToQueue(function);
+    private void runStep(FunctionDto functionDto, WorkflowStepInstance step) {
+        Map<String, Object> inputData = step.getInputData();
+        expressionEvaluator.normalizeInputData(step.getInputData(), step.getWorkflowUid());
+        functionDto.setInputData(inputData);
+        queueController.addFunctionDtoToQueue(functionDto);
         instanceController.updateWorkflowStepInstanceStatus(step, RunStatus.RUNNING);
     }
 

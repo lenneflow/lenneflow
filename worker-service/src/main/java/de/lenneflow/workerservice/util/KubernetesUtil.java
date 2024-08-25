@@ -76,6 +76,7 @@ public class KubernetesUtil {
         client.resource(deployment).inNamespace(NAMESPACE).create();
         client.resource(service).inNamespace(NAMESPACE).create();
         createOrUpdateIngress(worker,function);
+        //TODO set service url to function
         updateDeploymentState(worker, function);
 
     }
