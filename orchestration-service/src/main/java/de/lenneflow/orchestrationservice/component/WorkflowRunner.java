@@ -223,7 +223,7 @@ public class WorkflowRunner {
      */
     private void runStep(FunctionDto functionDto, WorkflowStepInstance step) {
         Map<String, Object> inputData = step.getInputData();
-        expressionEvaluator.normalizeInputData(step.getInputData(), step.getWorkflowUid());
+        expressionEvaluator.normalizeInputData(step.getInputData(), step.getWorkflowInstanceUid());
         functionDto.setInputData(inputData);
         queueController.addFunctionDtoToQueue(functionDto);
         instanceController.updateWorkflowStepInstanceStatus(step, RunStatus.RUNNING);

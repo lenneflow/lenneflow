@@ -41,6 +41,8 @@ public class Function {
 
     private int assignedHostPort;
 
+    private String serviceUrl;
+
     private LocalDateTime creationTime;
 
     private LocalDateTime updateTime;

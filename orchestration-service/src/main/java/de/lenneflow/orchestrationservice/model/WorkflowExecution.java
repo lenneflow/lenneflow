@@ -11,7 +11,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Getter
@@ -35,8 +37,6 @@ public class WorkflowExecution {
     @DocumentReference
     private List<WorkflowStepInstance> runSteps;
 
-    private String workflowType;
-
     private int workflowVersion;
 
     private LocalDateTime startTime;
@@ -45,7 +45,7 @@ public class WorkflowExecution {
 
     private String errors;
 
-    private String runOutput;
+    private Map<String, Object> runOutput = new HashMap<>();
 
     public WorkflowExecution(Workflow workflow, WorkflowInstance workflowInstance){
         this.runId = UUID.randomUUID().toString();

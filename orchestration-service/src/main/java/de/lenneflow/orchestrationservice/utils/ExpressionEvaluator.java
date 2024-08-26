@@ -22,60 +22,67 @@ public class ExpressionEvaluator {
         this.workflowStepInstanceRepository = workflowStepInstanceRepository;
     }
 
-    public boolean evaluateBooleanExpression(String workflowUid, String expression) {
-        Object result = evaluateExpression(workflowUid, expression);
-        return Boolean.parseBoolean(result.toString());
+    public boolean evaluateBooleanExpression(String workflowInstanceUid, String expression) {
+        EvaluationValue result = evaluateExpression(workflowInstanceUid, expression);
+        return result.getBooleanValue();
     }
 
-    public String evaluateStringExpression(String workflowUid, String expression) {
-        Object result = evaluateExpression(workflowUid, expression);
-        return result.toString();
-
-    }
-
-    public double evaluateDoubleExpression(String workflowUid, String expression) {
-        Object result = evaluateExpression(workflowUid, expression);
-        return Double.parseDouble(result.toString());
+    public String evaluateStringExpression(String workflowInstanceUid, String expression) {
+        EvaluationValue result = evaluateExpression(workflowInstanceUid, expression);
+        return result.getStringValue();
 
     }
 
-    public void normalizeInputData(Map<String, Object> inputData, String workflowUid) {
+    public double evaluateDoubleExpression(String workflowInstanceUid, String expression) {
+        EvaluationValue result = evaluateExpression(workflowInstanceUid, expression);
+        return result.getNumberValue().doubleValue();
+
+    }
+
+    public void normalizeInputData(Map<String, Object> inputData, String workflowInstanceUid) {
         for (Map.Entry<String, Object> entry : inputData.entrySet()) {
             if (entry.getValue() instanceof Map) {
-                normalizeInputData((Map<String, Object>) entry.getValue(), workflowUid);
+                normalizeInputData((Map<String, Object>) entry.getValue(), workflowInstanceUid);
             } else if (entry.getValue() instanceof String) {
-                Object newValue = evaluateInputDataEntry(workflowUid, (String) entry.getValue());
+                Object newValue = evaluateInputDataEntry(workflowInstanceUid, (String) entry.getValue());
                 inputData.put(entry.getKey(), newValue);
             }
         }
     }
 
-    private Object evaluateInputDataEntry(String workflowUid, String value) {
+    private Object evaluateInputDataEntry(String workflowInstanceUid, String value) {
         if(value.toLowerCase().startsWith(FORMULA_PREFIX)){
             String expression = value.replace(FORMULA_PREFIX, "").replace("#","");
-            return evaluateExpression(workflowUid, expression);
+            EvaluationValue eval = evaluateExpression(workflowInstanceUid, expression);
+            if(eval.isBooleanValue())
+                return eval.getBooleanValue();
+            if(eval.isNumberValue())
+                return eval.getNumberValue().intValue();
+            if(eval.isDurationValue())
+                return eval.getDurationValue();
+            return eval.getValue().toString();
+
         }
         return value;
     }
 
-    private Object evaluateExpression(String workflowUid, String expression) {
+    private EvaluationValue evaluateExpression(String workflowInstanceUid, String expression) {
         String[] subStrings = StringUtils.substringsBetween(expression, "[", "]");
         for(String s : subStrings) {
-            expression = expression.replace(s, getDataFromSubstring(workflowUid, s));
+            expression = expression.replace(s, getDataFromSubstring(workflowInstanceUid, s));
         }
         expression = expression.replace("[", "").replace("]", "");
         Expression exp = new Expression(expression);
         try {
-            EvaluationValue value = exp.evaluate();
-            return value.getValue();
+            return exp.evaluate();
         } catch (Exception e) {
             throw new InternalServiceException("Invalid expression in Payload: " + expression);
         }
     }
 
-    private String getDataFromSubstring(String workflowUid, String dataPath) {
+    private String getDataFromSubstring(String workflowInstanceUid, String dataPath) {
         String[] stringParts = dataPath.split("\\.");
-        WorkflowStepInstance step = workflowStepInstanceRepository.findByNameAndWorkflowInstanceUid(stringParts[0].trim(), workflowUid);
+        WorkflowStepInstance step = workflowStepInstanceRepository.findByNameAndWorkflowInstanceUid(stringParts[0].trim(), workflowInstanceUid);
         return switch (stringParts[1].toLowerCase().trim()) {
             case "output", "outputdata" -> {
                 Map<String, Object> outputData = step.getOutputData();
@@ -91,7 +98,5 @@ public class ExpressionEvaluator {
 
 
     }
-
-
 
 }

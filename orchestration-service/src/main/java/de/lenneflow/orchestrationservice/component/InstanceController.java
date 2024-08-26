@@ -155,12 +155,12 @@ public class InstanceController {
             case SIMPLE, SUB_WORKFLOW:
                 return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
             case DO_WHILE:
-                if (expressionEvaluator.evaluateBooleanExpression(stepInstance.getWorkflowUid(), stepInstance.getStopCondition()))
+                if (expressionEvaluator.evaluateBooleanExpression(stepInstance.getWorkflowInstanceUid(), stepInstance.getStopCondition()))
                     return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
                 else
                     return stepInstance;
             case SWITCH:
-                String switchCondition = expressionEvaluator.evaluateStringExpression(stepInstance.getWorkflowUid(), stepInstance.getSwitchCondition());
+                String switchCondition = expressionEvaluator.evaluateStringExpression(stepInstance.getWorkflowInstanceUid(), stepInstance.getSwitchCondition());
                 WorkflowStepInstance foundStepInstance = stepInstance.getDecisionCases().get(switchCondition);
                 if (foundStepInstance == null) {
                     WorkflowStepInstance defaultStepInstance = stepInstance.getDecisionCases().get("Default");
