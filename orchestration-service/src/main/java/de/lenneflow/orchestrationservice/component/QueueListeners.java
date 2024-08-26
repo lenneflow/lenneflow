@@ -25,7 +25,9 @@ public class QueueListeners {
     @RabbitListener(queues = AppConfiguration.FUNCTIONQUEUE)
     public void functionListener(byte[] serializedFunction) {
         FunctionDto functionDto = Util.deserializeFunction(serializedFunction);
-        functionService.processFunctionDtoFromQueue(functionDto);
+        //TODO thread should be replaced by Async
+        new Thread(() -> {functionService.processFunctionDtoFromQueue(functionDto);}).start();
+
     }
 
     @RabbitListener(queues = AppConfiguration.FUNCTIONRESULTQUEUE)

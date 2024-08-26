@@ -89,8 +89,8 @@ public class KubernetesUtil {
             KubernetesClient client = getKubernetesClient(worker);
             String deploymentName = function.getName();
             client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).waitUntilCondition(
-                    pod -> pod.getStatus().getReadyReplicas() > 0, 5, MINUTES);
-            if(client.services().inNamespace(NAMESPACE).withName(deploymentName).isReady()){
+                    d -> d.getStatus().getReadyReplicas() > 0, 5, MINUTES);
+            if(client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).isReady()){
                 updateFunction(function, DeploymentState.DEPLOYED);
                 return;
             }
