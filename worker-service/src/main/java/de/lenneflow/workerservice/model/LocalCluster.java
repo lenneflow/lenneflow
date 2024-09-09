@@ -18,7 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document
-public class Worker {
+public class LocalCluster {
 
     @Id
     private String uid;

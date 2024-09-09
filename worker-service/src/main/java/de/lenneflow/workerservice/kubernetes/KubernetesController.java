@@ -1,4 +1,4 @@
-package de.lenneflow.workerservice.util;
+package de.lenneflow.workerservice.kubernetes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
@@ -6,12 +6,10 @@ import de.lenneflow.workerservice.enums.DeploymentState;
 import de.lenneflow.workerservice.exception.InternalServiceException;
 import de.lenneflow.workerservice.feignclients.FunctionServiceClient;
 import de.lenneflow.workerservice.feignmodel.Function;
-import de.lenneflow.workerservice.model.Worker;
+import de.lenneflow.workerservice.model.LocalCluster;
 import de.lenneflow.workerservice.repository.WorkerRepository;
-import io.fabric8.kubernetes.api.model.Namespace;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
+import de.lenneflow.workerservice.util.YamlEditor;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
@@ -33,7 +31,7 @@ import java.util.Random;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 @Component
-public class KubernetesUtil {
+public class KubernetesController {
 
     public static final String NAMESPACE = "lenneflow";
     public static final String SERVICE_ACCOUNT_NAME = "lenneflow-sa";
@@ -42,61 +40,65 @@ public class KubernetesUtil {
     WorkerRepository workerRepository;
     final FunctionServiceClient functionServiceClient;
 
-    public KubernetesUtil(WorkerRepository workerRepository, FunctionServiceClient functionServiceClient) {
+    public KubernetesController(WorkerRepository workerRepository, FunctionServiceClient functionServiceClient) {
         this.workerRepository = workerRepository;
         this.functionServiceClient = functionServiceClient;
     }
 
-    public void checkWorkerConnection(Worker worker) {
-        KubernetesClient client = getKubernetesClient(worker);
+    public void checkWorkerConnection(LocalCluster localCluster) {
+        KubernetesClient client = getKubernetesClient(localCluster);
         String apiVersion = client.getApiVersion();
         client.close();
         if(apiVersion == null || apiVersion.isEmpty()){
-            throw new InternalServiceException("The connection to the worker " + worker.getName() + " was not possible");
+            throw new InternalServiceException("The connection to the localCluster " + localCluster.getName() + " was not possible");
         }
     }
 
-    public void checkServiceExists(Worker worker) {
-        KubernetesClient client = getKubernetesClient(worker);
+    public void checkServiceExists(LocalCluster localCluster) {
+        KubernetesClient client = getKubernetesClient(localCluster);
         String apiVersion = client.getApiVersion();
         client.close();
         if(apiVersion == null || apiVersion.isEmpty()){
-            throw new InternalServiceException("The connection to the worker " + worker.getName() + " was not possible");
+            throw new InternalServiceException("The connection to the localCluster " + localCluster.getName() + " was not possible");
         }
     }
 
     public void deployFunctionImageToWorker(Function function) {
-        Worker worker = getWorkerForFunction(function);
-        assignHostPortToFunction(worker, function);
-        KubernetesClient client = getKubernetesClient(worker);
-        createNamespace(worker);
-        createServiceAccount(worker);
+        LocalCluster localCluster = getWorkerForFunction(function);
+        assignHostPortToFunction(localCluster, function);
+        KubernetesClient client = getKubernetesClient(localCluster);
+        createNamespace(localCluster);
+        createServiceAccount(localCluster);
         Deployment deployment = YamlEditor.createKubernetesDeploymentResource(function,2, SERVICE_ACCOUNT_NAME);
         Service service = YamlEditor.createKubernetesServiceResource(function, "ClusterIP");
         client.resource(deployment).inNamespace(NAMESPACE).create();
         client.resource(service).inNamespace(NAMESPACE).create();
-        createOrUpdateIngress(worker,function);
-        String functionServiceUrl = "https://" + worker.getHostName() + function.getResourcePath();
+        createOrUpdateIngress(localCluster,function);
+        String functionServiceUrl = "https://" + localCluster.getHostName() + function.getResourcePath();
         function.setServiceUrl(functionServiceUrl);
         functionServiceClient.updateFunction(function, function.getUid());
-        updateDeploymentState(worker, function);
-
+        updateDeploymentState(localCluster, function);
     }
 
-    private void updateDeploymentState(Worker worker, Function function) {
+    private void updateDeploymentState(LocalCluster localCluster, Function function) {
         new Thread(() ->{
+            try {
+                Thread.sleep(15000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             updateFunction(function, DeploymentState.DEPLOYING);
-            KubernetesClient client = getKubernetesClient(worker);
+            KubernetesClient client = getKubernetesClient(localCluster);
             String deploymentName = function.getName();
+
             client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).waitUntilCondition(
-                    d -> d.getStatus().getReadyReplicas() > 0, 5, MINUTES);
+                    d -> ( d.getStatus().getReadyReplicas() > 0), 5, MINUTES);
             if(client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).isReady()){
                 updateFunction(function, DeploymentState.DEPLOYED);
                 return;
             }
             updateFunction(function, DeploymentState.FAILED);
         }).start();
-
     }
 
     private void updateFunction(Function function, DeploymentState deploymentState) {
@@ -104,11 +106,11 @@ public class KubernetesUtil {
         functionServiceClient.updateFunction(function, function.getUid());
     }
 
-    public void assignHostPortToFunction(Worker worker, Function function){
+    public void assignHostPortToFunction(LocalCluster localCluster, Function function){
         if(function.getAssignedHostPort() >= 47000){
             return;
         }
-        List<Integer> ports = worker.getUsedHostPorts();
+        List<Integer> ports = localCluster.getUsedHostPorts();
         if(ports.isEmpty()){
             ports.add(47000);
         }
@@ -116,15 +118,15 @@ public class KubernetesUtil {
         function.setAssignedHostPort(nextPort);
         functionServiceClient.updateFunction(function, function.getUid());
         ports.add(nextPort);
-        worker.setUsedHostPorts(ports);
-        workerRepository.save(worker);
+        localCluster.setUsedHostPorts(ports);
+        workerRepository.save(localCluster);
     }
 
     public void deployFunctionToWorker(Function function, List<String> deploymentFileUrls) {
         try {
-            Worker worker = getWorkerForFunction(function);
-            KubernetesClient client = getKubernetesClient(worker);
-            createNamespace(worker);
+            LocalCluster localCluster = getWorkerForFunction(function);
+            KubernetesClient client = getKubernetesClient(localCluster);
+            createNamespace(localCluster);
 
             Yaml yaml = new Yaml();
             ObjectMapper mapper = new YAMLMapper();
@@ -141,13 +143,13 @@ public class KubernetesUtil {
         }
     }
 
-    private void createOrUpdateIngress(Worker worker, Function function) {
-        KubernetesClient client = getKubernetesClient(worker);
-        Ingress currentIngress = client.network().v1().ingresses().inNamespace(NAMESPACE).withName(worker.getIngressServiceName()).get();
-        assignHostPortToFunction(worker, function);
+    private void createOrUpdateIngress(LocalCluster localCluster, Function function) {
+        KubernetesClient client = getKubernetesClient(localCluster);
+        Ingress currentIngress = client.network().v1().ingresses().inNamespace(NAMESPACE).withName(localCluster.getIngressServiceName()).get();
+        assignHostPortToFunction(localCluster, function);
         try {
             if (currentIngress == null) {
-                Ingress ingressResource = YamlEditor.createKubernetesIngressResource(worker, function);
+                Ingress ingressResource = YamlEditor.createKubernetesIngressResource(localCluster, function);
                 currentIngress = client.resource(ingressResource).inNamespace(NAMESPACE).create();
                 return;
             }
@@ -161,8 +163,8 @@ public class KubernetesUtil {
 
     }
 
-    private void createNamespace(Worker worker) {
-        KubernetesClient client = getKubernetesClient(worker);
+    private void createNamespace(LocalCluster localCluster) {
+        KubernetesClient client = getKubernetesClient(localCluster);
         Namespace ns = new NamespaceBuilder().withNewMetadata().withName(NAMESPACE)
                 .endMetadata().build();
         try {
@@ -175,8 +177,8 @@ public class KubernetesUtil {
         }
     }
 
-    private void createServiceAccount(Worker worker) {
-        KubernetesClient client = getKubernetesClient(worker);
+    private void createServiceAccount(LocalCluster localCluster) {
+        KubernetesClient client = getKubernetesClient(localCluster);
         try {
             if (client.serviceAccounts().inNamespace(NAMESPACE).withName(SERVICE_ACCOUNT_NAME).get() == null) {
                 ServiceAccount serviceAccountResource = YamlEditor.createKubernetesServiceAccountResource(SERVICE_ACCOUNT_NAME);
@@ -192,26 +194,26 @@ public class KubernetesUtil {
 
     }
 
-    private Worker getWorkerForFunction(Function function) {
+    private LocalCluster getWorkerForFunction(Function function) {
         Random random = new Random();
         String functionType = function.getType();
-        List<Worker> workers = workerRepository.findBySupportedFunctionTypesContaining(functionType);
-        if (workers == null || workers.isEmpty()) {
-            List<Worker> workers2 = workerRepository.findAll();
+        List<LocalCluster> localClusters = workerRepository.findBySupportedFunctionTypesContaining(functionType);
+        if (localClusters == null || localClusters.isEmpty()) {
+            List<LocalCluster> workers2 = workerRepository.findAll();
             if(workers2.isEmpty()) {
-                throw new InternalServiceException("No worker found!" );
+                throw new InternalServiceException("No worker found!");
             }
             return workers2.get(random.nextInt(workers2.size()));
         }
-        return workers.get(random.nextInt(workers.size()));
+        return localClusters.get(random.nextInt(localClusters.size()));
     }
 
-    private KubernetesClient getKubernetesClient(Worker worker) {
-        String masterUrl = "https://" + worker.getIpAddress() + ":" + worker.getKubernetesApiPort();
+    private KubernetesClient getKubernetesClient(LocalCluster localCluster) {
+        String masterUrl = "https://" + localCluster.getIpAddress() + ":" + localCluster.getKubernetesApiPort();
         Config config = new ConfigBuilder()
                 .withMasterUrl(masterUrl)
                 .withTrustCerts(true)
-                .withOauthToken(worker.getKubernetesBearerToken())
+                .withOauthToken(localCluster.getKubernetesBearerToken())
                 .build();
         return new KubernetesClientBuilder().withConfig(config).build();
     }

@@ -14,8 +14,8 @@ cd function-service
 docker build -t lenneflow/function-service .
 cd..
 
-cd worker-service
-docker build -t lenneflow/worker-service .
+cd localCluster-service
+docker build -t lenneflow/localCluster-service .
 cd..
 
 cd workflow-service

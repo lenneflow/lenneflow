@@ -1,19 +1,19 @@
 package de.lenneflow.workerservice.repository;
 
-import de.lenneflow.workerservice.model.Worker;
+import de.lenneflow.workerservice.model.LocalCluster;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 
-public interface WorkerRepository extends MongoRepository<Worker, String> {
+public interface WorkerRepository extends MongoRepository<LocalCluster, String> {
 
-    Worker findByUid(String uuid);
+    LocalCluster findByUid(String uuid);
 
-    Worker findByName(String name);
+    LocalCluster findByName(String name);
 
-    Worker findByIpAddress(String ipAddress);
+    LocalCluster findByIpAddress(String ipAddress);
 
-    Worker findByHostName(String hostName);
+    LocalCluster findByHostName(String hostName);
 
-    List<Worker> findBySupportedFunctionTypesContaining(String functionType);
+    List<LocalCluster> findBySupportedFunctionTypesContaining(String functionType);
 }
