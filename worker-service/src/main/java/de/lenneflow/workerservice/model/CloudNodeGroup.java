@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,4 +45,8 @@ public class CloudNodeGroup {
     private String roleArn;
 
     private List<String> subnetIds = new ArrayList<>();
+
+    private LocalDateTime created;
+
+    private LocalDateTime updated;
 }

@@ -1,20 +1,17 @@
 package de.lenneflow.workerservice.controller;
 
-import com.amazonaws.services.eks.model.Addon;
-import de.lenneflow.workerservice.dto.WorkerDTO;
-import de.lenneflow.workerservice.enums.WorkerStatus;
+import de.lenneflow.workerservice.enums.CloudProvider;
+import de.lenneflow.workerservice.enums.ClusterStatus;
 import de.lenneflow.workerservice.exception.ResourceNotFoundException;
 import de.lenneflow.workerservice.feignclients.FunctionServiceClient;
 import de.lenneflow.workerservice.feignmodel.Function;
-import de.lenneflow.workerservice.kubernetes.aws.CloudController;
-import de.lenneflow.workerservice.model.CloudCluster;
+import de.lenneflow.workerservice.kubernetes.cloud.CloudController;
+import de.lenneflow.workerservice.model.KubernetesCluster;
 import de.lenneflow.workerservice.model.CloudCredential;
 import de.lenneflow.workerservice.model.CloudNodeGroup;
-import de.lenneflow.workerservice.model.LocalCluster;
-import de.lenneflow.workerservice.repository.CloudClusterRepository;
+import de.lenneflow.workerservice.repository.KubernetesClusterRepository;
 import de.lenneflow.workerservice.repository.CloudCredentialRepository;
 import de.lenneflow.workerservice.repository.CloudNodeGroupRepository;
-import de.lenneflow.workerservice.repository.WorkerRepository;
 import de.lenneflow.workerservice.kubernetes.KubernetesController;
 import de.lenneflow.workerservice.util.PayloadValidator;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -31,25 +28,24 @@ import java.util.UUID;
 @RequestMapping("/api/workers")
 public class WorkerController {
 
-    final
-    WorkerRepository workerRepository;
+    private static final String KUBERNETES_CLUSTER_NOT_FOUND = "KubernetesCluster not found";
+
     final ModelMapper modelMapper;
     final PayloadValidator payloadValidator;
     final FunctionServiceClient functionServiceClient;
-    final KubernetesController kubernetesController;
-    final CloudClusterRepository cloudClusterRepository;
     final CloudController cloudController;
+    final KubernetesController kubernetesController;
+    final KubernetesClusterRepository kubernetesClusterRepository;
     final CloudCredentialRepository localCredentialRepository;
     final CloudCredentialRepository cloudCredentialRepository;
     final CloudNodeGroupRepository cloudNodeGroupRepository;
 
-    public WorkerController(WorkerRepository workerRepository, PayloadValidator payloadValidator, FunctionServiceClient functionServiceClient, KubernetesController kubernetesController, CloudClusterRepository cloudClusterRepository, CloudController cloudController, CloudCredentialRepository localCredentialRepository, CloudCredentialRepository cloudCredentialRepository, CloudNodeGroupRepository cloudNodeGroupRepository) {
-        this.workerRepository = workerRepository;
+    public WorkerController(PayloadValidator payloadValidator, FunctionServiceClient functionServiceClient, KubernetesClusterRepository kubernetesClusterRepository, CloudController cloudController, KubernetesController kubernetesController1, CloudCredentialRepository localCredentialRepository, CloudCredentialRepository cloudCredentialRepository, CloudNodeGroupRepository cloudNodeGroupRepository) {
         this.payloadValidator = payloadValidator;
         this.functionServiceClient = functionServiceClient;
-        this.kubernetesController = kubernetesController;
-        this.cloudClusterRepository = cloudClusterRepository;
+        this.kubernetesClusterRepository = kubernetesClusterRepository;
         this.cloudController = cloudController;
+        this.kubernetesController = kubernetesController1;
         this.localCredentialRepository = localCredentialRepository;
         this.cloudNodeGroupRepository = cloudNodeGroupRepository;
         modelMapper = new ModelMapper();
@@ -62,17 +58,28 @@ public class WorkerController {
         return "Welcome to the Worker Service!";
     }
 
-    @PostMapping
-    public ResponseEntity<LocalCluster> createNewWorker(@RequestBody WorkerDTO workerDTO) {
-        LocalCluster localCluster = modelMapper.map(workerDTO, LocalCluster.class);
-        localCluster.setUid(UUID.randomUUID().toString());
-        localCluster.setCreated(LocalDateTime.now());
-        localCluster.setUpdated(LocalDateTime.now());
-        localCluster.setStatus(WorkerStatus.OFFLINE);
-        localCluster.setIngressServiceName(localCluster.getName().toLowerCase() + "-ingress");
-        payloadValidator.validate(localCluster);
-        LocalCluster savedLocalCluster = workerRepository.save(localCluster);
-        return new ResponseEntity<>(savedLocalCluster, HttpStatus.CREATED);
+    @PostMapping("/clusters")
+    public ResponseEntity<KubernetesCluster> createKubernetesCluster(@RequestBody KubernetesCluster kubernetesCluster) {
+        kubernetesCluster.setUid(UUID.randomUUID().toString());
+        kubernetesCluster.setCreated(LocalDateTime.now());
+        kubernetesCluster.setUpdated(LocalDateTime.now());
+        kubernetesCluster.setStatus(ClusterStatus.OFFLINE);
+        kubernetesCluster.setIngressServiceName(kubernetesCluster.getClusterName().toLowerCase() + "-ingress");
+        payloadValidator.validate(kubernetesCluster);
+        kubernetesClusterRepository.save(kubernetesCluster);
+        if(!kubernetesCluster.getCloudProvider().equals(CloudProvider.LOCAL)){
+            if(kubernetesCluster.isCreate()){
+                kubernetesCluster.setStatus(ClusterStatus.CREATING);
+                kubernetesClusterRepository.save(kubernetesCluster);
+                cloudController.createCluster(kubernetesCluster);
+            }else{
+                cloudController.getCluster(kubernetesCluster);
+                kubernetesCluster.setStatus(ClusterStatus.CREATED);
+                kubernetesClusterRepository.save(kubernetesCluster);
+            }
+        }
+        KubernetesCluster savedKubernetesCluster = kubernetesClusterRepository.save(kubernetesCluster);
+        return new ResponseEntity<>(savedKubernetesCluster, HttpStatus.CREATED);
     }
 
     @PostMapping("/clusters/credentials")
@@ -93,42 +100,30 @@ public class WorkerController {
     }
 
     @GetMapping("/clusters/{uid}/addons/{name}")
-    public ResponseEntity<Addon> createCloudClusterAddOn(@PathVariable("uid") String uid, @PathVariable("name") String addonName) {
-        CloudCluster cluster = cloudClusterRepository.findByUid(uid);
-        Addon addon = cloudController.createClusterAddOn(cluster, addonName);
+    public ResponseEntity<Object> createCloudClusterAddOn(@PathVariable("uid") String uid, @PathVariable("name") String addonName) {
+        KubernetesCluster cluster = kubernetesClusterRepository.findByUid(uid);
+        Object addon = cloudController.createClusterAddOn(cluster, addonName);
         return new ResponseEntity<>(addon, HttpStatus.OK);
     }
 
-    @PostMapping("/clusters")
-    public ResponseEntity<CloudCluster> createCloudCluster(@RequestBody CloudCluster cloudCluster) {
-        cloudCluster.setUid(UUID.randomUUID().toString());
-        //TODO set dates and validate (check existence)
-        CloudCluster savedCluster  = cloudClusterRepository.save(cloudCluster);
-        if(savedCluster.isCreate()){
-            cloudController.createCluster(cloudCluster);
-        }
-        return new ResponseEntity<>(savedCluster, HttpStatus.OK);
-    }
 
     @PostMapping("/{id}")
-    public ResponseEntity<LocalCluster> updateWorker(@RequestBody WorkerDTO workerDTO, @PathVariable String id) {
-        LocalCluster localCluster = workerRepository.findByUid(id);
-        modelMapper.map(workerDTO, localCluster);
-        if(localCluster == null) {
-            throw new ResourceNotFoundException("LocalCluster not found");
+    public ResponseEntity<KubernetesCluster> updateWorker(@RequestBody KubernetesCluster kubernetesCluster, @PathVariable String id) {
+        if(kubernetesCluster == null) {
+            throw new ResourceNotFoundException(KUBERNETES_CLUSTER_NOT_FOUND);
         }
-        payloadValidator.validate(localCluster);
-        LocalCluster savedLocalCluster = workerRepository.save(localCluster);
-        return new ResponseEntity<>(savedLocalCluster, HttpStatus.OK);
+        payloadValidator.validate(kubernetesCluster);
+        KubernetesCluster savedKubernetesCluster = kubernetesClusterRepository.save(kubernetesCluster);
+        return new ResponseEntity<>(savedKubernetesCluster, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<LocalCluster> getWorker(@PathVariable String id) {
-        LocalCluster foundLocalCluster = workerRepository.findByUid(id);
-        if(foundLocalCluster == null) {
-            throw new ResourceNotFoundException("LocalCluster not found");
+    public ResponseEntity<KubernetesCluster> getWorker(@PathVariable String id) {
+        KubernetesCluster foundKubernetesCluster = kubernetesClusterRepository.findByUid(id);
+        if(foundKubernetesCluster == null) {
+            throw new ResourceNotFoundException(KUBERNETES_CLUSTER_NOT_FOUND);
         }
-        return new ResponseEntity<>(foundLocalCluster, HttpStatus.OK);
+        return new ResponseEntity<>(foundKubernetesCluster, HttpStatus.OK);
     }
 
     @GetMapping(value = "/deploy-function", params = "function-id")
@@ -141,25 +136,25 @@ public class WorkerController {
     @GetMapping(value = "/{id}/check-connection")
     @ResponseStatus(value = HttpStatus.OK)
     public void checkConnection(@PathVariable String id) {
-        LocalCluster foundLocalCluster = workerRepository.findByUid(id);
-        if(foundLocalCluster == null) {
-            throw new ResourceNotFoundException("LocalCluster not found");
+        KubernetesCluster foundKubernetesCluster = kubernetesClusterRepository.findByUid(id);
+        if(foundKubernetesCluster == null) {
+            throw new ResourceNotFoundException(KUBERNETES_CLUSTER_NOT_FOUND);
         }
-        kubernetesController.checkWorkerConnection(foundLocalCluster);
+        kubernetesController.checkWorkerConnection(foundKubernetesCluster);
     }
 
     @GetMapping("/all")
-    public List<LocalCluster> getAllWorkers() {
-        return workerRepository.findAll();
+    public List<KubernetesCluster> getAllWorkers() {
+        return kubernetesClusterRepository.findAll();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<LocalCluster> deleteWorker(@PathVariable String id) {
-        LocalCluster foundLocalCluster = workerRepository.findByUid(id);
-        if(foundLocalCluster == null) {
-            throw new ResourceNotFoundException("LocalCluster with id " + id + " not found");
+    public ResponseEntity<KubernetesCluster> deleteWorker(@PathVariable String id) {
+        KubernetesCluster foundKubernetesCluster = kubernetesClusterRepository.findByUid(id);
+        if(foundKubernetesCluster == null) {
+            throw new ResourceNotFoundException("KubernetesCluster with id " + id + " not found");
         }
-        workerRepository.delete(foundLocalCluster);
+        kubernetesClusterRepository.delete(foundKubernetesCluster);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }

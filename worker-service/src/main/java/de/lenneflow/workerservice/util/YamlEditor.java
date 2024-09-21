@@ -1,7 +1,7 @@
 package de.lenneflow.workerservice.util;
 
 import de.lenneflow.workerservice.feignmodel.Function;
-import de.lenneflow.workerservice.model.LocalCluster;
+import de.lenneflow.workerservice.model.KubernetesCluster;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
@@ -49,13 +49,13 @@ public class YamlEditor {
                 .endSubject().withNewRoleRef().withApiGroup("rbac.authorization.k8s.io").withKind("ClusterRole").withName(serviceAccountName).endRoleRef().build();
     }
 
-    public static Ingress createKubernetesIngressResource(LocalCluster localCluster, Function function) {
-        String ingressName = localCluster.getName().toLowerCase() + "-ingress";
+    public static Ingress createKubernetesIngressResource(KubernetesCluster kubernetesCluster, Function function) {
+        String ingressName = kubernetesCluster.getClusterName().toLowerCase() + "-ingress";
         Map<String, String> ingressAnnotations = new HashMap<>();
         ingressAnnotations.put("kubernetes.io/ingress.class", "nginx");
         ingressAnnotations.put("nginx.ingress.kubernetes.io/use-regex", "true");
         return new IngressBuilder().withApiVersion("networking.k8s.io/v1").withKind("Ingress").withNewMetadata().withName(ingressName).withAnnotations(ingressAnnotations).endMetadata().withNewSpec()
-                .withIngressClassName("nginx").withRules().addNewRule().withHost(localCluster.getHostName()).withNewHttp().withPaths().addNewPath().withPath(function.getResourcePath())
+                .withIngressClassName("nginx").withRules().addNewRule().withHost(kubernetesCluster.getHostName()).withNewHttp().withPaths().addNewPath().withPath(function.getResourcePath())
                 .withPathType("Prefix").withNewBackend().withNewService().withName(function.getName()).withNewPort().withNumber(function.getAssignedHostPort()).endPort().endService().endBackend()
                 .endPath().endHttp().endRule().endSpec().build();
     }

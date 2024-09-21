@@ -15,19 +15,24 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document
-public class CloudCredential {
+public class KubernetesCredential {
 
     @Id
     private String uid;
 
-    @Indexed(unique = true)
     private String name;
 
     private String description;
 
-    private String accessKey;
+    private String serviceUser;
 
-    private String secretKey;
+    private String apiServerEndpoint;
+
+    private String ipAddress;
+
+    private int apiServerPort;
+
+    private String sessionToken;
 
     private LocalDateTime created;
 

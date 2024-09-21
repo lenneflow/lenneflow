@@ -1,6 +1,5 @@
 package de.lenneflow.workerservice.repository;
 
-import de.lenneflow.workerservice.model.CloudCluster;
 import de.lenneflow.workerservice.model.CloudNodeGroup;
 import org.springframework.data.mongodb.repository.MongoRepository;
 

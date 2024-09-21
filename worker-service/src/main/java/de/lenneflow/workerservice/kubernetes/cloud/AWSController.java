@@ -1,4 +1,4 @@
-package de.lenneflow.workerservice.kubernetes.aws;
+package de.lenneflow.workerservice.kubernetes.cloud;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
@@ -11,15 +11,17 @@ import com.amazonaws.services.eks.AmazonEKS;
 import com.amazonaws.services.eks.AmazonEKSClientBuilder;
 import com.amazonaws.services.eks.model.*;
 import de.lenneflow.workerservice.exception.InternalServiceException;
+import de.lenneflow.workerservice.exception.PayloadNotValidException;
 import de.lenneflow.workerservice.exception.ResourceNotFoundException;
-import de.lenneflow.workerservice.model.CloudCluster;
+import de.lenneflow.workerservice.model.KubernetesCluster;
 import de.lenneflow.workerservice.model.CloudCredential;
 import de.lenneflow.workerservice.model.CloudNodeGroup;
-import de.lenneflow.workerservice.repository.CloudClusterRepository;
+import de.lenneflow.workerservice.repository.KubernetesClusterRepository;
 import de.lenneflow.workerservice.repository.CloudCredentialRepository;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -28,61 +30,81 @@ import static com.amazonaws.retry.PredefinedRetryPolicies.DEFAULT_BACKOFF_STRATE
 import static com.amazonaws.retry.PredefinedRetryPolicies.DEFAULT_MAX_ERROR_RETRY;
 
 @Component
-public class AWSController {
+public class AWSController implements ICloudController{
 
     private final List<String> addOnList;
     private final CloudCredentialRepository cloudCredentialRepository;
-    private final CloudClusterRepository cloudClusterRepository;
+    private final KubernetesClusterRepository kubernetesClusterRepository;
 
-    public AWSController(CloudCredentialRepository cloudCredentialRepository, CloudClusterRepository cloudClusterRepository) {
+    public AWSController(CloudCredentialRepository cloudCredentialRepository, KubernetesClusterRepository kubernetesClusterRepository) {
         this.cloudCredentialRepository = cloudCredentialRepository;
-        this.cloudClusterRepository = cloudClusterRepository;
+        this.kubernetesClusterRepository = kubernetesClusterRepository;
         addOnList = Arrays.asList("kube-proxy", "vpc-cni", "eks-pod-identity-agent", "coredns");
     }
 
-    public Cluster createCluster(CloudCluster cloudCluster) {
-        AmazonEKS eksClient = getClient(cloudCluster);
-        if (eksClient.listClusters(new ListClustersRequest()).getClusters().contains(cloudCluster.getClusterName())) {
-            throw new InternalServiceException("Cluster " + cloudCluster.getClusterName() + " already exists");
+    public Cluster createCluster(KubernetesCluster kubernetesCluster) {
+        AmazonEKS eksClient = getClient(kubernetesCluster);
+        if (eksClient.listClusters(new ListClustersRequest()).getClusters().contains(kubernetesCluster.getClusterName())) {
+            throw new PayloadNotValidException("Cluster " + kubernetesCluster.getClusterName() + " already exists in the cloud");
         }
         CreateClusterResult eksCluster = eksClient.createCluster(
-                new CreateClusterRequest().withName(cloudCluster.getClusterName()).withRoleArn(cloudCluster.getRoleArn())
-                        .withResourcesVpcConfig(new VpcConfigRequest().withSubnetIds(cloudCluster.getSubnetIds()).withSecurityGroupIds(cloudCluster.getSecurityGroupId())).withUpgradePolicy(new UpgradePolicyRequest().withSupportType(SupportType.STANDARD))
+                new CreateClusterRequest().withName(kubernetesCluster.getClusterName()).withRoleArn(kubernetesCluster.getRoleArn())
+                        .withResourcesVpcConfig(new VpcConfigRequest().withSubnetIds(kubernetesCluster.getSubnetIds()).withSecurityGroupIds(kubernetesCluster.getSecurityGroupId())).withUpgradePolicy(new UpgradePolicyRequest().withSupportType(SupportType.STANDARD))
                         .withAccessConfig(new CreateAccessConfigRequest().withBootstrapClusterCreatorAdminPermissions(true)).withAccessConfig(new CreateAccessConfigRequest().withAuthenticationMode(AuthenticationMode.API_AND_CONFIG_MAP))
         );
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                createClusterAddOns(cloudCluster, eksCluster.getCluster(), addOnList);
-            }
-        }).start();
+        new Thread(() -> createClusterAddOns(kubernetesCluster, eksCluster.getCluster(), addOnList)).start();
         return eksCluster.getCluster();
     }
 
 
-    public void createClusterAddOns(CloudCluster cloudCluster, Cluster cluster, List<String> addonNameList) {
+    public void createClusterAddOns(KubernetesCluster kubernetesCluster, Cluster cluster, List<String> addonNameList) {
         for(int i=0;i<20;i++) {
-            if(Objects.equals(getCluster(cloudCluster).getStatus(), ClusterStatus.ACTIVE.toString())){
+            if(Objects.equals(getCluster(kubernetesCluster).getStatus(), ClusterStatus.ACTIVE.toString())){
+                kubernetesCluster.setStatus(de.lenneflow.workerservice.enums.ClusterStatus.CREATING_ADDONS);
+                kubernetesClusterRepository.save(kubernetesCluster);
                 break;
             }else{
-                try {
-                    Thread.sleep(60000);
-                } catch (InterruptedException e) {
-
-                }
+                pause(60000);
             }
         }
-        for (String addonName : addonNameList) {
-            createClusterAddOn(cloudCluster, addonName);
+
+        if(!Objects.equals(getCluster(kubernetesCluster).getStatus(), ClusterStatus.ACTIVE.toString())){
+            kubernetesClusterRepository.delete(kubernetesCluster);
+           throw new InternalServiceException("Cluster " + kubernetesCluster.getClusterName() + " could not be created!");
         }
+
+        List<Addon> addons = new ArrayList<>();
+        for (String addonName : addonNameList) {
+            addons.add(createClusterAddOn(kubernetesCluster, addonName));
+        }
+
+        for(int i=0;i<20;i++) {
+            if(allAddOnsActive(addons)){
+                break;
+            }else{
+             pause(10000);
+            }
+        }
+
+        kubernetesCluster.setStatus(de.lenneflow.workerservice.enums.ClusterStatus.CREATED);
+        kubernetesClusterRepository.save(kubernetesCluster);
+    }
+
+    private boolean allAddOnsActive(List<Addon> addons){
+        for(Addon addon : addons){
+            if(!Objects.equals(addon.getStatus(), AddonStatus.ACTIVE.toString())){
+                return false;
+            }
+        }
+        return true;
     }
 
 
-    public Addon createClusterAddOn(CloudCluster cloudCluster, String addonName) {
-        AmazonEKS eksClient = getClient(cloudCluster);
+    public Addon createClusterAddOn(KubernetesCluster kubernetesCluster, String addonName) {
+        AmazonEKS eksClient = getClient(kubernetesCluster);
         String latestVersion = getAddonLatestVersion(eksClient, addonName);
-        return eksClient.createAddon(new CreateAddonRequest().withClusterName(cloudCluster.getClusterName()).withAddonName(addonName)
-                        .withServiceAccountRoleArn(cloudCluster.getRoleArn()).withAddonVersion(latestVersion))
+        return eksClient.createAddon(new CreateAddonRequest().withClusterName(kubernetesCluster.getClusterName()).withAddonName(addonName)
+                        .withServiceAccountRoleArn(kubernetesCluster.getRoleArn()).withAddonVersion(latestVersion))
                 .getAddon();
     }
 
@@ -113,8 +135,8 @@ public class AWSController {
 
     public Nodegroup createNodeGroup(CloudNodeGroup cloudNodeGroup) {
 
-        CloudCluster cloudCluster = cloudClusterRepository.findByUid(cloudNodeGroup.getClusterUid());
-        AmazonEKS eksClient = getClient(cloudCluster);
+        KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(cloudNodeGroup.getClusterUid());
+        AmazonEKS eksClient = getClient(kubernetesCluster);
 
         //if (eksClient.listNodegroups(new ListNodegroupsRequest()).getNodegroups().contains(cloudNodeGroup.getGroupName())) {
             //throw new ResourceNotFoundException("Node group " + cloudNodeGroup.getGroupName() + " already exists!");
@@ -122,7 +144,7 @@ public class AWSController {
 
 
         CreateNodegroupResult eksCluster = eksClient.createNodegroup(
-                new CreateNodegroupRequest().withClusterName(cloudCluster.getClusterName()).withNodegroupName(cloudNodeGroup.getGroupName()).withAmiType(cloudNodeGroup.getAmi())
+                new CreateNodegroupRequest().withClusterName(kubernetesCluster.getClusterName()).withNodegroupName(cloudNodeGroup.getGroupName()).withAmiType(cloudNodeGroup.getAmi())
                         .withInstanceTypes(cloudNodeGroup.getInstanceType()).withScalingConfig(new NodegroupScalingConfig()
                                 .withDesiredSize(cloudNodeGroup.getDesiredNodeCount())
                                 .withMinSize(cloudNodeGroup.getMinNodeCount())
@@ -133,7 +155,6 @@ public class AWSController {
         return eksCluster.getNodegroup();
     }
 
-
     public Nodegroup updateScalingConfig(CloudNodeGroup cloudNodeGroup) {
         Nodegroup nodegroup = getNodeGroup(cloudNodeGroup);
         nodegroup.getScalingConfig()
@@ -141,38 +162,48 @@ public class AWSController {
                 .withMinSize(cloudNodeGroup.getMinNodeCount())
                 .withMaxSize(cloudNodeGroup.getMaxNodeCount());
         return nodegroup;
-
     }
 
-
-    public Cluster getCluster(CloudCluster cloudCluster) {
-        AmazonEKS eksClient = getClient(cloudCluster);
-        if (eksClient.listClusters(new ListClustersRequest()).getClusters().contains(cloudCluster.getClusterName())) {
-            return eksClient.describeCluster(new DescribeClusterRequest().withName(cloudCluster.getClusterName())).getCluster();
+    public Cluster getCluster(KubernetesCluster kubernetesCluster) {
+        AmazonEKS eksClient = getClient(kubernetesCluster);
+        if (eksClient.listClusters(new ListClustersRequest()).getClusters().contains(kubernetesCluster.getClusterName())) {
+            return eksClient.describeCluster(new DescribeClusterRequest().withName(kubernetesCluster.getClusterName())).getCluster();
         }
-        throw new ResourceNotFoundException("Cluster " + cloudCluster.getClusterName() + " not found");
+        throw new ResourceNotFoundException("Cluster " + kubernetesCluster.getClusterName() + " not found");
     }
 
+//    public Cluster getSessionToken(KubernetesCluster cloudCluster) {
+//        AmazonEKS eksClient = getClient(cloudCluster);
+//        eksClient.
+//
+//
+//    }
 
     public Nodegroup getNodeGroup(CloudNodeGroup cloudNodeGroup) {
-        CloudCluster cloudCluster = cloudClusterRepository.findByUid(cloudNodeGroup.getClusterUid());
-        AmazonEKS eksClient = getClient(cloudCluster);
+        KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(cloudNodeGroup.getClusterUid());
+        AmazonEKS eksClient = getClient(kubernetesCluster);
         if (eksClient.listNodegroups(new ListNodegroupsRequest()).getNodegroups().contains(cloudNodeGroup.getGroupName())) {
             return eksClient.describeNodegroup(new DescribeNodegroupRequest().withNodegroupName(cloudNodeGroup.getGroupName())).getNodegroup();
         }
-
         throw new ResourceNotFoundException("Node group " + cloudNodeGroup.getGroupName() + " not found");
     }
 
-
-    private AmazonEKS getClient(CloudCluster cloudCluster) {
-        CloudCredential cloudCredential = cloudCredentialRepository.findByUid(cloudCluster.getCloudCredentialUid());
+    private AmazonEKS getClient(KubernetesCluster kubernetesCluster) {
+        CloudCredential cloudCredential = cloudCredentialRepository.findByUid(kubernetesCluster.getCloudCredentialUid());
         AWSCredentials credentials = new BasicAWSCredentials(cloudCredential.getAccessKey(), cloudCredential.getSecretKey());
 
         return AmazonEKSClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
-                .withRegion(cloudCluster.getRegion())
+                .withRegion(kubernetesCluster.getRegion())
                 .withClientConfiguration(new ClientConfiguration().withProtocol(Protocol.HTTPS).withMaxErrorRetry(DEFAULT_MAX_ERROR_RETRY).withRetryPolicy(new RetryPolicy(PredefinedRetryPolicies.DEFAULT_RETRY_CONDITION,
                         DEFAULT_BACKOFF_STRATEGY, DEFAULT_MAX_ERROR_RETRY, false))).build();
+    }
+
+    private void pause(int millis){
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
