@@ -29,10 +29,6 @@ public class PayloadValidator {
     private void checkMandatoryFields(KubernetesCluster kubernetesCluster) {
         KubernetesCredential credential = kubernetesCredentialRepository.findByUid(kubernetesCluster.getKubernetesCredentialUid());
 
-        if(credential == null) {
-            throw new PayloadNotValidException("A kubernetes credential object with the ID " + kubernetesCluster.getKubernetesCredentialUid() + "does not exist.");
-        }
-
         if(kubernetesCluster.getCloudProvider() == null){
             throw new PayloadNotValidException("Cloud provider is required!");
         }
@@ -46,6 +42,10 @@ public class PayloadValidator {
         }
 
         if(kubernetesCluster.getCloudProvider().equals(CloudProvider.LOCAL)){
+            if(credential == null) {
+                throw new PayloadNotValidException("A kubernetes credential object with the ID " + kubernetesCluster.getKubernetesCredentialUid() + "does not exist.");
+            }
+
             if(kubernetesCluster.getHostName() == null || kubernetesCluster.getHostName().isEmpty()) {
                 throw new PayloadNotValidException("Host Name is required");
             }

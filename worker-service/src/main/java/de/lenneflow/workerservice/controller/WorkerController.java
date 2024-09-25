@@ -8,10 +8,10 @@ import de.lenneflow.workerservice.feignmodel.Function;
 import de.lenneflow.workerservice.kubernetes.cloud.CloudController;
 import de.lenneflow.workerservice.model.KubernetesCluster;
 import de.lenneflow.workerservice.model.CloudCredential;
-import de.lenneflow.workerservice.model.CloudNodeGroup;
+import de.lenneflow.workerservice.model.ClusterNodeGroup;
 import de.lenneflow.workerservice.repository.KubernetesClusterRepository;
 import de.lenneflow.workerservice.repository.CloudCredentialRepository;
-import de.lenneflow.workerservice.repository.CloudNodeGroupRepository;
+import de.lenneflow.workerservice.repository.ClusterNodeGroupRepository;
 import de.lenneflow.workerservice.kubernetes.KubernetesController;
 import de.lenneflow.workerservice.util.PayloadValidator;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -38,16 +38,16 @@ public class WorkerController {
     final KubernetesClusterRepository kubernetesClusterRepository;
     final CloudCredentialRepository localCredentialRepository;
     final CloudCredentialRepository cloudCredentialRepository;
-    final CloudNodeGroupRepository cloudNodeGroupRepository;
+    final ClusterNodeGroupRepository clusterNodeGroupRepository;
 
-    public WorkerController(PayloadValidator payloadValidator, FunctionServiceClient functionServiceClient, KubernetesClusterRepository kubernetesClusterRepository, CloudController cloudController, KubernetesController kubernetesController1, CloudCredentialRepository localCredentialRepository, CloudCredentialRepository cloudCredentialRepository, CloudNodeGroupRepository cloudNodeGroupRepository) {
+    public WorkerController(PayloadValidator payloadValidator, FunctionServiceClient functionServiceClient, KubernetesClusterRepository kubernetesClusterRepository, CloudController cloudController, KubernetesController kubernetesController1, CloudCredentialRepository localCredentialRepository, CloudCredentialRepository cloudCredentialRepository, ClusterNodeGroupRepository clusterNodeGroupRepository) {
         this.payloadValidator = payloadValidator;
         this.functionServiceClient = functionServiceClient;
         this.kubernetesClusterRepository = kubernetesClusterRepository;
         this.cloudController = cloudController;
         this.kubernetesController = kubernetesController1;
         this.localCredentialRepository = localCredentialRepository;
-        this.cloudNodeGroupRepository = cloudNodeGroupRepository;
+        this.clusterNodeGroupRepository = clusterNodeGroupRepository;
         modelMapper = new ModelMapper();
         this.cloudCredentialRepository = cloudCredentialRepository;
     }
@@ -90,11 +90,11 @@ public class WorkerController {
     }
 
     @PostMapping("/clusters/node-groups")
-    public ResponseEntity<CloudNodeGroup> createCloudClusterNodeGroup(@RequestBody CloudNodeGroup cloudNodeGroup) {
-        cloudNodeGroup.setUid(UUID.randomUUID().toString());
-        CloudNodeGroup savedNodeGroup = cloudNodeGroupRepository.save(cloudNodeGroup);
+    public ResponseEntity<ClusterNodeGroup> createCloudClusterNodeGroup(@RequestBody ClusterNodeGroup clusterNodeGroup) {
+        clusterNodeGroup.setUid(UUID.randomUUID().toString());
+        ClusterNodeGroup savedNodeGroup = clusterNodeGroupRepository.save(clusterNodeGroup);
         if(savedNodeGroup.isCreate()){
-            cloudController.createNodeGroup(cloudNodeGroup);
+            cloudController.createNodeGroup(clusterNodeGroup);
         }
         return new ResponseEntity<>(savedNodeGroup, HttpStatus.OK);
     }

@@ -1,6 +1,6 @@
 package de.lenneflow.workerservice.kubernetes.cloud;
 
-import de.lenneflow.workerservice.model.CloudNodeGroup;
+import de.lenneflow.workerservice.model.ClusterNodeGroup;
 import de.lenneflow.workerservice.model.KubernetesCluster;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +18,7 @@ public class AzureController implements  ICloudController{
     }
 
     @Override
-    public Object createNodeGroup(CloudNodeGroup cloudNodeGroup) {
+    public Object createNodeGroup(ClusterNodeGroup clusterNodeGroup) {
         return null;
     }
 
@@ -28,7 +28,7 @@ public class AzureController implements  ICloudController{
     }
 
     @Override
-    public Object getNodeGroup(CloudNodeGroup cloudNodeGroup) {
+    public Object getNodeGroup(ClusterNodeGroup clusterNodeGroup) {
         return null;
     }
 }

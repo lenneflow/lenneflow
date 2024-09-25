@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -19,7 +18,7 @@ import java.util.List;
 @NoArgsConstructor
 @Document
 @CompoundIndex(def = "{'clusterUid': 1, 'groupName': 1}", unique = true)
-public class CloudNodeGroup {
+public class ClusterNodeGroup {
 
     @Id
     private String uid;

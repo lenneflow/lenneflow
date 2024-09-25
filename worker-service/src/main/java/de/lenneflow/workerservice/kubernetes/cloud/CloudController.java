@@ -2,7 +2,7 @@ package de.lenneflow.workerservice.kubernetes.cloud;
 
 import de.lenneflow.workerservice.exception.InternalServiceException;
 import de.lenneflow.workerservice.model.KubernetesCluster;
-import de.lenneflow.workerservice.model.CloudNodeGroup;
+import de.lenneflow.workerservice.model.ClusterNodeGroup;
 import de.lenneflow.workerservice.repository.KubernetesClusterRepository;
 import org.springframework.stereotype.Component;
 
@@ -50,17 +50,17 @@ public class CloudController {
         }
     }
 
-    public Object createNodeGroup(CloudNodeGroup cloudNodeGroup) {
+    public Object createNodeGroup(ClusterNodeGroup clusterNodeGroup) {
 
-        KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(cloudNodeGroup.getClusterUid());
+        KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(clusterNodeGroup.getClusterUid());
 
         switch (kubernetesCluster.getCloudProvider()){
             case GOOGLE_CLOUD:
-                return googleController.createNodeGroup(cloudNodeGroup);
+                return googleController.createNodeGroup(clusterNodeGroup);
             case AMAZON_AWS:
-                return awsController.createNodeGroup(cloudNodeGroup);
+                return awsController.createNodeGroup(clusterNodeGroup);
             case MICROSOFT_AZURE:
-                return azureController.createNodeGroup(cloudNodeGroup);
+                return azureController.createNodeGroup(clusterNodeGroup);
             default:
                 throw new InternalServiceException(UNSUPPORTED_CLOUD_PROVIDER);
         }
@@ -79,15 +79,15 @@ public class CloudController {
         }
     }
 
-    public Object getNodeGroup(CloudNodeGroup cloudNodeGroup) {
-        KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(cloudNodeGroup.getClusterUid());
+    public Object getNodeGroup(ClusterNodeGroup clusterNodeGroup) {
+        KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(clusterNodeGroup.getClusterUid());
         switch (kubernetesCluster.getCloudProvider()){
             case GOOGLE_CLOUD:
-                return googleController.getNodeGroup(cloudNodeGroup);
+                return googleController.getNodeGroup(clusterNodeGroup);
             case AMAZON_AWS:
-                return awsController.getNodeGroup(cloudNodeGroup);
+                return awsController.getNodeGroup(clusterNodeGroup);
             case MICROSOFT_AZURE:
-                return azureController.getNodeGroup(cloudNodeGroup);
+                return azureController.getNodeGroup(clusterNodeGroup);
             default:
                 throw new InternalServiceException(UNSUPPORTED_CLOUD_PROVIDER);
         }

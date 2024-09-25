@@ -1,33 +1,31 @@
 package de.lenneflow.workerservice.kubernetes.cloud;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.Protocol;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.retry.PredefinedRetryPolicies;
-import com.amazonaws.retry.RetryPolicy;
-import com.amazonaws.services.eks.AmazonEKS;
-import com.amazonaws.services.eks.AmazonEKSClientBuilder;
-import com.amazonaws.services.eks.model.*;
+
 import de.lenneflow.workerservice.exception.InternalServiceException;
 import de.lenneflow.workerservice.exception.PayloadNotValidException;
 import de.lenneflow.workerservice.exception.ResourceNotFoundException;
+import de.lenneflow.workerservice.model.ClusterNodeGroup;
 import de.lenneflow.workerservice.model.KubernetesCluster;
 import de.lenneflow.workerservice.model.CloudCredential;
-import de.lenneflow.workerservice.model.CloudNodeGroup;
 import de.lenneflow.workerservice.repository.KubernetesClusterRepository;
 import de.lenneflow.workerservice.repository.CloudCredentialRepository;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.springframework.stereotype.Component;
+import software.amazon.awssdk.auth.credentials.*;
+import software.amazon.awssdk.core.internal.http.loader.DefaultSdkHttpClientBuilder;
+import software.amazon.awssdk.http.SdkHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.eks.EksClient;
+import software.amazon.awssdk.services.eks.model.*;
 
+import java.time.Clock;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static com.amazonaws.retry.PredefinedRetryPolicies.DEFAULT_BACKOFF_STRATEGY;
-import static com.amazonaws.retry.PredefinedRetryPolicies.DEFAULT_MAX_ERROR_RETRY;
+
 
 @Component
 public class AWSController implements ICloudController{
@@ -43,10 +41,18 @@ public class AWSController implements ICloudController{
     }
 
     public Cluster createCluster(KubernetesCluster kubernetesCluster) {
-        AmazonEKS eksClient = getClient(kubernetesCluster);
-        if (eksClient.listClusters(new ListClustersRequest()).getClusters().contains(kubernetesCluster.getClusterName())) {
-            throw new PayloadNotValidException("Cluster " + kubernetesCluster.getClusterName() + " already exists in the cloud");
+        EksClient eksClient = getClient(kubernetesCluster);
+        if (eksClient.listClusters().clusters().contains(kubernetesCluster.getClusterName())) {
+            throw new PayloadNotValidException("The Cluster " + kubernetesCluster.getClusterName() + " already exists in the cloud");
         }
+
+        VpcConfigRequest vpcConfigRequest = VpcConfigRequest.builder().subnetIds(kubernetesCluster.getSubnetIds()).securityGroupIds(kubernetesCluster.getSecurityGroupId()).build();
+        CreateAccessConfigRequest accessConfig1 = CreateAccessConfigRequest.builder().bootstrapClusterCreatorAdminPermissions(true).build();
+        CreateAccessConfigRequest accessConfig2 = CreateAccessConfigRequest.builder().authenticationMode(AuthenticationMode.API_AND_CONFIG_MAP).build();
+
+        eksClient.createCluster(CreateClusterRequest.builder().name(kubernetesCluster.getClusterName()).roleArn(kubernetesCluster.getRoleArn())
+                .resourcesVpcConfig(vpcConfigRequest).accessConfig(accessConfig1).accessConfig(accessConfig2).build());
+
         CreateClusterResult eksCluster = eksClient.createCluster(
                 new CreateClusterRequest().withName(kubernetesCluster.getClusterName()).withRoleArn(kubernetesCluster.getRoleArn())
                         .withResourcesVpcConfig(new VpcConfigRequest().withSubnetIds(kubernetesCluster.getSubnetIds()).withSecurityGroupIds(kubernetesCluster.getSecurityGroupId())).withUpgradePolicy(new UpgradePolicyRequest().withSupportType(SupportType.STANDARD))
@@ -132,35 +138,66 @@ public class AWSController implements ICloudController{
         return latestVersion;
     }
 
+    public String getAuthenticationToken(AWSCredentialsProvider awsAuth, Region awsRegion, String clusterName) {
+        try {
+            SdkHttpFullRequest requestToSign = SdkHttpFullRequest
+                    .builder()
+                    .method(SdkHttpMethod.GET)
+                    .uri(StsUtil.getStsRegionalEndpointUri(awsRegion))
+                    .appendHeader("x-k8s-aws-id", clusterName)
+                    .appendRawQueryParameter("Action", "GetCallerIdentity")
+                    .appendRawQueryParameter("Version", "2011-06-15")
+                    .build();
 
-    public Nodegroup createNodeGroup(CloudNodeGroup cloudNodeGroup) {
+            ZonedDateTime expirationDate = DateUtil.addSeconds(DateUtil.now(), 60);
+            Aws4PresignerParams presignerParams = Aws4PresignerParams.builder()
+                    .awsCredentials(awsAuth.resolveCredentials())
+                    .signingRegion(awsRegion)
+                    .signingName("sts")
+                    .signingClockOverride(Clock.systemUTC())
+                    .expirationTime(expirationDate.toInstant())
+                    .build();
 
-        KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(cloudNodeGroup.getClusterUid());
+            SdkHttpFullRequest signedRequest = Aws4Signer.create().presign(requestToSign, presignerParams);
+
+            String encodedUrl = Base64.getUrlEncoder().withoutPadding().encodeToString(signedRequest.getUri().toString().getBytes(CharSet.UTF_8.getCharset()));
+            return ("k8s-aws-v1." + encodedUrl);
+        } catch (Exception e) {
+            String errorMessage = "A problem occurred generating an Eks authentication token for cluster: " + clusterName;
+            //logger.error(errorMessage, e);
+            throw new RuntimeException(errorMessage, e);
+        }
+    }
+
+
+    public Nodegroup createNodeGroup(ClusterNodeGroup clusterNodeGroup) {
+
+        KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(clusterNodeGroup.getClusterUid());
         AmazonEKS eksClient = getClient(kubernetesCluster);
 
-        //if (eksClient.listNodegroups(new ListNodegroupsRequest()).getNodegroups().contains(cloudNodeGroup.getGroupName())) {
-            //throw new ResourceNotFoundException("Node group " + cloudNodeGroup.getGroupName() + " already exists!");
+        //if (eksClient.listNodegroups(new ListNodegroupsRequest()).getNodegroups().contains(clusterNodeGroup.getGroupName())) {
+            //throw new ResourceNotFoundException("Node group " + clusterNodeGroup.getGroupName() + " already exists!");
         //}
 
 
         CreateNodegroupResult eksCluster = eksClient.createNodegroup(
-                new CreateNodegroupRequest().withClusterName(kubernetesCluster.getClusterName()).withNodegroupName(cloudNodeGroup.getGroupName()).withAmiType(cloudNodeGroup.getAmi())
-                        .withInstanceTypes(cloudNodeGroup.getInstanceType()).withScalingConfig(new NodegroupScalingConfig()
-                                .withDesiredSize(cloudNodeGroup.getDesiredNodeCount())
-                                .withMinSize(cloudNodeGroup.getMinNodeCount())
-                                .withMaxSize(cloudNodeGroup.getMaxNodeCount())).withNodeRole(cloudNodeGroup.getRoleArn()).withCapacityType(CapacityTypes.ON_DEMAND)
-                        .withDiskSize(20).withSubnets(cloudNodeGroup.getSubnetIds()).withUpdateConfig(new NodegroupUpdateConfig().withMaxUnavailable(1))
+                new CreateNodegroupRequest().withClusterName(kubernetesCluster.getClusterName()).withNodegroupName(clusterNodeGroup.getGroupName()).withAmiType(clusterNodeGroup.getAmi())
+                        .withInstanceTypes(clusterNodeGroup.getInstanceType()).withScalingConfig(new NodegroupScalingConfig()
+                                .withDesiredSize(clusterNodeGroup.getDesiredNodeCount())
+                                .withMinSize(clusterNodeGroup.getMinNodeCount())
+                                .withMaxSize(clusterNodeGroup.getMaxNodeCount())).withNodeRole(clusterNodeGroup.getRoleArn()).withCapacityType(CapacityTypes.ON_DEMAND)
+                        .withDiskSize(20).withSubnets(clusterNodeGroup.getSubnetIds()).withUpdateConfig(new NodegroupUpdateConfig().withMaxUnavailable(1))
 
         );
         return eksCluster.getNodegroup();
     }
 
-    public Nodegroup updateScalingConfig(CloudNodeGroup cloudNodeGroup) {
-        Nodegroup nodegroup = getNodeGroup(cloudNodeGroup);
+    public Nodegroup updateScalingConfig(ClusterNodeGroup clusterNodeGroup) {
+        Nodegroup nodegroup = getNodeGroup(clusterNodeGroup);
         nodegroup.getScalingConfig()
-                .withDesiredSize(cloudNodeGroup.getDesiredNodeCount())
-                .withMinSize(cloudNodeGroup.getMinNodeCount())
-                .withMaxSize(cloudNodeGroup.getMaxNodeCount());
+                .withDesiredSize(clusterNodeGroup.getDesiredNodeCount())
+                .withMinSize(clusterNodeGroup.getMinNodeCount())
+                .withMaxSize(clusterNodeGroup.getMaxNodeCount());
         return nodegroup;
     }
 
@@ -179,24 +216,22 @@ public class AWSController implements ICloudController{
 //
 //    }
 
-    public Nodegroup getNodeGroup(CloudNodeGroup cloudNodeGroup) {
-        KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(cloudNodeGroup.getClusterUid());
+    public Nodegroup getNodeGroup(ClusterNodeGroup clusterNodeGroup) {
+        KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(clusterNodeGroup.getClusterUid());
         AmazonEKS eksClient = getClient(kubernetesCluster);
-        if (eksClient.listNodegroups(new ListNodegroupsRequest()).getNodegroups().contains(cloudNodeGroup.getGroupName())) {
-            return eksClient.describeNodegroup(new DescribeNodegroupRequest().withNodegroupName(cloudNodeGroup.getGroupName())).getNodegroup();
+        if (eksClient.listNodegroups(new ListNodegroupsRequest()).getNodegroups().contains(clusterNodeGroup.getGroupName())) {
+            return eksClient.describeNodegroup(new DescribeNodegroupRequest().withNodegroupName(clusterNodeGroup.getGroupName())).getNodegroup();
         }
-        throw new ResourceNotFoundException("Node group " + cloudNodeGroup.getGroupName() + " not found");
+        throw new ResourceNotFoundException("Node group " + clusterNodeGroup.getGroupName() + " not found");
     }
 
-    private AmazonEKS getClient(KubernetesCluster kubernetesCluster) {
+    private EksClient getClient(KubernetesCluster kubernetesCluster) {
         CloudCredential cloudCredential = cloudCredentialRepository.findByUid(kubernetesCluster.getCloudCredentialUid());
-        AWSCredentials credentials = new BasicAWSCredentials(cloudCredential.getAccessKey(), cloudCredential.getSecretKey());
+        AwsCredentials credentials = AwsBasicCredentials.create(cloudCredential.getAccessKey(), cloudCredential.getSecretKey());
 
-        return AmazonEKSClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(credentials))
-                .withRegion(kubernetesCluster.getRegion())
-                .withClientConfiguration(new ClientConfiguration().withProtocol(Protocol.HTTPS).withMaxErrorRetry(DEFAULT_MAX_ERROR_RETRY).withRetryPolicy(new RetryPolicy(PredefinedRetryPolicies.DEFAULT_RETRY_CONDITION,
-                        DEFAULT_BACKOFF_STRATEGY, DEFAULT_MAX_ERROR_RETRY, false))).build();
+        return EksClient.builder().region(Region.of(kubernetesCluster.getRegion()))
+                .credentialsProvider(StaticCredentialsProvider.create(credentials))
+                .build();
     }
 
     private void pause(int millis){

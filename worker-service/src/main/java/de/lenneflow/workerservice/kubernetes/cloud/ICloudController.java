@@ -1,6 +1,6 @@
 package de.lenneflow.workerservice.kubernetes.cloud;
 
-import de.lenneflow.workerservice.model.CloudNodeGroup;
+import de.lenneflow.workerservice.model.ClusterNodeGroup;
 import de.lenneflow.workerservice.model.KubernetesCluster;
 
 public interface ICloudController {
@@ -9,9 +9,9 @@ public interface ICloudController {
 
     Object createClusterAddOn(KubernetesCluster kubernetesCluster, String addOnName);
 
-    Object createNodeGroup(CloudNodeGroup cloudNodeGroup);
+    Object createNodeGroup(ClusterNodeGroup clusterNodeGroup);
 
     Object getCluster(KubernetesCluster kubernetesCluster);
 
-    Object getNodeGroup(CloudNodeGroup cloudNodeGroup);
+    Object getNodeGroup(ClusterNodeGroup clusterNodeGroup);
 }
