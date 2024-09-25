@@ -9,22 +9,25 @@ import de.lenneflow.workerservice.model.KubernetesCluster;
 import de.lenneflow.workerservice.model.CloudCredential;
 import de.lenneflow.workerservice.repository.KubernetesClusterRepository;
 import de.lenneflow.workerservice.repository.CloudCredentialRepository;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.*;
-import software.amazon.awssdk.core.internal.http.loader.DefaultSdkHttpClientBuilder;
-import software.amazon.awssdk.http.SdkHttpClient;
+import software.amazon.awssdk.auth.signer.Aws4Signer;
+import software.amazon.awssdk.auth.signer.params.Aws4PresignerParams;
+import software.amazon.awssdk.http.SdkHttpFullRequest;
+import software.amazon.awssdk.http.SdkHttpMethod;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.eks.EksClient;
 import software.amazon.awssdk.services.eks.model.*;
+import software.amazon.awssdk.services.sts.endpoints.StsEndpointParams;
+import software.amazon.awssdk.services.sts.endpoints.StsEndpointProvider;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 
 @Component
@@ -50,22 +53,17 @@ public class AWSController implements ICloudController{
         CreateAccessConfigRequest accessConfig1 = CreateAccessConfigRequest.builder().bootstrapClusterCreatorAdminPermissions(true).build();
         CreateAccessConfigRequest accessConfig2 = CreateAccessConfigRequest.builder().authenticationMode(AuthenticationMode.API_AND_CONFIG_MAP).build();
 
-        eksClient.createCluster(CreateClusterRequest.builder().name(kubernetesCluster.getClusterName()).roleArn(kubernetesCluster.getRoleArn())
-                .resourcesVpcConfig(vpcConfigRequest).accessConfig(accessConfig1).accessConfig(accessConfig2).build());
+        Cluster cluster = eksClient.createCluster(CreateClusterRequest.builder().name(kubernetesCluster.getClusterName()).roleArn(kubernetesCluster.getRoleArn()).upgradePolicy(UpgradePolicyRequest.builder().supportType(SupportType.STANDARD).build())
+                .resourcesVpcConfig(vpcConfigRequest).accessConfig(accessConfig1).accessConfig(accessConfig2).build()).cluster();
 
-        CreateClusterResult eksCluster = eksClient.createCluster(
-                new CreateClusterRequest().withName(kubernetesCluster.getClusterName()).withRoleArn(kubernetesCluster.getRoleArn())
-                        .withResourcesVpcConfig(new VpcConfigRequest().withSubnetIds(kubernetesCluster.getSubnetIds()).withSecurityGroupIds(kubernetesCluster.getSecurityGroupId())).withUpgradePolicy(new UpgradePolicyRequest().withSupportType(SupportType.STANDARD))
-                        .withAccessConfig(new CreateAccessConfigRequest().withBootstrapClusterCreatorAdminPermissions(true)).withAccessConfig(new CreateAccessConfigRequest().withAuthenticationMode(AuthenticationMode.API_AND_CONFIG_MAP))
-        );
-        new Thread(() -> createClusterAddOns(kubernetesCluster, eksCluster.getCluster(), addOnList)).start();
-        return eksCluster.getCluster();
+        new Thread(() -> createClusterAddOns(kubernetesCluster, addOnList)).start();
+        return cluster;
     }
 
 
-    public void createClusterAddOns(KubernetesCluster kubernetesCluster, Cluster cluster, List<String> addonNameList) {
+    public void createClusterAddOns(KubernetesCluster kubernetesCluster, List<String> addonNameList) {
         for(int i=0;i<20;i++) {
-            if(Objects.equals(getCluster(kubernetesCluster).getStatus(), ClusterStatus.ACTIVE.toString())){
+            if(Objects.equals(getCluster(kubernetesCluster).status().toString(), ClusterStatus.ACTIVE.toString())){
                 kubernetesCluster.setStatus(de.lenneflow.workerservice.enums.ClusterStatus.CREATING_ADDONS);
                 kubernetesClusterRepository.save(kubernetesCluster);
                 break;
@@ -74,7 +72,7 @@ public class AWSController implements ICloudController{
             }
         }
 
-        if(!Objects.equals(getCluster(kubernetesCluster).getStatus(), ClusterStatus.ACTIVE.toString())){
+        if(!Objects.equals(getCluster(kubernetesCluster).status().toString(), ClusterStatus.ACTIVE.toString())){
             kubernetesClusterRepository.delete(kubernetesCluster);
            throw new InternalServiceException("Cluster " + kubernetesCluster.getClusterName() + " could not be created!");
         }
@@ -98,7 +96,7 @@ public class AWSController implements ICloudController{
 
     private boolean allAddOnsActive(List<Addon> addons){
         for(Addon addon : addons){
-            if(!Objects.equals(addon.getStatus(), AddonStatus.ACTIVE.toString())){
+            if(!Objects.equals(addon.status().toString(), AddonStatus.ACTIVE.toString())){
                 return false;
             }
         }
@@ -107,29 +105,29 @@ public class AWSController implements ICloudController{
 
 
     public Addon createClusterAddOn(KubernetesCluster kubernetesCluster, String addonName) {
-        AmazonEKS eksClient = getClient(kubernetesCluster);
+        EksClient eksClient = getClient(kubernetesCluster);
         String latestVersion = getAddonLatestVersion(eksClient, addonName);
-        return eksClient.createAddon(new CreateAddonRequest().withClusterName(kubernetesCluster.getClusterName()).withAddonName(addonName)
-                        .withServiceAccountRoleArn(kubernetesCluster.getRoleArn()).withAddonVersion(latestVersion))
-                .getAddon();
+        return eksClient.createAddon(CreateAddonRequest.builder().clusterName(kubernetesCluster.getClusterName()).addonName(addonName)
+                        .serviceAccountRoleArn(kubernetesCluster.getRoleArn()).addonVersion(latestVersion).build())
+                .addon();
     }
 
-    private String getAddonLatestVersion(AmazonEKS eksClient, String addonName) {
+    private String getAddonLatestVersion(EksClient eksClient, String addonName) {
         String latestVersion = "";
         String latestVersionPrefix = "";
-        List<AddonVersionInfo> versionInfos = eksClient.describeAddonVersions(new DescribeAddonVersionsRequest().withAddonName(addonName)).getAddons().get(0).getAddonVersions();
+        List<AddonVersionInfo> versionInfos = eksClient.describeAddonVersions(DescribeAddonVersionsRequest.builder().addonName(addonName).build()).addons().get(0).addonVersions();
         for (AddonVersionInfo versionInfo : versionInfos) {
-            String version = versionInfo.getAddonVersion().replaceAll("v", "").split("-")[0].trim();
+            String version = versionInfo.addonVersion().replace("v", "").split("-")[0].trim();
             if(latestVersionPrefix.isEmpty()){
                 latestVersionPrefix = version;
-                latestVersion = versionInfo.getAddonVersion();
+                latestVersion = versionInfo.addonVersion();
             }else{
                 if(new ComparableVersion(latestVersionPrefix).compareTo(new ComparableVersion(version)) < 0){
                     latestVersionPrefix = version;
-                    latestVersion = versionInfo.getAddonVersion();
+                    latestVersion = versionInfo.addonVersion();
                 }else if(new ComparableVersion(latestVersionPrefix).compareTo(new ComparableVersion(version)) == 0){
-                    if(latestVersion.compareTo(versionInfo.getAddonVersion()) < 0){
-                        latestVersion = versionInfo.getAddonVersion();
+                    if(latestVersion.compareTo(versionInfo.addonVersion()) < 0){
+                        latestVersion = versionInfo.addonVersion();
                     }
 
                 }
@@ -138,89 +136,74 @@ public class AWSController implements ICloudController{
         return latestVersion;
     }
 
-    public String getAuthenticationToken(AWSCredentialsProvider awsAuth, Region awsRegion, String clusterName) {
-        try {
-            SdkHttpFullRequest requestToSign = SdkHttpFullRequest
-                    .builder()
-                    .method(SdkHttpMethod.GET)
-                    .uri(StsUtil.getStsRegionalEndpointUri(awsRegion))
-                    .appendHeader("x-k8s-aws-id", clusterName)
-                    .appendRawQueryParameter("Action", "GetCallerIdentity")
-                    .appendRawQueryParameter("Version", "2011-06-15")
-                    .build();
+    public String getAuthenticationToken(AwsCredentialsProvider awsAuth, Region awsRegion, String clusterName) throws InterruptedException, ExecutionException {
+        SdkHttpFullRequest requestToSign = SdkHttpFullRequest
+                .builder()
+                .method(SdkHttpMethod.GET)
+                .uri(StsEndpointProvider.defaultProvider().resolveEndpoint(StsEndpointParams.builder().region(awsRegion).build()).get().url())
+                .appendHeader("x-k8s-aws-id", clusterName)
+                .appendRawQueryParameter("Action", "GetCallerIdentity")
+                .appendRawQueryParameter("Version", "2011-06-15")
+                .build();
+        Date expirationDate = DateUtils.addSeconds(Date.from(Instant.now()), 60);
+        Aws4PresignerParams presignerParams = Aws4PresignerParams.builder()
+                .awsCredentials(awsAuth.resolveCredentials())
+                .signingRegion(awsRegion)
+                .signingName("sts")
+                .signingClockOverride(Clock.systemUTC())
+                .expirationTime(expirationDate.toInstant())
+                .build();
 
-            ZonedDateTime expirationDate = DateUtil.addSeconds(DateUtil.now(), 60);
-            Aws4PresignerParams presignerParams = Aws4PresignerParams.builder()
-                    .awsCredentials(awsAuth.resolveCredentials())
-                    .signingRegion(awsRegion)
-                    .signingName("sts")
-                    .signingClockOverride(Clock.systemUTC())
-                    .expirationTime(expirationDate.toInstant())
-                    .build();
+        SdkHttpFullRequest signedRequest = Aws4Signer.create().presign(requestToSign, presignerParams);
 
-            SdkHttpFullRequest signedRequest = Aws4Signer.create().presign(requestToSign, presignerParams);
-
-            String encodedUrl = Base64.getUrlEncoder().withoutPadding().encodeToString(signedRequest.getUri().toString().getBytes(CharSet.UTF_8.getCharset()));
-            return ("k8s-aws-v1." + encodedUrl);
-        } catch (Exception e) {
-            String errorMessage = "A problem occurred generating an Eks authentication token for cluster: " + clusterName;
-            //logger.error(errorMessage, e);
-            throw new RuntimeException(errorMessage, e);
-        }
+        String encodedUrl = Base64.getUrlEncoder().withoutPadding().encodeToString(signedRequest.getUri().toString().getBytes(StandardCharsets.UTF_8));
+        return ("k8s-aws-v1." + encodedUrl);
     }
 
 
     public Nodegroup createNodeGroup(ClusterNodeGroup clusterNodeGroup) {
 
         KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(clusterNodeGroup.getClusterUid());
-        AmazonEKS eksClient = getClient(kubernetesCluster);
+        EksClient eksClient = getClient(kubernetesCluster);
 
         //if (eksClient.listNodegroups(new ListNodegroupsRequest()).getNodegroups().contains(clusterNodeGroup.getGroupName())) {
             //throw new ResourceNotFoundException("Node group " + clusterNodeGroup.getGroupName() + " already exists!");
         //}
+        return eksClient.createNodegroup(
+                CreateNodegroupRequest.builder().clusterName(kubernetesCluster.getClusterName()).nodegroupName(clusterNodeGroup.getGroupName()).amiType(clusterNodeGroup.getAmi())
+                        .instanceTypes(clusterNodeGroup.getInstanceType()).scalingConfig(NodegroupScalingConfig.builder()
+                                .desiredSize(clusterNodeGroup.getDesiredNodeCount())
+                                .minSize(clusterNodeGroup.getMinNodeCount())
+                                .maxSize(clusterNodeGroup.getMaxNodeCount()).build()).nodeRole(clusterNodeGroup.getRoleArn()).capacityType(CapacityTypes.ON_DEMAND)
+                        .diskSize(20).subnets(clusterNodeGroup.getSubnetIds()).updateConfig(NodegroupUpdateConfig.builder().maxUnavailable(1).build())
+                        .build()
 
-
-        CreateNodegroupResult eksCluster = eksClient.createNodegroup(
-                new CreateNodegroupRequest().withClusterName(kubernetesCluster.getClusterName()).withNodegroupName(clusterNodeGroup.getGroupName()).withAmiType(clusterNodeGroup.getAmi())
-                        .withInstanceTypes(clusterNodeGroup.getInstanceType()).withScalingConfig(new NodegroupScalingConfig()
-                                .withDesiredSize(clusterNodeGroup.getDesiredNodeCount())
-                                .withMinSize(clusterNodeGroup.getMinNodeCount())
-                                .withMaxSize(clusterNodeGroup.getMaxNodeCount())).withNodeRole(clusterNodeGroup.getRoleArn()).withCapacityType(CapacityTypes.ON_DEMAND)
-                        .withDiskSize(20).withSubnets(clusterNodeGroup.getSubnetIds()).withUpdateConfig(new NodegroupUpdateConfig().withMaxUnavailable(1))
-
-        );
-        return eksCluster.getNodegroup();
+        ).nodegroup();
     }
 
     public Nodegroup updateScalingConfig(ClusterNodeGroup clusterNodeGroup) {
         Nodegroup nodegroup = getNodeGroup(clusterNodeGroup);
-        nodegroup.getScalingConfig()
-                .withDesiredSize(clusterNodeGroup.getDesiredNodeCount())
-                .withMinSize(clusterNodeGroup.getMinNodeCount())
-                .withMaxSize(clusterNodeGroup.getMaxNodeCount());
+        UpdateNodegroupConfigRequest.builder().nodegroupName(nodegroup.nodegroupName()).scalingConfig(NodegroupScalingConfig.builder()
+                .desiredSize(clusterNodeGroup.getDesiredNodeCount())
+                .minSize(clusterNodeGroup.getMinNodeCount())
+                .maxSize(clusterNodeGroup.getMaxNodeCount()).build());
         return nodegroup;
     }
 
     public Cluster getCluster(KubernetesCluster kubernetesCluster) {
-        AmazonEKS eksClient = getClient(kubernetesCluster);
-        if (eksClient.listClusters(new ListClustersRequest()).getClusters().contains(kubernetesCluster.getClusterName())) {
-            return eksClient.describeCluster(new DescribeClusterRequest().withName(kubernetesCluster.getClusterName())).getCluster();
+        EksClient eksClient = getClient(kubernetesCluster);
+        if (eksClient.listClusters(ListClustersRequest.builder().build()).clusters().contains(kubernetesCluster.getClusterName())) {
+            return eksClient.describeCluster(DescribeClusterRequest.builder().name(kubernetesCluster.getClusterName()).build()).cluster();
         }
         throw new ResourceNotFoundException("Cluster " + kubernetesCluster.getClusterName() + " not found");
     }
 
-//    public Cluster getSessionToken(KubernetesCluster cloudCluster) {
-//        AmazonEKS eksClient = getClient(cloudCluster);
-//        eksClient.
-//
-//
-//    }
 
     public Nodegroup getNodeGroup(ClusterNodeGroup clusterNodeGroup) {
         KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(clusterNodeGroup.getClusterUid());
-        AmazonEKS eksClient = getClient(kubernetesCluster);
-        if (eksClient.listNodegroups(new ListNodegroupsRequest()).getNodegroups().contains(clusterNodeGroup.getGroupName())) {
-            return eksClient.describeNodegroup(new DescribeNodegroupRequest().withNodegroupName(clusterNodeGroup.getGroupName())).getNodegroup();
+        EksClient eksClient = getClient(kubernetesCluster);
+        if (eksClient.listNodegroups(ListNodegroupsRequest.builder().build()).nodegroups().contains(clusterNodeGroup.getGroupName())) {
+            return eksClient.describeNodegroup(DescribeNodegroupRequest.builder().nodegroupName(clusterNodeGroup.getGroupName()).build()).nodegroup();
         }
         throw new ResourceNotFoundException("Node group " + clusterNodeGroup.getGroupName() + " not found");
     }
