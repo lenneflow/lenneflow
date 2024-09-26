@@ -21,33 +21,33 @@ import java.util.List;
 @NoArgsConstructor
 public class Function {
 
-    private String uid;
-
-    private String name;
-
-    private String description;
-
-    private String type;
-
-    private PackageRepository packageRepository;
-
-    private DeploymentState deploymentState;
-
-    private String resourcePath;
-
-    private String imageName;
-
-    private int servingPort;
-
-    private int assignedHostPort;
-
-    private String serviceUrl;
-
-    private LocalDateTime creationTime;
-
-    private LocalDateTime updateTime;
-
-    private String inputSchema;
+//    private String uid;
+//
+//    private String name;
+//
+//    private String description;
+//
+//    private String type;
+//
+//    private PackageRepository packageRepository;
+//
+//    private DeploymentState deploymentState;
+//
+//    private String resourcePath;
+//
+//    private String imageName;
+//
+//    private int servingPort;
+//
+//    private int assignedHostPort;
+//
+//    private String serviceUrl;
+//
+//    private LocalDateTime creationTime;
+//
+//    private LocalDateTime updateTime;
+//
+//    private String inputSchema;
 
 }
 

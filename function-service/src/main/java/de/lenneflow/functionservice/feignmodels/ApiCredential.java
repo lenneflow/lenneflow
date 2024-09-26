@@ -1,4 +1,4 @@
-package de.lenneflow.workerservice.model;
+package de.lenneflow.functionservice.feignmodels;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,27 +13,16 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Document
-public class LocalClusterDetails {
+public class ApiCredential {
 
-    @Id
     private String uid;
-
-    private String name;
 
     private String description;
 
-    private String ingressServiceName;
+    private String apiServerEndpoint;
 
-    private String serviceUser;
+    private String apiAuthToken;
 
-    private String ipAddress;
+    private LocalDateTime expiresAt;
 
-    private int apiServerPort;
-
-    private String sessionToken;
-
-    private LocalDateTime created;
-
-    private LocalDateTime updated;
 }

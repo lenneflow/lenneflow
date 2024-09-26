@@ -1,9 +1,10 @@
-package de.lenneflow.workerservice.kubernetes.cloud;
+package de.lenneflow.workerservice.kubernetes.cloudproviders;
 
 
 import de.lenneflow.workerservice.exception.InternalServiceException;
 import de.lenneflow.workerservice.exception.PayloadNotValidException;
 import de.lenneflow.workerservice.exception.ResourceNotFoundException;
+import de.lenneflow.workerservice.kubernetes.IClusterController;
 import de.lenneflow.workerservice.model.ClusterNodeGroup;
 import de.lenneflow.workerservice.model.KubernetesCluster;
 import de.lenneflow.workerservice.model.CloudCredential;
@@ -31,13 +32,13 @@ import java.util.concurrent.ExecutionException;
 
 
 @Component
-public class AWSController implements ICloudController{
+public class AWSClusterController implements IClusterController {
 
     private final List<String> addOnList;
     private final CloudCredentialRepository cloudCredentialRepository;
     private final KubernetesClusterRepository kubernetesClusterRepository;
 
-    public AWSController(CloudCredentialRepository cloudCredentialRepository, KubernetesClusterRepository kubernetesClusterRepository) {
+    public AWSClusterController(CloudCredentialRepository cloudCredentialRepository, KubernetesClusterRepository kubernetesClusterRepository) {
         this.cloudCredentialRepository = cloudCredentialRepository;
         this.kubernetesClusterRepository = kubernetesClusterRepository;
         addOnList = Arrays.asList("kube-proxy", "vpc-cni", "eks-pod-identity-agent", "coredns");
@@ -125,29 +126,40 @@ public class AWSController implements ICloudController{
                 if(new ComparableVersion(latestVersionPrefix).compareTo(new ComparableVersion(version)) < 0){
                     latestVersionPrefix = version;
                     latestVersion = versionInfo.addonVersion();
-                }else if(new ComparableVersion(latestVersionPrefix).compareTo(new ComparableVersion(version)) == 0){
-                    if(latestVersion.compareTo(versionInfo.addonVersion()) < 0){
+                }else if(new ComparableVersion(latestVersionPrefix).compareTo(new ComparableVersion(version)) == 0 && latestVersion.compareTo(versionInfo.addonVersion()) < 0){
                         latestVersion = versionInfo.addonVersion();
-                    }
-
                 }
             }
         }
         return latestVersion;
     }
 
-    public String getAuthenticationToken(AwsCredentialsProvider awsAuth, Region awsRegion, String clusterName) throws InterruptedException, ExecutionException {
-        SdkHttpFullRequest requestToSign = SdkHttpFullRequest
-                .builder()
-                .method(SdkHttpMethod.GET)
-                .uri(StsEndpointProvider.defaultProvider().resolveEndpoint(StsEndpointParams.builder().region(awsRegion).build()).get().url())
-                .appendHeader("x-k8s-aws-id", clusterName)
-                .appendRawQueryParameter("Action", "GetCallerIdentity")
-                .appendRawQueryParameter("Version", "2011-06-15")
-                .build();
+
+    @Override
+    public String getSessionToken(KubernetesCluster kubernetesCluster) {
+        CloudCredential credential = cloudCredentialRepository.findByUid(kubernetesCluster.getCloudCredentialUid());
+        AwsCredentials credentials = AwsBasicCredentials.create(credential.getAccessKey(), credential.getSecretKey());
+        return getAuthenticationToken(credentials, Region.of(kubernetesCluster.getRegion()), kubernetesCluster.getClusterName());
+
+    }
+
+    public String getAuthenticationToken(AwsCredentials awsAuth, Region awsRegion, String clusterName) {
+        SdkHttpFullRequest requestToSign = null;
+        try {
+            requestToSign = SdkHttpFullRequest
+                    .builder()
+                    .method(SdkHttpMethod.GET)
+                    .uri(StsEndpointProvider.defaultProvider().resolveEndpoint(StsEndpointParams.builder().region(awsRegion).build()).get().url())
+                    .appendHeader("x-k8s-aws-id", clusterName)
+                    .appendRawQueryParameter("Action", "GetCallerIdentity")
+                    .appendRawQueryParameter("Version", "2011-06-15")
+                    .build();
+        } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
+        }
         Date expirationDate = DateUtils.addSeconds(Date.from(Instant.now()), 60);
         Aws4PresignerParams presignerParams = Aws4PresignerParams.builder()
-                .awsCredentials(awsAuth.resolveCredentials())
+                .awsCredentials(awsAuth)
                 .signingRegion(awsRegion)
                 .signingName("sts")
                 .signingClockOverride(Clock.systemUTC())
@@ -166,9 +178,6 @@ public class AWSController implements ICloudController{
         KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(clusterNodeGroup.getClusterUid());
         EksClient eksClient = getClient(kubernetesCluster);
 
-        //if (eksClient.listNodegroups(new ListNodegroupsRequest()).getNodegroups().contains(clusterNodeGroup.getGroupName())) {
-            //throw new ResourceNotFoundException("Node group " + clusterNodeGroup.getGroupName() + " already exists!");
-        //}
         return eksClient.createNodegroup(
                 CreateNodegroupRequest.builder().clusterName(kubernetesCluster.getClusterName()).nodegroupName(clusterNodeGroup.getGroupName()).amiType(clusterNodeGroup.getAmi())
                         .instanceTypes(clusterNodeGroup.getInstanceType()).scalingConfig(NodegroupScalingConfig.builder()
@@ -221,7 +230,7 @@ public class AWSController implements ICloudController{
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            Thread.currentThread().interrupt();
         }
     }
 }

@@ -1,5 +1,6 @@
 package de.lenneflow.workerservice.model;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,24 +16,18 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document
-public class KubernetesCredential {
+public class ApiCredential {
 
     @Id
     private String uid;
 
-    private String name;
-
     private String description;
-
-    private String serviceUser;
 
     private String apiServerEndpoint;
 
-    private String ipAddress;
+    private String apiAuthToken;
 
-    private int apiServerPort;
-
-    private String sessionToken;
+    private LocalDateTime expiresAt;
 
     private LocalDateTime created;
 

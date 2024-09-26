@@ -23,7 +23,9 @@ public class FunctionDTO {
 
     private String resourcePath;
 
-    private int servingPort;
+    private int servicePort;
+
+    private boolean lazyDeployment;
 
     private String imageName;
 

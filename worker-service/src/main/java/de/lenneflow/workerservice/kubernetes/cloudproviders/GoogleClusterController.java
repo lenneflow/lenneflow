@@ -1,11 +1,12 @@
-package de.lenneflow.workerservice.kubernetes.cloud;
+package de.lenneflow.workerservice.kubernetes.cloudproviders;
 
+import de.lenneflow.workerservice.kubernetes.IClusterController;
 import de.lenneflow.workerservice.model.ClusterNodeGroup;
 import de.lenneflow.workerservice.model.KubernetesCluster;
 import org.springframework.stereotype.Component;
 
 @Component
-public class AzureController implements  ICloudController{
+public class GoogleClusterController implements IClusterController {
 
     @Override
     public Object createCluster(KubernetesCluster kubernetesCluster) {
@@ -30,5 +31,10 @@ public class AzureController implements  ICloudController{
     @Override
     public Object getNodeGroup(ClusterNodeGroup clusterNodeGroup) {
         return null;
+    }
+
+    @Override
+    public String getSessionToken(KubernetesCluster kubernetesCluster) {
+        return "";
     }
 }

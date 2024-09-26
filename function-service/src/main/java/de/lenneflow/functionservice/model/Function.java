@@ -38,7 +38,9 @@ public class Function {
 
     private String imageName;
 
-    private int servingPort;
+    private boolean lazyDeployment;
+
+    private int servicePort;
 
     private int assignedHostPort;
 
