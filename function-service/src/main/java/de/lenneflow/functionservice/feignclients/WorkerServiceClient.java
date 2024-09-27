@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
-@FeignClient(name = "worker-service", url = "http://localhost:47003")
+@FeignClient(name = "worker-service", url = "http://localhost:47004")
 //@FeignClient(name = "worker-service")
 public interface WorkerServiceClient {
 
@@ -21,10 +21,10 @@ public interface WorkerServiceClient {
     @GetMapping("/api/workers/clusters")
     List<KubernetesCluster> getKubernetesClusterList();
 
-    @PostMapping("/clusters/{uid}/update-used-port")
+    @PostMapping("/api/workers/clusters/{uid}/update-used-ports")
     KubernetesCluster updateUsedPorts(@PathVariable("uid") String clusterUid, @RequestBody List<Integer> usedPorts);
 
-    @PostMapping("/clusters/api-credential/{uid}")
-    ApiCredential getApiCredential(@PathVariable("uid") String apiCredentialUid);
+    @GetMapping("/api/workers/clusters/{uid}/api-credential")
+    ApiCredential getApiCredential(@PathVariable("uid") String clusterUid);
 
 }

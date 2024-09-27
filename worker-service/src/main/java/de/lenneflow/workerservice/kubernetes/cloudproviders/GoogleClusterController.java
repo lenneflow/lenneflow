@@ -5,6 +5,8 @@ import de.lenneflow.workerservice.model.ClusterNodeGroup;
 import de.lenneflow.workerservice.model.KubernetesCluster;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
+
 @Component
 public class GoogleClusterController implements IClusterController {
 
@@ -34,7 +36,12 @@ public class GoogleClusterController implements IClusterController {
     }
 
     @Override
-    public String getSessionToken(KubernetesCluster kubernetesCluster) {
+    public String getSessionToken(KubernetesCluster kubernetesCluster, Date expirationDate) {
+        return "";
+    }
+
+    @Override
+    public String getApiServerEndpoint(KubernetesCluster kubernetesCluster) {
         return "";
     }
 }

@@ -9,6 +9,8 @@ import de.lenneflow.workerservice.model.ClusterNodeGroup;
 import de.lenneflow.workerservice.repository.KubernetesClusterRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
+
 @Component
 public class KubernetesClusterController implements IClusterController {
 
@@ -69,14 +71,28 @@ public class KubernetesClusterController implements IClusterController {
     }
 
     @Override
-    public String getSessionToken(KubernetesCluster kubernetesCluster) {
+    public String getSessionToken(KubernetesCluster kubernetesCluster, Date expirationDate) {
         switch (kubernetesCluster.getCloudProvider()){
             case GOOGLE_CLOUD:
-                return googleClusterController.getSessionToken(kubernetesCluster);
+                return googleClusterController.getSessionToken(kubernetesCluster, expirationDate);
             case AMAZON_AWS:
-                return awsClusterController.getSessionToken(kubernetesCluster);
+                return awsClusterController.getSessionToken(kubernetesCluster, expirationDate);
             case MICROSOFT_AZURE:
-                return azureClusterController.getSessionToken(kubernetesCluster);
+                return azureClusterController.getSessionToken(kubernetesCluster, expirationDate);
+            default:
+                throw new InternalServiceException(UNSUPPORTED_CLOUD_PROVIDER);
+        }
+    }
+
+    @Override
+    public String getApiServerEndpoint(KubernetesCluster kubernetesCluster) {
+        switch (kubernetesCluster.getCloudProvider()){
+            case GOOGLE_CLOUD:
+                return googleClusterController.getApiServerEndpoint(kubernetesCluster);
+            case AMAZON_AWS:
+                return awsClusterController.getApiServerEndpoint(kubernetesCluster);
+            case MICROSOFT_AZURE:
+                return azureClusterController.getApiServerEndpoint(kubernetesCluster);
             default:
                 throw new InternalServiceException(UNSUPPORTED_CLOUD_PROVIDER);
         }

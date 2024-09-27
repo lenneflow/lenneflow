@@ -16,12 +16,15 @@ import de.lenneflow.workerservice.repository.CloudCredentialRepository;
 import de.lenneflow.workerservice.repository.ClusterNodeGroupRepository;
 import de.lenneflow.workerservice.util.PayloadValidator;
 import io.swagger.v3.oas.annotations.Hidden;
+import org.apache.commons.lang.time.DateUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -53,28 +56,11 @@ public class WorkerController {
         this.cloudCredentialRepository = cloudCredentialRepository;
     }
 
-    @Hidden
-    @GetMapping(value={ "/check"})
-    public String checkService() {
-        return "Welcome to the Worker Service!";
-    }
-
-    @Hidden
-    @PostMapping(value={ "/clusters/{uid}/update-used-port"})
-    public KubernetesCluster updateUsedPorts(@PathVariable("uid") String clusterUid, @RequestBody List<Integer> usedPorts) {
-        KubernetesCluster cluster = kubernetesClusterRepository.findByUid(clusterUid);
-        cluster.setUsedHostPorts(usedPorts);
-        return kubernetesClusterRepository.save(cluster);
-    }
-
-    @Hidden
-    @GetMapping(value={ "/clusters/api-credential/{uid}"})
-    public ApiCredential getApiCredential(@PathVariable("uid") String apiCredentialUid) {
-        return apiCredentialRepository.findByUid(apiCredentialUid);
-    }
-
     @PostMapping("/clusters/local")
     public ResponseEntity<KubernetesCluster> createLocalKubernetesCluster(@RequestBody LocalClusterDTO clusterDTO) {
+
+        payloadValidator.validate(clusterDTO);
+
         KubernetesCluster kubernetesCluster = modelMapper.map(clusterDTO, KubernetesCluster.class);
         kubernetesCluster.setUid(UUID.randomUUID().toString());
         kubernetesCluster.setCreated(LocalDateTime.now());
@@ -102,8 +88,11 @@ public class WorkerController {
 
     }
 
-    @PostMapping("/clusters/local")
+    @PostMapping("/clusters/cloud")
     public ResponseEntity<KubernetesCluster> createCloudKubernetesCluster(@RequestBody CloudClusterDTO clusterDTO) {
+
+        payloadValidator.validate(clusterDTO);
+
         KubernetesCluster kubernetesCluster = modelMapper.map(clusterDTO, KubernetesCluster.class);
         kubernetesCluster.setUid(UUID.randomUUID().toString());
         kubernetesCluster.setCreated(LocalDateTime.now());
@@ -153,6 +142,11 @@ public class WorkerController {
         return new ResponseEntity<>(addon, HttpStatus.OK);
     }
 
+    @GetMapping("/clusters")
+    public List<KubernetesCluster> getAllClusters() {
+        return kubernetesClusterRepository.findAll();
+    }
+
 
     @PostMapping("/{id}")
     public ResponseEntity<KubernetesCluster> updateWorker(@RequestBody KubernetesCluster kubernetesCluster, @PathVariable String id) {
@@ -186,5 +180,43 @@ public class WorkerController {
         }
         kubernetesClusterRepository.delete(foundKubernetesCluster);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @Hidden
+    @GetMapping(value={ "/check"})
+    public String checkService() {
+        return "Welcome to the Worker Service!";
+    }
+
+    @Hidden
+    @PostMapping(value={ "/clusters/{uid}/update-used-ports"})
+    public KubernetesCluster updateUsedPorts(@PathVariable("uid") String clusterUid, @RequestBody List<Integer> usedPorts) {
+        KubernetesCluster cluster = kubernetesClusterRepository.findByUid(clusterUid);
+        cluster.setUsedHostPorts(usedPorts);
+        return kubernetesClusterRepository.save(cluster);
+    }
+
+    @Hidden
+    @GetMapping(value={ "/clusters/{uid}/api-credential"})
+    public ApiCredential getApiCredential(@PathVariable("uid") String clusterUid) {
+        KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(clusterUid);
+        if(kubernetesCluster.getApiCredentialUid() == null || kubernetesCluster.getApiCredentialUid().isEmpty()) {
+            kubernetesClusterController.getCluster(kubernetesCluster);
+            ApiCredential apiCredential = new ApiCredential();
+            apiCredential.setUid(UUID.randomUUID().toString());
+            Date expirationDate = DateUtils.addDays(Date.from(Instant.now()), 1);
+            apiCredential.setApiAuthToken(kubernetesClusterController.getSessionToken(kubernetesCluster, expirationDate));
+            apiCredential.setExpiresAt(LocalDateTime.now().plusDays(1));
+            apiCredential.setApiServerEndpoint(kubernetesClusterController.getApiServerEndpoint(kubernetesCluster));
+            apiCredential.setDescription("Api credential for cluster " + kubernetesCluster.getClusterName());
+            apiCredential.setUpdated(LocalDateTime.now());
+            apiCredential.setCreated(LocalDateTime.now());
+            ApiCredential saved = apiCredentialRepository.save(apiCredential);
+            kubernetesCluster.setApiCredentialUid(saved.getUid());
+            kubernetesClusterRepository.save(kubernetesCluster);
+            return saved;
+
+        }
+        return apiCredentialRepository.findByUid(kubernetesCluster.getApiCredentialUid());
     }
 }

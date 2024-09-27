@@ -107,43 +107,26 @@ public class AWSClusterController implements IClusterController {
 
     public Addon createClusterAddOn(KubernetesCluster kubernetesCluster, String addonName) {
         EksClient eksClient = getClient(kubernetesCluster);
-        String latestVersion = getAddonLatestVersion(eksClient, addonName);
         return eksClient.createAddon(CreateAddonRequest.builder().clusterName(kubernetesCluster.getClusterName()).addonName(addonName)
-                        .serviceAccountRoleArn(kubernetesCluster.getRoleArn()).addonVersion(latestVersion).build())
+                        .serviceAccountRoleArn(kubernetesCluster.getRoleArn()).build())
                 .addon();
     }
 
-    private String getAddonLatestVersion(EksClient eksClient, String addonName) {
-        String latestVersion = "";
-        String latestVersionPrefix = "";
-        List<AddonVersionInfo> versionInfos = eksClient.describeAddonVersions(DescribeAddonVersionsRequest.builder().addonName(addonName).build()).addons().get(0).addonVersions();
-        for (AddonVersionInfo versionInfo : versionInfos) {
-            String version = versionInfo.addonVersion().replace("v", "").split("-")[0].trim();
-            if(latestVersionPrefix.isEmpty()){
-                latestVersionPrefix = version;
-                latestVersion = versionInfo.addonVersion();
-            }else{
-                if(new ComparableVersion(latestVersionPrefix).compareTo(new ComparableVersion(version)) < 0){
-                    latestVersionPrefix = version;
-                    latestVersion = versionInfo.addonVersion();
-                }else if(new ComparableVersion(latestVersionPrefix).compareTo(new ComparableVersion(version)) == 0 && latestVersion.compareTo(versionInfo.addonVersion()) < 0){
-                        latestVersion = versionInfo.addonVersion();
-                }
-            }
-        }
-        return latestVersion;
-    }
-
-
     @Override
-    public String getSessionToken(KubernetesCluster kubernetesCluster) {
+    public String getSessionToken(KubernetesCluster kubernetesCluster, Date expirationDate) {
         CloudCredential credential = cloudCredentialRepository.findByUid(kubernetesCluster.getCloudCredentialUid());
         AwsCredentials credentials = AwsBasicCredentials.create(credential.getAccessKey(), credential.getSecretKey());
-        return getAuthenticationToken(credentials, Region.of(kubernetesCluster.getRegion()), kubernetesCluster.getClusterName());
+        return getAuthenticationToken(credentials, Region.of(kubernetesCluster.getRegion()), kubernetesCluster.getClusterName(), expirationDate);
 
     }
 
-    public String getAuthenticationToken(AwsCredentials awsAuth, Region awsRegion, String clusterName) {
+    @Override
+    public String getApiServerEndpoint(KubernetesCluster kubernetesCluster) {
+       Cluster cluster = getCluster(kubernetesCluster);
+       return  cluster.endpoint();
+    }
+
+    public String getAuthenticationToken(AwsCredentials awsAuth, Region awsRegion, String clusterName, Date expirationDate) {
         SdkHttpFullRequest requestToSign = null;
         try {
             requestToSign = SdkHttpFullRequest
@@ -152,12 +135,11 @@ public class AWSClusterController implements IClusterController {
                     .uri(StsEndpointProvider.defaultProvider().resolveEndpoint(StsEndpointParams.builder().region(awsRegion).build()).get().url())
                     .appendHeader("x-k8s-aws-id", clusterName)
                     .appendRawQueryParameter("Action", "GetCallerIdentity")
-                    .appendRawQueryParameter("Version", "2011-06-15")
+                    .appendRawQueryParameter("Version", "2024-09-24")
                     .build();
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
         }
-        Date expirationDate = DateUtils.addSeconds(Date.from(Instant.now()), 60);
         Aws4PresignerParams presignerParams = Aws4PresignerParams.builder()
                 .awsCredentials(awsAuth)
                 .signingRegion(awsRegion)
@@ -224,6 +206,27 @@ public class AWSClusterController implements IClusterController {
         return EksClient.builder().region(Region.of(kubernetesCluster.getRegion()))
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
                 .build();
+    }
+
+    private String getAddonLatestVersion(EksClient eksClient, String addonName) {
+        String latestVersion = "";
+        String latestVersionPrefix = "";
+        List<AddonVersionInfo> versionInfos = eksClient.describeAddonVersions(DescribeAddonVersionsRequest.builder().addonName(addonName).build()).addons().get(0).addonVersions();
+        for (AddonVersionInfo versionInfo : versionInfos) {
+            String version = versionInfo.addonVersion().replace("v", "").split("-")[0].trim();
+            if(latestVersionPrefix.isEmpty()){
+                latestVersionPrefix = version;
+                latestVersion = versionInfo.addonVersion();
+            }else{
+                if(new ComparableVersion(latestVersionPrefix).compareTo(new ComparableVersion(version)) < 0){
+                    latestVersionPrefix = version;
+                    latestVersion = versionInfo.addonVersion();
+                }else if(new ComparableVersion(latestVersionPrefix).compareTo(new ComparableVersion(version)) == 0 && latestVersion.compareTo(versionInfo.addonVersion()) < 0){
+                    latestVersion = versionInfo.addonVersion();
+                }
+            }
+        }
+        return latestVersion;
     }
 
     private void pause(int millis){

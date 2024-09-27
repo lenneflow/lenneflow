@@ -8,10 +8,7 @@ import de.lenneflow.functionservice.feignmodels.KubernetesCluster;
 import de.lenneflow.functionservice.model.Function;
 import de.lenneflow.functionservice.repository.FunctionRepository;
 import de.lenneflow.functionservice.util.YamlEditor;
-import io.fabric8.kubernetes.api.model.Namespace;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
@@ -142,11 +139,10 @@ public class KubernetesController {
         Namespace ns = new NamespaceBuilder().withNewMetadata().withName(NAMESPACE)
                 .endMetadata().build();
         try {
-            if (client.namespaces().withName(NAMESPACE).get() != null) {
-                return;
-            }
             client.namespaces().resource(ns).create();
         } catch (Exception e) {
+            if(e.getMessage().toLowerCase().contains("already exists"))
+                return;
             throw new InternalServiceException("It was not possible to create the namespace " + NAMESPACE + "\n" + e.getMessage());
         }
     }
@@ -163,6 +159,8 @@ public class KubernetesController {
                 client.resource(bindingResource).inNamespace(NAMESPACE).create();
             }
         } catch (Exception e) {
+            if(e.getMessage().toLowerCase().contains("already exists"))
+                return;
             throw new InternalServiceException("It was not possible to create the service account " + SERVICE_ACCOUNT_NAME + "\n" + e.getMessage());
         }
     }
@@ -192,7 +190,7 @@ public class KubernetesController {
     }
 
     private KubernetesClient getKubernetesClient(KubernetesCluster kubernetesCluster) {
-        ApiCredential credential = workerServiceClient.getApiCredential(kubernetesCluster.getApiCredentialUid());
+        ApiCredential credential = workerServiceClient.getApiCredential(kubernetesCluster.getUid());
         String  masterUrl = credential.getApiServerEndpoint();
 
         Config config = new ConfigBuilder()
