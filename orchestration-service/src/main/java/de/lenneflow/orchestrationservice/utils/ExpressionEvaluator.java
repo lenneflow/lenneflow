@@ -2,6 +2,9 @@ package de.lenneflow.orchestrationservice.utils;
 
 import com.ezylang.evalex.Expression;
 import com.ezylang.evalex.data.EvaluationValue;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
 import de.lenneflow.orchestrationservice.exception.InternalServiceException;
 import de.lenneflow.orchestrationservice.model.WorkflowStepInstance;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
@@ -15,11 +18,63 @@ public class ExpressionEvaluator {
 
     final
     WorkflowStepInstanceRepository workflowStepInstanceRepository;
+    final ObjectMapper objectMapper = new ObjectMapper();
 
-    public final static String FORMULA_PREFIX = "@formula#";
 
     public ExpressionEvaluator(WorkflowStepInstanceRepository workflowStepInstanceRepository) {
         this.workflowStepInstanceRepository = workflowStepInstanceRepository;
+    }
+
+    public void normalizeInputData(Map<String, Object> inputData, String workflowInstanceUid) {
+        for (Map.Entry<String, Object> entry : inputData.entrySet()) {
+            if (entry.getValue() instanceof Map) {
+                normalizeInputData((Map<String, Object>)entry.getValue(), workflowInstanceUid);
+            } else if (entry.getValue() instanceof String string) {
+                Object newValue = evaluateInputDataEntry(workflowInstanceUid, string);
+                inputData.put(entry.getKey(), newValue);
+            }
+        }
+    }
+
+    private Object evaluateInputDataEntry(String workflowInstanceUid, String value) {
+        if(value.startsWith("[") && value.endsWith("]")){
+            String expression = value.replace("[", "").replace("]","");
+            return getDataFromSubstring(workflowInstanceUid, expression);
+        }
+        return value;
+    }
+
+    private String getDataFromSubstring(String workflowInstanceUid, String dataPath) {
+        String[] stringParts = dataPath.split("\\.");
+        WorkflowStepInstance step = workflowStepInstanceRepository.findByNameAndWorkflowInstanceUid(stringParts[0].trim(), workflowInstanceUid);
+        return switch (stringParts[1].toLowerCase().trim()) {
+            case "output", "outputdata" -> {
+                Map<String, Object> outputData = step.getOutputData();
+                yield getMapValueByPath(outputData, getJsonPath(stringParts)).toString();
+            }
+            case "input", "inputdata" -> {
+                Map<String, Object> inputData = step.getInputData();
+                yield getMapValueByPath(inputData, getJsonPath(stringParts)).toString();
+            }
+            default -> throw new InternalServiceException("Invalid data path: " + dataPath);
+        };
+    }
+
+    private String getJsonPath(String[] data){
+        StringBuilder result = new StringBuilder("$");
+        for(int i = 2; i < data.length; i++){
+            result.append(".").append(data[i]);
+        }
+        return result.toString();
+    }
+
+    private Object getMapValueByPath(Map<String, Object> inputData, String path) {
+        try {
+            String json = objectMapper.writeValueAsString(inputData);
+            return JsonPath.read(json, path);
+        } catch (JsonProcessingException e) {
+            throw new InternalServiceException("Could not get data from Map " + inputData.toString());
+        }
     }
 
     public boolean evaluateBooleanExpression(String workflowInstanceUid, String expression) {
@@ -39,33 +94,6 @@ public class ExpressionEvaluator {
 
     }
 
-    public void normalizeInputData(Map<String, Object> inputData, String workflowInstanceUid) {
-        for (Map.Entry<String, Object> entry : inputData.entrySet()) {
-            if (entry.getValue() instanceof Map) {
-                normalizeInputData((Map<String, Object>) entry.getValue(), workflowInstanceUid);
-            } else if (entry.getValue() instanceof String) {
-                Object newValue = evaluateInputDataEntry(workflowInstanceUid, (String) entry.getValue());
-                inputData.put(entry.getKey(), newValue);
-            }
-        }
-    }
-
-    private Object evaluateInputDataEntry(String workflowInstanceUid, String value) {
-        if(value.toLowerCase().startsWith(FORMULA_PREFIX)){
-            String expression = value.replace(FORMULA_PREFIX, "").replace("#","");
-            EvaluationValue eval = evaluateExpression(workflowInstanceUid, expression);
-            if(eval.isBooleanValue())
-                return eval.getBooleanValue();
-            if(eval.isNumberValue())
-                return eval.getNumberValue().intValue();
-            if(eval.isDurationValue())
-                return eval.getDurationValue();
-            return eval.getValue().toString();
-
-        }
-        return value;
-    }
-
     private EvaluationValue evaluateExpression(String workflowInstanceUid, String expression) {
         String[] subStrings = StringUtils.substringsBetween(expression, "[", "]");
         for(String s : subStrings) {
@@ -78,25 +106,6 @@ public class ExpressionEvaluator {
         } catch (Exception e) {
             throw new InternalServiceException("Invalid expression in Payload: " + expression);
         }
-    }
-
-    private String getDataFromSubstring(String workflowInstanceUid, String dataPath) {
-        String[] stringParts = dataPath.split("\\.");
-        WorkflowStepInstance step = workflowStepInstanceRepository.findByNameAndWorkflowInstanceUid(stringParts[0].trim(), workflowInstanceUid);
-        return switch (stringParts[1].toLowerCase().trim()) {
-            case "output", "outputdata" -> {
-                Map<String, Object> outputData = step.getOutputData();
-                yield outputData.get(stringParts[2].trim()).toString();
-            }
-            case "input", "inputdata" -> {
-                Map<String, Object> inputData = step.getInputData();
-                yield inputData.get(stringParts[2].trim()).toString();
-                //TODO get deeper located data
-            }
-            default -> throw new InternalServiceException("Invalid data path: " + dataPath);
-        };
-
-
     }
 
 }

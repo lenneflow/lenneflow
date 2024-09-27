@@ -25,6 +25,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator:latest.release'
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:latest.release'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:latest.release'
+    implementation 'com.jayway.jsonpath:json-path:2.9.0'
     implementation 'de.codecentric:spring-boot-admin-starter-client:latest.release'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:latest.release'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2'

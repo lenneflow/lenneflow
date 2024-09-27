@@ -26,7 +26,7 @@ public class QueueListeners {
     public void functionListener(byte[] serializedFunction) {
         FunctionDto functionDto = Util.deserializeFunction(serializedFunction);
         //TODO thread should be replaced by Async
-        new Thread(() -> {functionService.processFunctionDtoFromQueue(functionDto);}).start();
+        new Thread(() -> functionService.processFunctionDtoFromQueue(functionDto)).start();
 
     }
 
