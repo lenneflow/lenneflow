@@ -17,6 +17,7 @@ import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceReposito
 import de.lenneflow.orchestrationservice.utils.ExpressionEvaluator;
 import org.springframework.stereotype.Controller;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Controller
@@ -110,6 +111,14 @@ public class InstanceController {
         updateWorkflowExecutionStatus(execution, runStatus);
     }
 
+    public void setWorkflowRunEndTime(WorkflowInstance workflowInstance, WorkflowExecution execution){
+        workflowInstance.setEndTime(LocalDateTime.now());
+        workflowInstanceRepository.save(workflowInstance);
+        execution.setEndTime(LocalDateTime.now());
+        workflowExecutionRepository.save(execution);
+    }
+
+
     /**
      * Updated the workflow instance status
      *
@@ -159,17 +168,18 @@ public class InstanceController {
                 else
                     return stepInstance;
             case SWITCH:
-                String switchCondition = expressionEvaluator.evaluateStringExpression(stepInstance.getWorkflowInstanceUid(), stepInstance.getSwitchCondition());
-                WorkflowStepInstance foundStepInstance = stepInstance.getDecisionCases().get(switchCondition);
-                if (foundStepInstance == null) {
-                    WorkflowStepInstance defaultStepInstance = stepInstance.getDecisionCases().get("Default");
-                    if (defaultStepInstance == null) {
-                        throw new InternalServiceException("The next workflow step to execute could not be found after the evaluation of the switch condition " + stepInstance.getSwitchCondition());
-                    } else {
-                        return defaultStepInstance;
-                    }
-                }
-                return foundStepInstance;
+                //TODO
+//                String switchCondition = expressionEvaluator.evaluateStringExpression(stepInstance.getWorkflowInstanceUid(), stepInstance.getSwitchCondition());
+//                WorkflowStepInstance foundStepInstance = stepInstance.getDecisionCases().get(switchCondition);
+//                if (foundStepInstance == null) {
+//                    WorkflowStepInstance defaultStepInstance = stepInstance.getDecisionCases().get(0);
+//                    if (defaultStepInstance == null) {
+//                        throw new InternalServiceException("The next workflow step to execute could not be found after the evaluation of the switch condition " + stepInstance.getSwitchCondition());
+//                    } else {
+//                        return defaultStepInstance;
+//                    }
+//                }
+                return null;
             default:
                 throw new InternalServiceException("The next workflow step to execute could not be found");
         }

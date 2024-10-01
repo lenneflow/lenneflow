@@ -3,6 +3,7 @@ package de.lenneflow.orchestrationservice.model;
 import de.lenneflow.orchestrationservice.enums.ControlStructure;
 import de.lenneflow.orchestrationservice.enums.RunStatus;
 import de.lenneflow.orchestrationservice.enums.RunOrderLabel;
+import de.lenneflow.orchestrationservice.feignmodels.DecisionCase;
 import de.lenneflow.orchestrationservice.feignmodels.WorkflowStep;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,9 +13,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Getter
 @Setter
@@ -46,7 +45,7 @@ public class WorkflowStepInstance {
 
     private String subWorkflowId;
 
-    private Map<String, WorkflowStepInstance> decisionCases = new LinkedHashMap<>();
+    private List<DecisionCase> decisionCases = new ArrayList<>();
 
     private String switchCondition;
 

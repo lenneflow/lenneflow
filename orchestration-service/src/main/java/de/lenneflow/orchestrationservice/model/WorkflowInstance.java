@@ -59,6 +59,7 @@ public class WorkflowInstance {
         this.timeOutInSeconds = workflow.getTimeOutInSeconds();
         this.created = LocalDateTime.now();
         this.updated = LocalDateTime.now();
+        this.startTime = LocalDateTime.now();
 
     }
 

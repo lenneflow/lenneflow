@@ -1,6 +1,5 @@
 package de.lenneflow.workflowservice.util;
 
-import com.ezylang.evalex.Expression;
 import de.lenneflow.workflowservice.exception.InternalServiceException;
 import de.lenneflow.workflowservice.exception.PayloadNotValidException;
 import de.lenneflow.workflowservice.exception.ResourceNotFoundException;
@@ -8,7 +7,6 @@ import de.lenneflow.workflowservice.model.Workflow;
 import de.lenneflow.workflowservice.model.WorkflowStep;
 import de.lenneflow.workflowservice.repository.WorkflowRepository;
 import de.lenneflow.workflowservice.repository.WorkflowStepRepository;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -66,17 +64,17 @@ public class Validator {
     }
 
     private void validateExpression(String expression) {
-        String[] subStrings = StringUtils.substringsBetween(expression, "[", "]");
-        for(String s : subStrings) {
-            expression = expression.replace(s, "0");
-        }
-        expression = expression.replace("[", "").replace("]", "");
-        Expression exp = new Expression(expression);
-        try {
-            exp.evaluate();
-        } catch (Exception e) {
-            throw new PayloadNotValidException("Invalid expression in Payload: " + expression);
-        }
+//        String[] subStrings = StringUtils.substringsBetween(expression, "[", "]");
+//        for(String s : subStrings) {
+//            expression = expression.replace(s, "0");
+//        }
+//        expression = expression.replace("[", "").replace("]", "");
+//        Expression exp = new Expression(expression);
+//        try {
+//            exp.evaluate();
+//        } catch (Exception e) {
+//            throw new PayloadNotValidException("Invalid expression in Payload: " + expression);
+//        }
     }
 
 

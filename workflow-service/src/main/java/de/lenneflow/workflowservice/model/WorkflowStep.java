@@ -10,7 +10,9 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -40,7 +42,7 @@ public class WorkflowStep {
 
     private String subWorkflowId;
 
-    private Map<String, WorkflowStep> decisionCases = new LinkedHashMap<>();
+    private List<DecisionCase> decisionCases = new ArrayList<>();
 
     private String switchCondition;
 

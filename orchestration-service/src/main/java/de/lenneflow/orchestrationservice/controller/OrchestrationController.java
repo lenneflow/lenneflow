@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -48,16 +49,17 @@ public class OrchestrationController {
 
 
     @GetMapping("/workflows/{workflow-id}/start")
-    public ResponseEntity<WorkflowExecution>  startWorkflowGet(@PathVariable(name = "workflow-id") String workflowId) {
-        return new ResponseEntity<>(workflowRunner.startWorkflow(workflowId, null), HttpStatus.OK);
+    public WorkflowExecution  startWorkflowGet(@PathVariable(name = "workflow-id") String workflowId) {
+        return workflowRunner.startWorkflow(workflowId, null);
     }
 
     @PostMapping("/workflows/{workflow-id}/start")
-    public ResponseEntity<WorkflowExecution> startWorkflowPost(@PathVariable(name = "workflow-id") String workflowId, @RequestBody Map<String, Object> inputParameters) {
+    public WorkflowExecution startWorkflowPost(@PathVariable(name = "workflow-id") String workflowId, @RequestBody Map<String, Object> inputParameters) {
         if(inputParametersValid(workflowId, inputParameters)){
-            return new ResponseEntity<>(workflowRunner.startWorkflow(workflowId, inputParameters), HttpStatus.OK);
+            return workflowRunner.startWorkflow(workflowId, inputParameters);
         }
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        return null;
+
     }
 
     @GetMapping("/workflows/executions/{execution-id}/stop")
@@ -79,6 +81,11 @@ public class OrchestrationController {
     @GetMapping("/workflows/executions/{execution-id}/state")
     public WorkflowExecution workflowRunState(@PathVariable(name = "execution-id") String executionId) {
         return workflowRunner.executionState(executionId);
+    }
+
+    @GetMapping("/workflows/executions")
+    public List<WorkflowExecution> executionList() {
+        return workflowExecutionRepository.findAll();
     }
 
     private boolean inputParametersValid(String workflowId, Map<String, Object> inputParameters) {

@@ -60,14 +60,14 @@ public class WorkflowController {
         return modelMapper.map(workflowRepository.save(workflow), WorkflowDTO.class);
     }
 
-    @PostMapping("/{id}")
-    public WorkflowDTO patchWorkflow(@RequestBody WorkflowDTO workflowDTO, @PathVariable String id) {
-        Workflow workflow = workflowRepository.findByUid(id);
-        modelMapper.map(workflowDTO, workflow);
-        validator.validateWorkflow(workflow);
-        workflow.setUpdated(LocalDateTime.now());
-        return modelMapper.map(workflowRepository.save(workflow), WorkflowDTO.class);
-    }
+//    @PostMapping("/{id}")
+//    public WorkflowDTO patchWorkflow(@RequestBody WorkflowDTO workflowDTO, @PathVariable String id) {
+//        Workflow workflow = workflowRepository.findByUid(id);
+//        modelMapper.map(workflowDTO, workflow);
+//        validator.validateWorkflow(workflow);
+//        workflow.setUpdated(LocalDateTime.now());
+//        return modelMapper.map(workflowRepository.save(workflow), WorkflowDTO.class);
+//    }
 
     @DeleteMapping("/{id}")
     public void deleteWorkflow(@PathVariable String id) {
