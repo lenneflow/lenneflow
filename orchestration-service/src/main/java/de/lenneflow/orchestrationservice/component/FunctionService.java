@@ -21,24 +21,10 @@ public class FunctionService {
         this.queueController = queueController;
     }
 
-//    @Async
-//    public CompletableFuture<Void> processFunctionDtoFromQueue(FunctionDto functionDto) {
-//        Map<String, Object> inputData = functionDto.getInputData();
-//        Map<String, Object> outputData = restTemplate.postForObject(functionDto.getServiceUrl(), inputData, Map.class);
-//        if (outputData != null) {
-//            functionDto.setOutputData(outputData);
-//            functionDto.setRunStatus(RunStatus.COMPLETED);
-//        } else {
-//            functionDto.setRunStatus(RunStatus.FAILED);
-//        }
-//        queueController.addFunctionDtoToResultQueue(functionDto);
-//        return CompletableFuture.completedFuture(null);
-//    }
-
-    public void processFunctionDtoFromQueue(FunctionDto functionDto) {
+    @Async
+    public CompletableFuture<FunctionDto> processFunctionDtoFromQueue(FunctionDto functionDto) {
         Map<String, Object> inputData = functionDto.getInputData();
-        String serviceUrl = functionDto.getServiceUrl();
-        Map<String, Object> outputData = restTemplate.postForObject(serviceUrl, inputData, Map.class);
+        Map<String, Object> outputData = restTemplate.postForObject(functionDto.getServiceUrl(), inputData, Map.class);
         if (outputData != null) {
             functionDto.setOutputData(outputData);
             functionDto.setRunStatus(RunStatus.COMPLETED);
@@ -46,7 +32,21 @@ public class FunctionService {
             functionDto.setRunStatus(RunStatus.FAILED);
         }
         queueController.addFunctionDtoToResultQueue(functionDto);
+        return CompletableFuture.completedFuture(functionDto);
     }
+
+//    public void processFunctionDtoFromQueue(FunctionDto functionDto) {
+//        Map<String, Object> inputData = functionDto.getInputData();
+//        String serviceUrl = functionDto.getServiceUrl();
+//        Map<String, Object> outputData = restTemplate.postForObject(serviceUrl, inputData, Map.class);
+//        if (outputData != null) {
+//            functionDto.setOutputData(outputData);
+//            functionDto.setRunStatus(RunStatus.COMPLETED);
+//        } else {
+//            functionDto.setRunStatus(RunStatus.FAILED);
+//        }
+//        queueController.addFunctionDtoToResultQueue(functionDto);
+//    }
 
 
 }

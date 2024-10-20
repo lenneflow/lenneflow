@@ -65,7 +65,7 @@ public class AWSClusterController implements IClusterController {
     public void createClusterAddOns(KubernetesCluster kubernetesCluster, List<String> addonNameList) {
         for(int i=0;i<20;i++) {
             if(Objects.equals(getCluster(kubernetesCluster).status().toString(), ClusterStatus.ACTIVE.toString())){
-                kubernetesCluster.setStatus(de.lenneflow.workerservice.enums.ClusterStatus.CREATING_ADDONS);
+                kubernetesCluster.setStatus(de.lenneflow.workerservice.enums.ClusterStatus.CREATING);
                 kubernetesClusterRepository.save(kubernetesCluster);
                 break;
             }else{

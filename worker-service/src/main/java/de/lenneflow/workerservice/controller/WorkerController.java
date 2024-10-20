@@ -97,7 +97,7 @@ public class WorkerController {
         kubernetesCluster.setUid(UUID.randomUUID().toString());
         kubernetesCluster.setCreated(LocalDateTime.now());
         kubernetesCluster.setUpdated(LocalDateTime.now());
-        kubernetesCluster.setStatus(ClusterStatus.OFFLINE);
+        kubernetesCluster.setStatus(ClusterStatus.CREATED);
         kubernetesCluster.setIngressServiceName(kubernetesCluster.getClusterName().toLowerCase() + "-ingress");
         kubernetesCluster.setServiceUser(SERVICE_ACCOUNT_NAME);
         kubernetesCluster.setCreated(LocalDateTime.now());

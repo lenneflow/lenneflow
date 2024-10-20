@@ -30,11 +30,11 @@ public class KubernetesClusterController implements IClusterController {
 
     public Object createCluster(KubernetesCluster kubernetesCluster) {
         switch (kubernetesCluster.getCloudProvider()){
-            case GOOGLE_CLOUD:
+            case GOOGLE:
                 return googleClusterController.createCluster(kubernetesCluster);
-            case AMAZON_AWS:
+            case AMAZON:
                 return awsClusterController.createCluster(kubernetesCluster);
-            case MICROSOFT_AZURE:
+            case MICROSOFT:
                 return azureClusterController.createCluster(kubernetesCluster);
             default:
                 throw new InternalServiceException(UNSUPPORTED_CLOUD_PROVIDER);
@@ -43,11 +43,11 @@ public class KubernetesClusterController implements IClusterController {
 
     public Object createClusterAddOn(KubernetesCluster kubernetesCluster, String addOnName) {
         switch (kubernetesCluster.getCloudProvider()){
-            case GOOGLE_CLOUD:
+            case GOOGLE:
                 return googleClusterController.createClusterAddOn(kubernetesCluster, addOnName);
-            case AMAZON_AWS:
+            case AMAZON:
                 return awsClusterController.createClusterAddOn(kubernetesCluster, addOnName);
-            case MICROSOFT_AZURE:
+            case MICROSOFT:
                 return azureClusterController.createClusterAddOn(kubernetesCluster, addOnName);
             default:
                 throw new InternalServiceException(UNSUPPORTED_CLOUD_PROVIDER);
@@ -59,11 +59,11 @@ public class KubernetesClusterController implements IClusterController {
         KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(clusterNodeGroup.getClusterUid());
 
         switch (kubernetesCluster.getCloudProvider()){
-            case GOOGLE_CLOUD:
+            case GOOGLE:
                 return googleClusterController.createNodeGroup(clusterNodeGroup);
-            case AMAZON_AWS:
+            case AMAZON:
                 return awsClusterController.createNodeGroup(clusterNodeGroup);
-            case MICROSOFT_AZURE:
+            case MICROSOFT:
                 return azureClusterController.createNodeGroup(clusterNodeGroup);
             default:
                 throw new InternalServiceException(UNSUPPORTED_CLOUD_PROVIDER);
@@ -73,11 +73,11 @@ public class KubernetesClusterController implements IClusterController {
     @Override
     public String getSessionToken(KubernetesCluster kubernetesCluster, Date expirationDate) {
         switch (kubernetesCluster.getCloudProvider()){
-            case GOOGLE_CLOUD:
+            case GOOGLE:
                 return googleClusterController.getSessionToken(kubernetesCluster, expirationDate);
-            case AMAZON_AWS:
+            case AMAZON:
                 return awsClusterController.getSessionToken(kubernetesCluster, expirationDate);
-            case MICROSOFT_AZURE:
+            case MICROSOFT:
                 return azureClusterController.getSessionToken(kubernetesCluster, expirationDate);
             default:
                 throw new InternalServiceException(UNSUPPORTED_CLOUD_PROVIDER);
@@ -87,11 +87,11 @@ public class KubernetesClusterController implements IClusterController {
     @Override
     public String getApiServerEndpoint(KubernetesCluster kubernetesCluster) {
         switch (kubernetesCluster.getCloudProvider()){
-            case GOOGLE_CLOUD:
+            case GOOGLE:
                 return googleClusterController.getApiServerEndpoint(kubernetesCluster);
-            case AMAZON_AWS:
+            case AMAZON:
                 return awsClusterController.getApiServerEndpoint(kubernetesCluster);
-            case MICROSOFT_AZURE:
+            case MICROSOFT:
                 return azureClusterController.getApiServerEndpoint(kubernetesCluster);
             default:
                 throw new InternalServiceException(UNSUPPORTED_CLOUD_PROVIDER);
@@ -101,11 +101,11 @@ public class KubernetesClusterController implements IClusterController {
 
     public Object getCluster(KubernetesCluster kubernetesCluster) {
         switch (kubernetesCluster.getCloudProvider()){
-            case GOOGLE_CLOUD:
+            case GOOGLE:
                 return googleClusterController.getCluster(kubernetesCluster);
-            case AMAZON_AWS:
+            case AMAZON:
                 return awsClusterController.getCluster(kubernetesCluster);
-            case MICROSOFT_AZURE:
+            case MICROSOFT:
                 return azureClusterController.getCluster(kubernetesCluster);
             default:
                 throw new InternalServiceException(UNSUPPORTED_CLOUD_PROVIDER);
@@ -115,11 +115,11 @@ public class KubernetesClusterController implements IClusterController {
     public Object getNodeGroup(ClusterNodeGroup clusterNodeGroup) {
         KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(clusterNodeGroup.getClusterUid());
         switch (kubernetesCluster.getCloudProvider()){
-            case GOOGLE_CLOUD:
+            case GOOGLE:
                 return googleClusterController.getNodeGroup(clusterNodeGroup);
-            case AMAZON_AWS:
+            case AMAZON:
                 return awsClusterController.getNodeGroup(clusterNodeGroup);
-            case MICROSOFT_AZURE:
+            case MICROSOFT:
                 return azureClusterController.getNodeGroup(clusterNodeGroup);
             default:
                 throw new InternalServiceException(UNSUPPORTED_CLOUD_PROVIDER);
