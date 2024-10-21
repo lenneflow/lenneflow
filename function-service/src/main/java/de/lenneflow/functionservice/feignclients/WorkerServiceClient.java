@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
-@FeignClient(name = "worker-service", url = "http://localhost:47004")
-//@FeignClient(name = "worker-service")
+
+@FeignClient(name = "worker-service")
 public interface WorkerServiceClient {
 
     @GetMapping("/api/workers/clusters/{id}")
