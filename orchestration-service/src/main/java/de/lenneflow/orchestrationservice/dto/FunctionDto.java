@@ -25,6 +25,10 @@ public class FunctionDto {
 
     private String serviceUrl;
 
+    private String callBackLink;
+
+    private String failureReason;
+
     private String name;
 
     private String type;

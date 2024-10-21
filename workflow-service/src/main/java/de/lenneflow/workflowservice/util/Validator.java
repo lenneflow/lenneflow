@@ -51,7 +51,7 @@ public class Validator {
     private void checkExpressions(WorkflowStep workflowStep) {
         switch (workflowStep.getControlStructure()){
             case SWITCH:
-                String switchCondition = workflowStep.getSwitchCondition();
+                String switchCondition = workflowStep.getSwitchCase();
                 validateExpression(switchCondition);
                 break;
             case DO_WHILE:
@@ -97,7 +97,7 @@ public class Validator {
                 }
                 break;
             case SWITCH:
-                if(workflowStep.getSwitchCondition() == null || workflowStep.getSwitchCondition().isEmpty()){
+                if(workflowStep.getSwitchCase() == null || workflowStep.getSwitchCase().isEmpty()){
                     logger.info("Workflow step {} has no switch condition", workflowStep.getName());
                     throw new PayloadNotValidException("The field switchCondition is mandatory for this payload!");
                 }

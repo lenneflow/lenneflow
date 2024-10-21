@@ -39,12 +39,13 @@ public class ExpressionEvaluator {
     private Object evaluateInputDataEntry(String workflowInstanceUid, String value) {
         if(value.startsWith("[") && value.endsWith("]")){
             String expression = value.replace("[", "").replace("]","");
-            return getDataFromSubstring(workflowInstanceUid, expression);
+            return readDataFromPath(workflowInstanceUid, expression);
         }
         return value;
     }
 
-    private String getDataFromSubstring(String workflowInstanceUid, String dataPath) {
+    public String readDataFromPath(String workflowInstanceUid, String dataPath) {
+        dataPath = dataPath.replace("[", "").replace("]", "");
         String[] stringParts = dataPath.split("\\.");
         WorkflowStepInstance step = workflowStepInstanceRepository.findByNameAndWorkflowInstanceUid(stringParts[0].trim(), workflowInstanceUid);
         return switch (stringParts[1].toLowerCase().trim()) {
@@ -97,7 +98,7 @@ public class ExpressionEvaluator {
     private EvaluationValue evaluateExpression(String workflowInstanceUid, String expression) {
         String[] subStrings = StringUtils.substringsBetween(expression, "[", "]");
         for(String s : subStrings) {
-            expression = expression.replace(s, getDataFromSubstring(workflowInstanceUid, s));
+            expression = expression.replace(s, readDataFromPath(workflowInstanceUid, s));
         }
         expression = expression.replace("[", "").replace("]", "");
         Expression exp = new Expression(expression);

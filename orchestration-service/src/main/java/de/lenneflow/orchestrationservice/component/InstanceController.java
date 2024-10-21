@@ -103,6 +103,7 @@ public class InstanceController {
         workflowStepInstanceRepository.save(workflowStepInstance);
         Map<String, Object> output = functionDto.getOutputData();
         workflowStepInstance.setOutputData(output);
+        workflowStepInstance.setRunCount(workflowStepInstance.getRunCount() + 1);
         workflowStepInstanceRepository.save(workflowStepInstance);
     }
 
@@ -160,26 +161,13 @@ public class InstanceController {
      */
     public WorkflowStepInstance getNextWorkflowStepInstance(WorkflowStepInstance stepInstance) {
         switch (stepInstance.getControlStructure()) {
-            case SIMPLE, SUB_WORKFLOW:
+            case SIMPLE, SUB_WORKFLOW, SWITCH:
                 return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
             case DO_WHILE:
                 if (expressionEvaluator.evaluateBooleanExpression(stepInstance.getWorkflowInstanceUid(), stepInstance.getStopCondition()))
                     return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
                 else
                     return stepInstance;
-            case SWITCH:
-                //TODO
-//                String switchCondition = expressionEvaluator.evaluateStringExpression(stepInstance.getWorkflowInstanceUid(), stepInstance.getSwitchCondition());
-//                WorkflowStepInstance foundStepInstance = stepInstance.getDecisionCases().get(switchCondition);
-//                if (foundStepInstance == null) {
-//                    WorkflowStepInstance defaultStepInstance = stepInstance.getDecisionCases().get(0);
-//                    if (defaultStepInstance == null) {
-//                        throw new InternalServiceException("The next workflow step to execute could not be found after the evaluation of the switch condition " + stepInstance.getSwitchCondition());
-//                    } else {
-//                        return defaultStepInstance;
-//                    }
-//                }
-                return null;
             default:
                 throw new InternalServiceException("The next workflow step to execute could not be found");
         }

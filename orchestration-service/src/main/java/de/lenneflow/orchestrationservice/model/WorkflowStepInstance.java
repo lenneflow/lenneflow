@@ -47,7 +47,7 @@ public class WorkflowStepInstance {
 
     private List<DecisionCase> decisionCases = new ArrayList<>();
 
-    private String switchCondition;
+    private String switchCase;
 
     private String stopCondition;
 
@@ -57,7 +57,9 @@ public class WorkflowStepInstance {
 
     private RunOrderLabel runOrderLabel;
 
-    private Integer retryCount;
+    private Integer retryCount = 0;
+
+    private Integer runCount = 0;
 
     private LocalDateTime created;
 

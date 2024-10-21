@@ -44,7 +44,7 @@ public class WorkflowStep {
 
     private List<DecisionCase> decisionCases = new ArrayList<>();
 
-    private String switchCondition;
+    private String switchCase;
 
     private String stopCondition;
 
