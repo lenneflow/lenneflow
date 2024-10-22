@@ -4,10 +4,13 @@ import de.lenneflow.workerservice.exception.InternalServiceException;
 import de.lenneflow.workerservice.kubernetes.cloudproviders.AWSClusterController;
 import de.lenneflow.workerservice.kubernetes.cloudproviders.AzureClusterController;
 import de.lenneflow.workerservice.kubernetes.cloudproviders.GoogleClusterController;
+import de.lenneflow.workerservice.model.AccessToken;
 import de.lenneflow.workerservice.model.KubernetesCluster;
 import de.lenneflow.workerservice.model.ClusterNodeGroup;
 import de.lenneflow.workerservice.repository.KubernetesClusterRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Date;
 
@@ -16,16 +19,26 @@ public class KubernetesClusterController implements IClusterController {
 
     private static final String UNSUPPORTED_CLOUD_PROVIDER = "Unsupported Cloud Provider";
 
+    @Value("${k8sapi.address}")
+    private String k8sApiRootEndpoint;
+
+    private final RestTemplate restTemplate;
     private final KubernetesClusterRepository kubernetesClusterRepository;
     private final AWSClusterController awsClusterController;
     private final GoogleClusterController googleClusterController;
     private final AzureClusterController azureClusterController;
 
-    public KubernetesClusterController(KubernetesClusterRepository kubernetesClusterRepository, AWSClusterController awsClusterController, GoogleClusterController googleClusterController, AzureClusterController azureClusterController) {
+    public KubernetesClusterController(RestTemplate restTemplate, KubernetesClusterRepository kubernetesClusterRepository, AWSClusterController awsClusterController, GoogleClusterController googleClusterController, AzureClusterController azureClusterController) {
+        this.restTemplate = restTemplate;
         this.kubernetesClusterRepository = kubernetesClusterRepository;
         this.awsClusterController = awsClusterController;
         this.googleClusterController = googleClusterController;
         this.azureClusterController = azureClusterController;
+    }
+
+    public AccessToken getAccessToken(KubernetesCluster kubernetesCluster) {
+        String accessTokenUrl = k8sApiRootEndpoint + "/access-token/provider/"+ kubernetesCluster.getCloudProvider().toString() + "/cluster/" + kubernetesCluster.getClusterName() + "/region/" +kubernetesCluster.getRegion();
+        return restTemplate.getForObject(accessTokenUrl, AccessToken.class);
     }
 
     public Object createCluster(KubernetesCluster kubernetesCluster) {

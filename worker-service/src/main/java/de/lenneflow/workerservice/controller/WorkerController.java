@@ -6,25 +6,21 @@ import de.lenneflow.workerservice.enums.CloudProvider;
 import de.lenneflow.workerservice.enums.ClusterStatus;
 import de.lenneflow.workerservice.exception.ResourceNotFoundException;
 import de.lenneflow.workerservice.kubernetes.KubernetesClusterController;
-import de.lenneflow.workerservice.model.ApiCredential;
+import de.lenneflow.workerservice.model.AccessToken;
 import de.lenneflow.workerservice.model.KubernetesCluster;
 import de.lenneflow.workerservice.model.CloudCredential;
 import de.lenneflow.workerservice.model.ClusterNodeGroup;
-import de.lenneflow.workerservice.repository.ApiCredentialRepository;
 import de.lenneflow.workerservice.repository.KubernetesClusterRepository;
 import de.lenneflow.workerservice.repository.CloudCredentialRepository;
 import de.lenneflow.workerservice.repository.ClusterNodeGroupRepository;
 import de.lenneflow.workerservice.util.PayloadValidator;
 import io.swagger.v3.oas.annotations.Hidden;
-import org.apache.commons.lang.time.DateUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,23 +36,19 @@ public class WorkerController {
     final PayloadValidator payloadValidator;
     final KubernetesClusterController kubernetesClusterController;
     final KubernetesClusterRepository kubernetesClusterRepository;
-    final CloudCredentialRepository localCredentialRepository;
     final CloudCredentialRepository cloudCredentialRepository;
     final ClusterNodeGroupRepository clusterNodeGroupRepository;
-    final ApiCredentialRepository apiCredentialRepository;
 
-    public WorkerController(PayloadValidator payloadValidator, KubernetesClusterRepository kubernetesClusterRepository, KubernetesClusterController kubernetesClusterController, CloudCredentialRepository localCredentialRepository, CloudCredentialRepository cloudCredentialRepository, ClusterNodeGroupRepository clusterNodeGroupRepository, ApiCredentialRepository apiCredentialRepository) {
+    public WorkerController(PayloadValidator payloadValidator, KubernetesClusterRepository kubernetesClusterRepository, KubernetesClusterController kubernetesClusterController, CloudCredentialRepository localCredentialRepository, CloudCredentialRepository cloudCredentialRepository, ClusterNodeGroupRepository clusterNodeGroupRepository) {
         this.payloadValidator = payloadValidator;
         this.kubernetesClusterRepository = kubernetesClusterRepository;
         this.kubernetesClusterController = kubernetesClusterController;
-        this.localCredentialRepository = localCredentialRepository;
         this.clusterNodeGroupRepository = clusterNodeGroupRepository;
-        this.apiCredentialRepository = apiCredentialRepository;
         modelMapper = new ModelMapper();
         this.cloudCredentialRepository = cloudCredentialRepository;
     }
 
-    @PostMapping("/clusters/local")
+    @PostMapping("/clusters/register")
     public ResponseEntity<KubernetesCluster> createLocalKubernetesCluster(@RequestBody LocalClusterDTO clusterDTO) {
 
         payloadValidator.validate(clusterDTO);
@@ -73,22 +65,12 @@ public class WorkerController {
         kubernetesCluster.setUpdated(LocalDateTime.now());
         payloadValidator.validate(kubernetesCluster);
 
-
-        ApiCredential apiCredential = new ApiCredential();
-        apiCredential.setUid(UUID.randomUUID().toString());
-        apiCredential.setDescription("Api Credential for cluster " + kubernetesCluster.getClusterName());
-        apiCredential.setApiServerEndpoint(clusterDTO.getApiServerEndpoint());
-        apiCredential.setApiAuthToken(clusterDTO.getApiAuthToken());
-        apiCredential.setCreated(LocalDateTime.now());
-        apiCredential.setUpdated(LocalDateTime.now());
-        apiCredentialRepository.save(apiCredential);
-
         KubernetesCluster saved =  kubernetesClusterRepository.save(kubernetesCluster);
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
 
     }
 
-    @PostMapping("/clusters/cloud")
+    @PostMapping("/clusters/create")
     public ResponseEntity<KubernetesCluster> createCloudKubernetesCluster(@RequestBody CloudClusterDTO clusterDTO) {
 
         payloadValidator.validate(clusterDTO);
@@ -133,13 +115,6 @@ public class WorkerController {
             kubernetesClusterController.createNodeGroup(clusterNodeGroup);
         }
         return new ResponseEntity<>(savedNodeGroup, HttpStatus.OK);
-    }
-
-    @GetMapping("/clusters/{uid}/addons/{name}")
-    public ResponseEntity<Object> createCloudClusterAddOn(@PathVariable("uid") String uid, @PathVariable("name") String addonName) {
-        KubernetesCluster cluster = kubernetesClusterRepository.findByUid(uid);
-        Object addon = kubernetesClusterController.createClusterAddOn(cluster, addonName);
-        return new ResponseEntity<>(addon, HttpStatus.OK);
     }
 
     @GetMapping("/clusters")
@@ -197,26 +172,9 @@ public class WorkerController {
     }
 
     @Hidden
-    @GetMapping(value={ "/clusters/{uid}/api-credential"})
-    public ApiCredential getApiCredential(@PathVariable("uid") String clusterUid) {
+    @GetMapping(value={ "/clusters/{uid}/connection-token"})
+    public AccessToken getConnectionToken(@PathVariable("uid") String clusterUid) {
         KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(clusterUid);
-        if(kubernetesCluster.getApiCredentialUid() == null || kubernetesCluster.getApiCredentialUid().isEmpty()) {
-            kubernetesClusterController.getCluster(kubernetesCluster);
-            ApiCredential apiCredential = new ApiCredential();
-            apiCredential.setUid(UUID.randomUUID().toString());
-            Date expirationDate = DateUtils.addDays(Date.from(Instant.now()), 1);
-            apiCredential.setApiAuthToken(kubernetesClusterController.getSessionToken(kubernetesCluster, expirationDate));
-            apiCredential.setExpiresAt(LocalDateTime.now().plusDays(1));
-            apiCredential.setApiServerEndpoint(kubernetesClusterController.getApiServerEndpoint(kubernetesCluster));
-            apiCredential.setDescription("Api credential for cluster " + kubernetesCluster.getClusterName());
-            apiCredential.setUpdated(LocalDateTime.now());
-            apiCredential.setCreated(LocalDateTime.now());
-            ApiCredential saved = apiCredentialRepository.save(apiCredential);
-            kubernetesCluster.setApiCredentialUid(saved.getUid());
-            kubernetesClusterRepository.save(kubernetesCluster);
-            return saved;
-
-        }
-        return apiCredentialRepository.findByUid(kubernetesCluster.getApiCredentialUid());
+        return kubernetesClusterController.getAccessToken(kubernetesCluster);
     }
 }

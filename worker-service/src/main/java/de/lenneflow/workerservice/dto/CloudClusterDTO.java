@@ -17,19 +17,21 @@ public class CloudClusterDTO {
 
     private String clusterName;
 
-    private String description;
+    private String region;
+
+    private String kubernetesVersion;
 
     private CloudProvider cloudProvider;
 
-    private String region;
+    private int desiredNodeCount;
 
-    private boolean create;
+    private int minimumNodeCount;
 
-    private String roleArn;
+    private int maximumNodeCount;
 
-    private String securityGroupId;
+    private String instanceType;
 
-    private List<String> subnetIds = new ArrayList<>();
+    private String amiType;
 
     private List<String> supportedFunctionTypes = new ArrayList<>();
 

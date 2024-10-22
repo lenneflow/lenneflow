@@ -1,12 +1,10 @@
 package de.lenneflow.workerservice.model;
 
-import io.swagger.v3.oas.annotations.Hidden;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -16,20 +14,16 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document
-public class ApiCredential {
+public class AccessToken {
 
     @Id
     private String uid;
 
+    private String token;
+
     private String description;
 
-    private String apiServerEndpoint;
-
-    private String apiAuthToken;
-
-    private LocalDateTime expiresAt;
-
-    private LocalDateTime created;
+    private LocalDateTime expiration;
 
     private LocalDateTime updated;
 }

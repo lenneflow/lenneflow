@@ -25,24 +25,21 @@ public class KubernetesCluster {
     @Id
     private String uid;
 
-    @Indexed(unique = true)
     private String clusterName;
 
     private String description;
 
     private CloudProvider cloudProvider;
 
+    private String apiServerEndpoint;
+
+    private String kubernetesVersion;
+
     private ClusterStatus status;
 
     private String region;
 
     private boolean create;
-
-    private String roleArn;
-
-    private String securityGroupId;
-
-    private List<String> subnetIds = new ArrayList<>();
 
     private List<String> supportedFunctionTypes = new ArrayList<>();
 

@@ -20,10 +20,11 @@ public class CloudCredential {
     @Id
     private String uid;
 
-    @Indexed(unique = true)
     private String name;
 
     private String description;
+
+    private String accountId;
 
     private String accessKey;
 
