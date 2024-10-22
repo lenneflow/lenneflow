@@ -1,5 +1,6 @@
 package de.lenneflow.workerservice.dto;
 
+import de.lenneflow.workerservice.enums.CloudProvider;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,9 +13,11 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class LocalClusterDTO {
+public class UnmanagedClusterDTO {
 
     private String clusterName;
+
+    private String region;
 
     private String description;
 
@@ -22,8 +25,16 @@ public class LocalClusterDTO {
 
     private String apiServerEndpoint;
 
-    private String apiAuthToken;
+    private String caCertificate;
+
+    private String kubernetesAccessTokenUid;
 
     private String hostName;
+
+    private CloudProvider cloudProvider;
+
+    private String cloudCredentialUid;
+
+
 
 }

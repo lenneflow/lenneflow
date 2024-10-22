@@ -1,6 +1,7 @@
 package de.lenneflow.workerservice.dto;
 
 import de.lenneflow.workerservice.enums.CloudProvider;
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,11 +14,13 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class CloudClusterDTO {
+public class ManagedClusterDTO {
 
     private String clusterName;
 
     private String region;
+
+    private String description;
 
     private String kubernetesVersion;
 
@@ -36,5 +39,16 @@ public class CloudClusterDTO {
     private List<String> supportedFunctionTypes = new ArrayList<>();
 
     private String cloudCredentialUid;
+
+
+    //Hidden part. Only necessary to communicate with k8s API
+    @Hidden
+    private String accountId;
+
+    @Hidden
+    private String accessKey;
+
+    @Hidden
+    private String secretKey;
 
 }

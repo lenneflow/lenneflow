@@ -1,7 +1,7 @@
 package de.lenneflow.workerservice.util;
 
-import de.lenneflow.workerservice.dto.CloudClusterDTO;
-import de.lenneflow.workerservice.dto.LocalClusterDTO;
+import de.lenneflow.workerservice.dto.ManagedClusterDTO;
+import de.lenneflow.workerservice.dto.UnmanagedClusterDTO;
 import de.lenneflow.workerservice.exception.InternalServiceException;
 import de.lenneflow.workerservice.exception.PayloadNotValidException;
 import de.lenneflow.workerservice.model.KubernetesCluster;
@@ -29,30 +29,30 @@ public class PayloadValidator {
 
     }
 
-    public void validate(CloudClusterDTO cloudClusterDTO) {
+    public void validate(ManagedClusterDTO managedClusterDTO) {
 
-        if(cloudClusterDTO.getClusterName() == null || cloudClusterDTO.getClusterName().isEmpty()) {
+        if(managedClusterDTO.getClusterName() == null || managedClusterDTO.getClusterName().isEmpty()) {
             throw new PayloadNotValidException("KubernetesCluster Name is required");
         }
-        if(cloudClusterDTO.getRegion() == null || cloudClusterDTO.getRegion().isEmpty()) {
+        if(managedClusterDTO.getRegion() == null || managedClusterDTO.getRegion().isEmpty()) {
             throw new PayloadNotValidException("Region is required");
         }
 
-        if(cloudClusterDTO.getCloudProvider() == null || cloudClusterDTO.getCloudProvider().toString().isEmpty()) {
+        if(managedClusterDTO.getCloudProvider() == null || managedClusterDTO.getCloudProvider().toString().isEmpty()) {
             throw new PayloadNotValidException("CloudProvider is required");
         }
 
-        if(cloudClusterDTO.getSupportedFunctionTypes() == null || cloudClusterDTO.getSupportedFunctionTypes().isEmpty()) {
+        if(managedClusterDTO.getSupportedFunctionTypes() == null || managedClusterDTO.getSupportedFunctionTypes().isEmpty()) {
             throw new PayloadNotValidException("SupportedFunctionTypes is required");
         }
-        if(cloudClusterDTO.isCreate()){
-            if(cloudClusterDTO.getSecurityGroupId() == null || cloudClusterDTO.getSecurityGroupId().isEmpty()) {
+        if(managedClusterDTO.isCreate()){
+            if(managedClusterDTO.getSecurityGroupId() == null || managedClusterDTO.getSecurityGroupId().isEmpty()) {
                 throw new PayloadNotValidException("Security Group Id is required");
             }
-            if(cloudClusterDTO.getSubnetIds() == null || cloudClusterDTO.getSubnetIds().isEmpty()) {
+            if(managedClusterDTO.getSubnetIds() == null || managedClusterDTO.getSubnetIds().isEmpty()) {
                 throw new PayloadNotValidException("Subnet Ids are required");
             }
-            if(cloudClusterDTO.getRoleArn() == null || cloudClusterDTO.getRoleArn().isEmpty()) {
+            if(managedClusterDTO.getRoleArn() == null || managedClusterDTO.getRoleArn().isEmpty()) {
                 throw new PayloadNotValidException("Role Arn is required");
             }
         }
@@ -60,20 +60,20 @@ public class PayloadValidator {
 
     }
 
-    public void validate(LocalClusterDTO localClusterDTO) {
-        if(localClusterDTO.getClusterName() == null || localClusterDTO.getClusterName().isEmpty()) {
+    public void validate(UnmanagedClusterDTO unmanagedClusterDTO) {
+        if(unmanagedClusterDTO.getClusterName() == null || unmanagedClusterDTO.getClusterName().isEmpty()) {
             throw new PayloadNotValidException("KubernetesCluster Name is required");
         }
-        if(localClusterDTO.getHostName() == null || localClusterDTO.getHostName().isEmpty()) {
+        if(unmanagedClusterDTO.getHostName() == null || unmanagedClusterDTO.getHostName().isEmpty()) {
             throw new PayloadNotValidException("HostName is required");
         }
-        if(localClusterDTO.getApiServerEndpoint() == null || localClusterDTO.getApiServerEndpoint().isEmpty()) {
+        if(unmanagedClusterDTO.getApiServerEndpoint() == null || unmanagedClusterDTO.getApiServerEndpoint().isEmpty()) {
             throw new PayloadNotValidException("ApiServerEndpoint is required");
         }
-        if(localClusterDTO.getApiAuthToken() == null || localClusterDTO.getApiAuthToken().isEmpty()) {
+        if(unmanagedClusterDTO.getApiAuthToken() == null || unmanagedClusterDTO.getApiAuthToken().isEmpty()) {
             throw new PayloadNotValidException("ApiAuthToken is required");
         }
-        if(localClusterDTO.getSupportedFunctionTypes() == null || localClusterDTO.getSupportedFunctionTypes().isEmpty()) {
+        if(unmanagedClusterDTO.getSupportedFunctionTypes() == null || unmanagedClusterDTO.getSupportedFunctionTypes().isEmpty()) {
             throw new PayloadNotValidException("SupportedFunctionTypes is required");
         }
     }
