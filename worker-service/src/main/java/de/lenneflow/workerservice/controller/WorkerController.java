@@ -132,6 +132,7 @@ public class WorkerController {
 
     @PostMapping("/clusters/node-group/update")
     public ResponseEntity<KubernetesCluster> updateNodeGroup(@RequestBody NodeGroupDTO nodeGroupDTO) {
+        payloadValidator.validate(nodeGroupDTO);
         KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(nodeGroupDTO.getClusterUid());
         if(kubernetesCluster != null){
             checkIfClusterIsManaged(kubernetesCluster, true);
