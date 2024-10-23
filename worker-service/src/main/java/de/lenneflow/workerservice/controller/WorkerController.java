@@ -46,7 +46,7 @@ public class WorkerController {
         this.cloudCredentialRepository = cloudCredentialRepository;
     }
 
-    @PostMapping("/clusters/register")
+    @PostMapping("/cluster/register")
     public ResponseEntity<KubernetesCluster> createLocalKubernetesCluster(@RequestBody UnmanagedClusterDTO clusterDTO) {
 
         payloadValidator.validate(clusterDTO);
@@ -76,7 +76,7 @@ public class WorkerController {
 
     }
 
-    @PostMapping("/clusters/create")
+    @PostMapping("/cluster/create")
     public ResponseEntity<KubernetesCluster> createCloudKubernetesCluster(@RequestBody ManagedClusterDTO clusterDTO) {
 
         payloadValidator.validate(clusterDTO);
@@ -117,8 +117,6 @@ public class WorkerController {
         KubernetesCluster kubernetesClusterFromApi = cloudClusterController.getCluster(clusterDTO.getClusterName(), clusterDTO.getCloudProvider(), clusterDTO.getRegion());
         KubernetesCluster saved = updateKubernetesClusterWithDataFromApi(kubernetesCluster, kubernetesClusterFromApi);
 
-        //KubernetesCluster saved =  kubernetesClusterRepository.save(kubernetesCluster);
-
         new Thread(() -> waitForCompleteCreation(saved, 25)).start();
 
         return new ResponseEntity<>(saved, HttpStatus.OK);
@@ -131,7 +129,7 @@ public class WorkerController {
         return new ResponseEntity<>(savedCredential, HttpStatus.OK);
     }
 
-    @PostMapping("/clusters/node-group/update")
+    @PostMapping("/cluster/node-group/update")
     public ResponseEntity<KubernetesCluster> updateNodeGroup(@RequestBody NodeGroupDTO nodeGroupDTO) {
         payloadValidator.validate(nodeGroupDTO);
         KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(nodeGroupDTO.getClusterUid());
@@ -171,18 +169,21 @@ public class WorkerController {
     @GetMapping("/cluster/{uid}")
     public ResponseEntity<KubernetesCluster> getWorker(@PathVariable String uid) {
         KubernetesCluster found = kubernetesClusterRepository.findByUid(uid);
-        KubernetesCluster foundKubernetesCluster = cloudClusterController.getCluster(found.getClusterName(), found.getCloudProvider(), found.getRegion());
-//        if(foundKubernetesCluster == null) {
-//            throw new ResourceNotFoundException(KUBERNETES_CLUSTER_NOT_FOUND);
-//        }
-        return new ResponseEntity<>(foundKubernetesCluster, HttpStatus.OK);
+        if(found == null) {
+            throw new ResourceNotFoundException(KUBERNETES_CLUSTER_NOT_FOUND);
+        }
+        if(found.isManaged()){
+            KubernetesCluster clusterFromApi = cloudClusterController.getCluster(found.getClusterName(), found.getCloudProvider(), found.getRegion());
+            updateKubernetesClusterWithDataFromApi(found, clusterFromApi);
+        }
+        return new ResponseEntity<>(found, HttpStatus.OK);
     }
 
-    @DeleteMapping("/{id}")
-    public void deleteWorker(@PathVariable String id) {
-        KubernetesCluster foundKubernetesCluster = kubernetesClusterRepository.findByUid(id);
+    @DeleteMapping("/cluster/{uid}")
+    public void deleteWorker(@PathVariable String uid) {
+        KubernetesCluster foundKubernetesCluster = kubernetesClusterRepository.findByUid(uid);
         if(foundKubernetesCluster == null) {
-            throw new ResourceNotFoundException("KubernetesCluster with id " + id + " not found");
+            throw new ResourceNotFoundException("KubernetesCluster with id " + uid + " not found");
         }
         if(foundKubernetesCluster.isManaged()){
             HttpStatusCode status = cloudClusterController.deleteCluster(foundKubernetesCluster.getClusterName(), foundKubernetesCluster.getCloudProvider(), foundKubernetesCluster.getRegion());
@@ -201,7 +202,7 @@ public class WorkerController {
     }
 
     @Hidden
-    @PostMapping(value={ "/clusters/{uid}/update-used-ports"})
+    @PostMapping(value={ "/cluster/{uid}/update-used-ports"})
     public KubernetesCluster updateUsedPorts(@PathVariable("uid") String clusterUid, @RequestBody List<Integer> usedPorts) {
         KubernetesCluster cluster = kubernetesClusterRepository.findByUid(clusterUid);
         cluster.setUsedHostPorts(usedPorts);
@@ -209,10 +210,24 @@ public class WorkerController {
     }
 
     @Hidden
-    @GetMapping(value={ "/clusters/{uid}/connection-token"})
+    @GetMapping(value={ "/cluster/{uid}/connection-token"})
     public AccessToken getConnectionToken(@PathVariable("uid") String clusterUid) {
         KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(clusterUid);
-        return cloudClusterController.getAccessToken(kubernetesCluster);
+
+        if(kubernetesCluster.isManaged()) {
+            return cloudClusterController.getAccessToken(kubernetesCluster);
+        }
+        if(kubernetesCluster.getKubernetesAccessTokenUid() == null || kubernetesCluster.getKubernetesAccessTokenUid().isEmpty()) {
+            throw new InternalServiceException("Cluster does not have access token ID. Impossible to get the access token!");
+        }
+        AccessToken currentToken = accessTokenRepository.findByUid(kubernetesCluster.getKubernetesAccessTokenUid());
+        if(currentToken == null) {
+            throw new InternalServiceException("The token ID of the Cluster is not correct! No access token found!");
+        }
+        if(currentToken.getExpiration().isBefore(LocalDateTime.now())) {
+            throw new InternalServiceException("The access token is expired. Please consider creating a new access token for the Cluster " + kubernetesCluster.getClusterName());
+        }
+        return currentToken;
     }
 
 

@@ -42,6 +42,12 @@ public class CloudClusterController {
         return response.getBody();
     }
 
+    public AccessToken getConnectionToken(String clusterName, CloudProvider cloudProvider, String region) {
+        String getClusterUrl = k8sApiRootEndpoint + "/access-token/cluster/" + clusterName+ "/provider/"+ cloudProvider.toString() +  "/region/" + region;
+        ResponseEntity<AccessToken> response = restTemplate.exchange(getClusterUrl, HttpMethod.GET, null, AccessToken.class);
+        return response.getBody();
+    }
+
     public HttpStatusCode updateNodeGroup(NodeGroupDTO nodeGroupDTO) {
         String createClusterUrl = k8sApiRootEndpoint + "/cluster/update";
         ResponseEntity<Void> response = restTemplate.exchange(createClusterUrl, HttpMethod.POST, new HttpEntity<>(nodeGroupDTO), Void.class);
