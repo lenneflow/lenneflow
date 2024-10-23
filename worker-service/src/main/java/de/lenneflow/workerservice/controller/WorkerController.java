@@ -115,9 +115,9 @@ public class WorkerController {
 
         //Get current kubernetes object with status from k8s api.
         KubernetesCluster kubernetesClusterFromApi = cloudClusterController.getCluster(clusterDTO.getClusterName(), clusterDTO.getCloudProvider(), clusterDTO.getRegion());
-        updateKubernetesClusterWithDataFromApi(kubernetesCluster, kubernetesClusterFromApi);
+        KubernetesCluster saved = updateKubernetesClusterWithDataFromApi(kubernetesCluster, kubernetesClusterFromApi);
 
-        KubernetesCluster saved =  kubernetesClusterRepository.save(kubernetesCluster);
+        //KubernetesCluster saved =  kubernetesClusterRepository.save(kubernetesCluster);
 
         new Thread(() -> waitForCompleteCreation(saved, 25)).start();
 
@@ -253,11 +253,12 @@ public class WorkerController {
     }
 
 
-    private void updateKubernetesClusterWithDataFromApi(KubernetesCluster kubernetesCluster, KubernetesCluster kubernetesClusterFromApi) {
+    private KubernetesCluster updateKubernetesClusterWithDataFromApi(KubernetesCluster kubernetesCluster, KubernetesCluster kubernetesClusterFromApi) {
         kubernetesCluster.setApiServerEndpoint(kubernetesClusterFromApi.getApiServerEndpoint());
         kubernetesCluster.setCaCertificate(kubernetesClusterFromApi.getCaCertificate());
         kubernetesCluster.setStatus(kubernetesClusterFromApi.getStatus());
         kubernetesCluster.setUpdated(LocalDateTime.now());
+        return kubernetesClusterRepository.save(kubernetesCluster);
     }
 
     private void checkIfClusterIsManaged(KubernetesCluster kubernetesCluster, boolean expectedToBeManaged) {
