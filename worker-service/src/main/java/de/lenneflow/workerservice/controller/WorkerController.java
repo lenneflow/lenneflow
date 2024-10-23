@@ -101,6 +101,7 @@ public class WorkerController {
         kubernetesCluster.setInstanceType(clusterDTO.getInstanceType());
         kubernetesCluster.setAmiType(clusterDTO.getAmiType());
         kubernetesCluster.setSupportedFunctionTypes(clusterDTO.getSupportedFunctionTypes());
+        kubernetesCluster.setStatus(ClusterStatus.NEW);
         kubernetesCluster.setCloudCredentialUid(clusterDTO.getCloudCredentialUid());
         kubernetesCluster.setManaged(true);
         kubernetesCluster.setCreated(LocalDateTime.now());
@@ -120,10 +121,10 @@ public class WorkerController {
 
         new Thread(() -> waitForCompleteCreation(saved, 25)).start();
 
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+        return new ResponseEntity<>(saved, HttpStatus.OK);
     }
 
-    @PostMapping("/clusters/credentials")
+    @PostMapping("/cloud-provider/credentials")
     public ResponseEntity<CloudCredential> createCloudClusterCredential(@RequestBody CloudCredential cloudCredential) {
         cloudCredential.setUid(UUID.randomUUID().toString());
         CloudCredential savedCredential = cloudCredentialRepository.save(cloudCredential);
@@ -167,12 +168,13 @@ public class WorkerController {
         return new ResponseEntity<>(savedKubernetesCluster, HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<KubernetesCluster> getWorker(@PathVariable String id) {
-        KubernetesCluster foundKubernetesCluster = kubernetesClusterRepository.findByUid(id);
-        if(foundKubernetesCluster == null) {
-            throw new ResourceNotFoundException(KUBERNETES_CLUSTER_NOT_FOUND);
-        }
+    @GetMapping("/cluster/{uid}")
+    public ResponseEntity<KubernetesCluster> getWorker(@PathVariable String uid) {
+        KubernetesCluster found = kubernetesClusterRepository.findByUid(uid);
+        KubernetesCluster foundKubernetesCluster = cloudClusterController.getCluster(found.getClusterName(), found.getCloudProvider(), found.getRegion());
+//        if(foundKubernetesCluster == null) {
+//            throw new ResourceNotFoundException(KUBERNETES_CLUSTER_NOT_FOUND);
+//        }
         return new ResponseEntity<>(foundKubernetesCluster, HttpStatus.OK);
     }
 

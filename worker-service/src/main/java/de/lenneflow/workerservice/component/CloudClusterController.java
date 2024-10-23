@@ -38,7 +38,8 @@ public class CloudClusterController {
 
     public KubernetesCluster getCluster(String clusterName, CloudProvider cloudProvider, String region) {
         String getClusterUrl = k8sApiRootEndpoint + "/cluster/" + clusterName+ "/provider/"+ cloudProvider.toString() +  "/region/" + region;
-        return restTemplate.getForObject(getClusterUrl, KubernetesCluster.class);
+        ResponseEntity<KubernetesCluster> response = restTemplate.exchange(getClusterUrl, HttpMethod.GET, null, KubernetesCluster.class);
+        return response.getBody();
     }
 
     public HttpStatusCode updateNodeGroup(NodeGroupDTO nodeGroupDTO) {
