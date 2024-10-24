@@ -1,10 +1,13 @@
 package de.lenneflow.workflowservice.util;
 
+import de.lenneflow.workflowservice.dto.WorkflowDTO;
 import de.lenneflow.workflowservice.exception.InternalServiceException;
 import de.lenneflow.workflowservice.exception.PayloadNotValidException;
 import de.lenneflow.workflowservice.exception.ResourceNotFoundException;
+import de.lenneflow.workflowservice.model.JsonSchema;
 import de.lenneflow.workflowservice.model.Workflow;
 import de.lenneflow.workflowservice.model.WorkflowStep;
+import de.lenneflow.workflowservice.repository.JsonSchemaRepository;
 import de.lenneflow.workflowservice.repository.WorkflowRepository;
 import de.lenneflow.workflowservice.repository.WorkflowStepRepository;
 import org.slf4j.Logger;
@@ -18,13 +21,15 @@ public class Validator {
 
     final WorkflowRepository workflowRepository;
     final WorkflowStepRepository workflowStepRepository;
+    final JsonSchemaRepository jsonSchemaRepository;
 
-    public Validator(WorkflowRepository workflowRepository, WorkflowStepRepository workflowStepRepository) {
+    public Validator(WorkflowRepository workflowRepository, WorkflowStepRepository workflowStepRepository, JsonSchemaRepository jsonSchemaRepository) {
         this.workflowRepository = workflowRepository;
         this.workflowStepRepository = workflowStepRepository;
+        this.jsonSchemaRepository = jsonSchemaRepository;
     }
 
-    public void validateWorkflowStep(WorkflowStep workflowStep){
+    public void validate(WorkflowStep workflowStep){
         checkMandatoryFields(workflowStep);
         checkUniqueValues(workflowStep);
         checkWorkflowExists(workflowStep);
@@ -32,7 +37,7 @@ public class Validator {
     }
 
 
-    public void validateWorkflow(Workflow workflow){
+    public void validate(Workflow workflow){
         String workflowName = workflow.getName();
         if(workflowName == null || workflowName.isEmpty()){
             throw new PayloadNotValidException("Workflow name is empty");
@@ -143,6 +148,27 @@ public class Validator {
         if(workflowStep.getExecutionOrder() <= 0){
             logger.info("Workflow step {} has no positive execution order", workflowStep.getName());
             throw new PayloadNotValidException("The field executionOrder must have a value greater than 0!");
+        }
+    }
+
+    public void validateJsonSchema(JsonSchema jsonSchema) {
+        //TODO Json schema validator
+    }
+
+    public void validate(WorkflowDTO workflowDTO) {
+        if(workflowDTO.getInputDataSchemaUid() == null || workflowDTO.getInputDataSchemaUid().isEmpty()){
+            throw new PayloadNotValidException("Please provide the input data schema uid!");
+        }
+        JsonSchema inputSchema = jsonSchemaRepository.findByUid(workflowDTO.getInputDataSchemaUid());
+        if(inputSchema == null){
+            throw new PayloadNotValidException("input data schema does not exist!");
+        }
+        if(workflowDTO.getOutputDataSchemaUid() == null || workflowDTO.getOutputDataSchemaUid().isEmpty()){
+            throw new PayloadNotValidException("Please provide the output data schema uid!");
+        }
+        JsonSchema outputSchema = jsonSchemaRepository.findByUid(workflowDTO.getOutputDataSchemaUid());
+        if(outputSchema == null){
+            throw new PayloadNotValidException("output data schema does not exist!");
         }
     }
 }

@@ -63,7 +63,7 @@ public class WorkflowStepController {
         workflowStep.setCreated(LocalDateTime.now());
         workflowStep.setUpdated(LocalDateTime.now());
         workflowStep.setControlStructure(ControlStructure.SIMPLE);
-        validator.validateWorkflowStep(workflowStep);
+        validator.validate(workflowStep);
         return saveWorkflowStep(workflowStep);
     }
 
@@ -74,7 +74,7 @@ public class WorkflowStepController {
         workflowStep.setCreated(LocalDateTime.now());
         workflowStep.setUpdated(LocalDateTime.now());
         workflowStep.setControlStructure(ControlStructure.SWITCH);
-        validator.validateWorkflowStep(workflowStep);
+        validator.validate(workflowStep);
         return saveWorkflowStep(workflowStep);
     }
 
@@ -85,7 +85,7 @@ public class WorkflowStepController {
         workflowStep.setCreated(LocalDateTime.now());
         workflowStep.setUpdated(LocalDateTime.now());
         workflowStep.setControlStructure(ControlStructure.DO_WHILE);
-        validator.validateWorkflowStep(workflowStep);
+        validator.validate(workflowStep);
         return saveWorkflowStep(workflowStep);
     }
 
@@ -96,7 +96,7 @@ public class WorkflowStepController {
         workflowStep.setCreated(LocalDateTime.now());
         workflowStep.setUpdated(LocalDateTime.now());
         workflowStep.setControlStructure(ControlStructure.SUB_WORKFLOW);
-        validator.validateWorkflowStep(workflowStep);
+        validator.validate(workflowStep);
         return saveWorkflowStep(workflowStep);
     }
 
@@ -104,7 +104,7 @@ public class WorkflowStepController {
     public WorkflowStep updateWorkflowStep(@PathVariable String id, @RequestBody SimpleWorkflowStep simpleWorkflowStep) {
         WorkflowStep workflowStep = workflowStepRepository.findByUid(id);
         ObjectMapper.mapToWorkflowStep(workflowStep, simpleWorkflowStep);
-        validator.validateWorkflowStep(workflowStep);
+        validator.validate(workflowStep);
         return patchWorkflowStep(workflowStep);
     }
 
@@ -112,7 +112,7 @@ public class WorkflowStepController {
     public WorkflowStep updateWorkflowStep(@PathVariable String id, @RequestBody SwitchWorkflowStep switchWorkflowStep) {
         WorkflowStep workflowStep = workflowStepRepository.findByUid(id);
         ObjectMapper.mapToWorkflowStep(workflowStep, switchWorkflowStep);
-        validator.validateWorkflowStep(workflowStep);
+        validator.validate(workflowStep);
         return patchWorkflowStep(workflowStep);
     }
 
@@ -120,7 +120,7 @@ public class WorkflowStepController {
     public WorkflowStep updateWorkflowStep(@PathVariable String id, @RequestBody WhileWorkflowStep whileWorkflowStep) {
         WorkflowStep workflowStep = workflowStepRepository.findByUid(id);
         ObjectMapper.mapToWorkflowStep(workflowStep, whileWorkflowStep);
-        validator.validateWorkflowStep(workflowStep);
+        validator.validate(workflowStep);
         return patchWorkflowStep(workflowStep);
     }
 
@@ -128,7 +128,7 @@ public class WorkflowStepController {
     public WorkflowStep updateWorkflowStep(@PathVariable String id, @RequestBody SubWorkflowStep subWorkflowStep) {
         WorkflowStep workflowStep = workflowStepRepository.findByUid(id);
         ObjectMapper.mapToWorkflowStep(workflowStep, subWorkflowStep);
-        validator.validateWorkflowStep(workflowStep);
+        validator.validate(workflowStep);
         return patchWorkflowStep(workflowStep);
     }
 

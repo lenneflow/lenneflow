@@ -131,7 +131,6 @@ public class WorkerController {
         return kubernetesClusterRepository.findAll();
     }
 
-
     @PostMapping("/cluster/{uid}/update")
     public ResponseEntity<KubernetesCluster> updateWorker(@RequestBody UnmanagedClusterDTO unmanagedClusterDTO, @PathVariable String uid) {
         payloadValidator.validate(unmanagedClusterDTO);
@@ -193,7 +192,7 @@ public class WorkerController {
         KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(clusterUid);
 
         if(kubernetesCluster.isManaged()) {
-            return cloudClusterController.getAccessToken(kubernetesCluster);
+            return cloudClusterController.getConnectionToken(kubernetesCluster.getClusterName(), kubernetesCluster.getCloudProvider(), kubernetesCluster.getRegion());
         }
         if(kubernetesCluster.getKubernetesAccessTokenUid() == null || kubernetesCluster.getKubernetesAccessTokenUid().isEmpty()) {
             throw new InternalServiceException("Cluster does not have access token ID. Impossible to get the access token!");
@@ -208,7 +207,6 @@ public class WorkerController {
         return currentToken;
     }
 
-
     private void waitForCompleteCreation(KubernetesCluster kubernetesCluster, int timeOutInMinutes) {
         LocalDateTime start = LocalDateTime.now();
         while (true) {
@@ -220,7 +218,6 @@ public class WorkerController {
             Util.pause(60000);
         }
     }
-
 
     private void waitForCompleteDeletion(KubernetesCluster kubernetesCluster) {
         LocalDateTime start = LocalDateTime.now();
@@ -236,7 +233,6 @@ public class WorkerController {
             Util.pause(60000);
         }
     }
-
 
     private KubernetesCluster updateKubernetesClusterWithDataFromApi(KubernetesCluster kubernetesCluster, KubernetesCluster kubernetesClusterFromApi) {
         kubernetesCluster.setApiServerEndpoint(kubernetesClusterFromApi.getApiServerEndpoint());

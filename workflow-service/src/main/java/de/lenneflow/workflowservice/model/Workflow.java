@@ -37,6 +37,12 @@ public class Workflow {
 
     private long timeOutInSeconds = Long.MAX_VALUE;
 
+    @DocumentReference
+    private JsonSchema inputDataSchema;
+
+    @DocumentReference
+    private JsonSchema outputDataSchema;
+
     private LocalDateTime created;
 
     private LocalDateTime updated;

@@ -1,6 +1,5 @@
 package de.lenneflow.workflowservice.dto;
 
-import io.swagger.v3.oas.annotations.Hidden;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,4 +18,8 @@ public class WorkflowDTO {
     private boolean restartable = true;
 
     private long timeOutInSeconds;
+
+    private String inputDataSchemaUid;
+
+    private String outputDataSchemaUid;
 }

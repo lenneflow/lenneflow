@@ -25,11 +25,6 @@ public class CloudClusterController {
         this.restTemplate = restTemplate;
     }
 
-    public AccessToken getAccessToken(KubernetesCluster kubernetesCluster) {
-        String accessTokenUrl = k8sApiRootEndpoint + "/access-token/provider/"+ kubernetesCluster.getCloudProvider().toString() + "/cluster/" + kubernetesCluster.getClusterName() + "/region/" +kubernetesCluster.getRegion();
-        return restTemplate.getForObject(accessTokenUrl, AccessToken.class);
-    }
-
     public HttpStatusCode createCluster(ManagedClusterDTO clusterDTO) {
         String createClusterUrl = k8sApiRootEndpoint + "/cluster/create";
         ResponseEntity<Void> response = restTemplate.exchange(createClusterUrl, HttpMethod.POST, new HttpEntity<>(clusterDTO), Void.class);
@@ -43,7 +38,7 @@ public class CloudClusterController {
     }
 
     public AccessToken getConnectionToken(String clusterName, CloudProvider cloudProvider, String region) {
-        String getClusterUrl = k8sApiRootEndpoint + "/access-token/cluster/" + clusterName+ "/provider/"+ cloudProvider.toString() +  "/region/" + region;
+        String getClusterUrl = k8sApiRootEndpoint + "/access-token/cluster/" + clusterName + "/provider/" + cloudProvider.toString() + "/region/" + region;
         ResponseEntity<AccessToken> response = restTemplate.exchange(getClusterUrl, HttpMethod.GET, null, AccessToken.class);
         return response.getBody();
     }
@@ -59,5 +54,6 @@ public class CloudClusterController {
         ResponseEntity<Void> response = restTemplate.exchange(deleteClusterUrl, HttpMethod.DELETE, null, Void.class);
         return  response.getStatusCode();
     }
+
 
 }
