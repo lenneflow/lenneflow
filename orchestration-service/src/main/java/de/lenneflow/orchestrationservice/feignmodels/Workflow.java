@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import java.time.LocalDateTime;
 import java.util.LinkedList;
@@ -28,6 +29,10 @@ public class Workflow {
     private boolean restartable = true;
 
     private long timeOutInSeconds = Long.MAX_VALUE;
+
+    private JsonSchema inputDataSchema;
+
+    private JsonSchema outputDataSchema;
 
     private LocalDateTime created;
 

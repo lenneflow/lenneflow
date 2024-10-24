@@ -43,6 +43,10 @@ public class WorkflowStep {
 
     private String stopCondition;
 
+    private JsonSchema inputDataSchema;
+
+    private JsonSchema outputDataSchema;
+
     private Map<String, Object> inputData = new LinkedHashMap<>();
 
     private Integer retryCount;
