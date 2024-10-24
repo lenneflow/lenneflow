@@ -69,7 +69,7 @@ public class KubernetesCluster {
 
     private String serviceUser;
 
-    private String hostName;
+    private String hostAddress;
 
     private LocalDateTime created;
 

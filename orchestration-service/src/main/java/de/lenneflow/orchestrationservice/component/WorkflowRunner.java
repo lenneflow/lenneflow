@@ -2,6 +2,7 @@ package de.lenneflow.orchestrationservice.component;
 
 import de.lenneflow.orchestrationservice.dto.FunctionDto;
 import de.lenneflow.orchestrationservice.enums.ControlStructure;
+import de.lenneflow.orchestrationservice.enums.DeploymentState;
 import de.lenneflow.orchestrationservice.enums.RunOrderLabel;
 import de.lenneflow.orchestrationservice.enums.RunStatus;
 import de.lenneflow.orchestrationservice.feignclients.FunctionServiceClient;
@@ -9,6 +10,7 @@ import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.orchestrationservice.feignmodels.DecisionCase;
 import de.lenneflow.orchestrationservice.feignmodels.Function;
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
+import de.lenneflow.orchestrationservice.feignmodels.WorkflowStep;
 import de.lenneflow.orchestrationservice.model.WorkflowExecution;
 import de.lenneflow.orchestrationservice.model.WorkflowInstance;
 import de.lenneflow.orchestrationservice.model.WorkflowStepInstance;
@@ -60,7 +62,7 @@ public class WorkflowRunner {
         instanceController.updateWorkflowStepInstance(workflowStepInstance, resultFunctionDto);
 
         if (workflowStepInstance.getRunOrderLabel() == RunOrderLabel.LAST) {
-            terminateWorkflowRun(execution, workflowInstance, workflowStepInstance);
+            terminateWorkflowRun(execution, workflowInstance, workflowStepInstance.getRunStatus(), null);
             return;
         }
         switch (resultFunctionDto.getRunStatus()) {
@@ -90,8 +92,11 @@ public class WorkflowRunner {
         WorkflowInstance workflowInstance = instanceController.createWorkflowInstance(workflowId, inputParameters);
         Workflow workflow = workflowServiceClient.getWorkflowById(workflowId);
         WorkflowExecution execution = createWorkflowExecution(workflow, workflowInstance);
-        instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance,execution,  RunStatus.RUNNING);
 
+        instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance,execution,  RunStatus.DEPLOYING_FUNCTIONS);
+        findUndeployedFunctionAndDeploy(workflowInstance);
+
+        instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance,execution,  RunStatus.RUNNING);
         WorkflowStepInstance firstStepInstance = instanceController.getStartStep(workflowInstance);
         Function function = functionServiceClient.getFunctionByUid(firstStepInstance.getFunctionId());
         FunctionDto functionDto = Util.mapFunctionToDto(function);
@@ -100,6 +105,16 @@ public class WorkflowRunner {
         functionDto.setWorkflowInstanceId(workflowInstance.getUid());
         runStep(functionDto, firstStepInstance);
         return workflowExecutionRepository.findByRunId(execution.getRunId());
+    }
+
+    private void findUndeployedFunctionAndDeploy(WorkflowInstance workflowInstance) {
+       List<WorkflowStepInstance> steps = workflowStepInstanceRepository.findByWorkflowInstanceUid(workflowInstance.getUid());
+       for(WorkflowStepInstance step : steps) {
+           Function function = functionServiceClient.getFunctionByUid(step.getFunctionId());
+           if(function != null && function.getDeploymentState() != DeploymentState.DEPLOYED) {
+              //TODO
+           }
+       }
     }
 
     /**
@@ -190,7 +205,7 @@ public class WorkflowRunner {
                 function.setWorkflowInstanceId(workflowInstance.getUid());
                 runStep(Util.mapFunctionToDto(function), nextStepInstance);
             }else{
-                //TODO
+                terminateWorkflowRun(execution, workflowInstance, RunStatus.FAILED, "Could not find function to execute");
             }
         }
     }
@@ -203,14 +218,14 @@ public class WorkflowRunner {
             if(function != null) {
                 runStep(Util.mapFunctionToDto(function), workflowStepInstance);
             }else{
-                //TODO
+                terminateWorkflowRun(execution, workflowInstance, RunStatus.FAILED, "Could not find function to execute");
             }
         }
-        terminateWorkflowRun(execution, workflowInstance, workflowStepInstance);
+        terminateWorkflowRun(execution, workflowInstance, workflowStepInstance.getRunStatus(), workflowStepInstance.getFailureReason());
     }
 
     private void processStepCancelledOrFailedWithTerminalError(WorkflowExecution execution,WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance){
-        terminateWorkflowRun(execution, workflowInstance, workflowStepInstance);
+        terminateWorkflowRun(execution, workflowInstance, workflowStepInstance.getRunStatus(), workflowStepInstance.getFailureReason());
     }
 
     /**
@@ -218,28 +233,16 @@ public class WorkflowRunner {
      *
      * @param execution        The workflow execution
      * @param workflowInstance the running workflow instance
-     * @param stepInstance     the last step instance before termination
+     * @param status     the status to set
      */
-    private void terminateWorkflowRun(WorkflowExecution execution, WorkflowInstance workflowInstance, WorkflowStepInstance stepInstance) {
-        switch (stepInstance.getRunStatus()) {
-            case FAILED, FAILED_WITH_TERMINAL_ERROR:
-                instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.FAILED);
-                break;
-            case COMPLETED:
-                instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.COMPLETED);
-                break;
-            case CANCELED:
-                instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.CANCELED);
-                break;
-            case TIMED_OUT:
-                instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.TIMED_OUT);
-                break;
-            default:
-                instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.COMPLETED_WITH_ERRORS);
-                break;
-        }
+    private void terminateWorkflowRun(WorkflowExecution execution, WorkflowInstance workflowInstance, RunStatus status, String failureReason) {
+        instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, status);
         instanceController.setWorkflowRunEndTime(workflowInstance, execution);
-        //TODO delete workflow and step instances
+        if(failureReason != null && !failureReason.isEmpty()) {
+            instanceController.setFailureReason(workflowInstance, execution, failureReason);
+        }
+
+        instanceController.deleteLastWorkflowInstances(30,30);
     }
 
 

@@ -1,9 +1,10 @@
 package de.lenneflow.functionservice.controller;
 
+import de.lenneflow.functionservice.enums.CloudProvider;
 import de.lenneflow.functionservice.enums.DeploymentState;
 import de.lenneflow.functionservice.exception.InternalServiceException;
 import de.lenneflow.functionservice.feignclients.WorkerServiceClient;
-import de.lenneflow.functionservice.feignmodels.ApiCredential;
+import de.lenneflow.functionservice.feignmodels.AccessToken;
 import de.lenneflow.functionservice.feignmodels.KubernetesCluster;
 import de.lenneflow.functionservice.model.Function;
 import de.lenneflow.functionservice.repository.FunctionRepository;
@@ -24,7 +25,7 @@ import java.util.*;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 @Component
-public class KubernetesController {
+public class DeploymentController {
 
     public static final String NAMESPACE = "lenneflow";
     public static final String SERVICE_ACCOUNT_NAME = "lenneflow-sa";
@@ -34,21 +35,12 @@ public class KubernetesController {
     final WorkerServiceClient workerServiceClient;
     final FunctionRepository functionRepository;
 
-    public KubernetesController(WorkerServiceClient workerServiceClient, FunctionRepository functionRepository) {
+    public DeploymentController(WorkerServiceClient workerServiceClient, FunctionRepository functionRepository) {
         this.workerServiceClient = workerServiceClient;
         this.functionRepository = functionRepository;
     }
 
-    public void checkWorkerConnection(KubernetesCluster kubernetesCluster) {
-        KubernetesClient client = getKubernetesClient(kubernetesCluster);
-        String apiVersion = client.getApiVersion();
-        client.close();
-        if(apiVersion == null || apiVersion.isEmpty()){
-            throw new InternalServiceException("The connection to the kubernetesCluster " + kubernetesCluster.getClusterName() + " was not possible");
-        }
-    }
-
-    public void checkServiceExists(KubernetesCluster kubernetesCluster) {
+    public void checkConnectionToKubernetes(KubernetesCluster kubernetesCluster) {
         KubernetesClient client = getKubernetesClient(kubernetesCluster);
         String apiVersion = client.getApiVersion();
         client.close();
@@ -59,47 +51,31 @@ public class KubernetesController {
 
     public void deployFunctionImageToWorker(Function function) {
         KubernetesCluster kubernetesCluster = getKubernetesClusterForFunction(function);
+        checkConnectionToKubernetes(kubernetesCluster);
         assignHostPortToFunction(kubernetesCluster, function);
         KubernetesClient client = getKubernetesClient(kubernetesCluster);
         createNamespace(kubernetesCluster);
         createServiceAccount(kubernetesCluster);
+
         Deployment deployment = YamlEditor.createKubernetesDeploymentResource(function,2, SERVICE_ACCOUNT_NAME);
-        Service service = YamlEditor.createKubernetesServiceResource(function, "ClusterIP");
+        Service service = YamlEditor.createKubernetesServiceResource(function, kubernetesCluster.getCloudProvider());
         client.resource(deployment).inNamespace(NAMESPACE).create();
         client.resource(service).inNamespace(NAMESPACE).create();
-        createOrUpdateIngress(kubernetesCluster,function);
-        String functionServiceUrl = "https://" + kubernetesCluster.getHostName() + function.getResourcePath();
+        if(kubernetesCluster.getCloudProvider() == CloudProvider.LOCAL) {
+            createOrUpdateIngress(kubernetesCluster,function);
+        }
+        String functionServiceUrl = getFunctionServiceUrl(kubernetesCluster, function);
         function.setServiceUrl(functionServiceUrl);
         functionRepository.save(function);
-        updateDeploymentState(kubernetesCluster, function);
+        waitAndUpdateDeploymentState(kubernetesCluster, function);
     }
 
-    private void updateDeploymentState(KubernetesCluster kubernetesCluster, Function function) {
-        new Thread(() ->{
-            try {
-                Thread.sleep(15000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            updateFunction(function, DeploymentState.DEPLOYING);
-            KubernetesClient client = getKubernetesClient(kubernetesCluster);
-            String deploymentName = function.getName();
 
-            client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).waitUntilCondition(
-                    d -> ( d.getStatus().getReadyReplicas() > 0), 5, MINUTES);
-            if(client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).isReady()){
-                updateFunction(function, DeploymentState.DEPLOYED);
-                return;
-            }
-            updateFunction(function, DeploymentState.FAILED);
-        }).start();
-    }
-
-    private void updateFunction(Function function, DeploymentState deploymentState) {
-        function.setDeploymentState(deploymentState);
-        functionRepository.save(function);
-    }
-
+    /**
+     * This is the port that will be exposed to the host. This function assigns a port that is not in use
+     * @param kubernetesCluster the kubernetes cluster
+     * @param function the function to deploy
+     */
     public void assignHostPortToFunction(KubernetesCluster kubernetesCluster, Function function){
         if(function.getAssignedHostPort() >= 47000){
             return;
@@ -114,6 +90,46 @@ public class KubernetesController {
         ports.add(nextPort);
 
         workerServiceClient.updateUsedPorts(kubernetesCluster.getUid(), ports);
+    }
+
+    private String getFunctionServiceUrl(KubernetesCluster kubernetesCluster, Function function) {
+        String functionResourcePath = function.getResourcePath().startsWith("/") ? function.getResourcePath() : "/%s".formatted(function.getResourcePath());
+        if(kubernetesCluster.getCloudProvider() == CloudProvider.LOCAL) {
+            return kubernetesCluster.getHostAddress() + functionResourcePath;
+        }
+        return getLoadBalancerAssignedHostName(kubernetesCluster) + ":" + function.getAssignedHostPort() + functionResourcePath;
+    }
+
+    private String getLoadBalancerAssignedHostName(KubernetesCluster kubernetesCluster) {
+        String hostname = "";
+        //TODO
+        return hostname;
+    }
+
+    private void waitAndUpdateDeploymentState(KubernetesCluster kubernetesCluster, Function function) {
+        new Thread(() ->{
+            try {
+                Thread.sleep(15000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            updateFunctionDeploymentState(function, DeploymentState.DEPLOYING);
+            KubernetesClient client = getKubernetesClient(kubernetesCluster);
+            String deploymentName = function.getName();
+
+            client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).waitUntilCondition(
+                    d -> ( d.getStatus().getReadyReplicas() > 0), 5, MINUTES);
+            if(client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).isReady()){
+                updateFunctionDeploymentState(function, DeploymentState.DEPLOYED);
+                return;
+            }
+            updateFunctionDeploymentState(function, DeploymentState.FAILED);
+        }).start();
+    }
+
+    private void updateFunctionDeploymentState(Function function, DeploymentState deploymentState) {
+        function.setDeploymentState(deploymentState);
+        functionRepository.save(function);
     }
 
     private void createOrUpdateIngress(KubernetesCluster kubernetesCluster, Function function) {
@@ -167,15 +183,19 @@ public class KubernetesController {
 
     private KubernetesCluster getKubernetesClusterForFunction(Function function) {
         String functionType = function.getType();
-        List<KubernetesCluster> kubernetesClusters = getClusters(functionType);
-        if (kubernetesClusters.isEmpty()) {
-            List<KubernetesCluster> workers2 = workerServiceClient.getKubernetesClusterList();
-            if(workers2.isEmpty()) {
+        List<KubernetesCluster> filteredClusters = getClusters(functionType);
+
+        //If no cluster for the function type exists, choose a random one.
+        if (filteredClusters.isEmpty()) {
+            List<KubernetesCluster> allClusters = workerServiceClient.getKubernetesClusterList();
+            if(allClusters.isEmpty()) {
                 throw new InternalServiceException("No worker found!");
             }
-            return workers2.get(random.nextInt(workers2.size()));
+            return allClusters.get(random.nextInt(allClusters.size()));
         }
-        return kubernetesClusters.get(random.nextInt(kubernetesClusters.size()));
+
+        //Choose a random cluster
+        return filteredClusters.get(random.nextInt(filteredClusters.size()));
     }
 
     private List<KubernetesCluster> getClusters(String functionType) {
@@ -190,13 +210,13 @@ public class KubernetesController {
     }
 
     private KubernetesClient getKubernetesClient(KubernetesCluster kubernetesCluster) {
-        ApiCredential credential = workerServiceClient.getApiCredential(kubernetesCluster.getUid());
-        String  masterUrl = credential.getApiServerEndpoint();
+        AccessToken token = workerServiceClient.getK8sConnectionToken(kubernetesCluster.getUid());
+        String  masterUrl = kubernetesCluster.getApiServerEndpoint();
 
         Config config = new ConfigBuilder()
                 .withMasterUrl(masterUrl)
                 .withTrustCerts(true)
-                .withOauthToken(credential.getApiAuthToken())
+                .withOauthToken(token.getToken())
                 .build();
         return new KubernetesClientBuilder().withConfig(config).build();
     }

@@ -52,5 +52,7 @@ public class Function {
 
     private String inputSchema;
 
+    private String outputSchema;
+
 }
 

@@ -7,10 +7,7 @@ import de.lenneflow.orchestrationservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
 import de.lenneflow.orchestrationservice.component.WorkflowRunner;
-import io.swagger.v3.oas.annotations.Hidden;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,19 +33,6 @@ public class OrchestrationController {
         this.workflowRunner = workflowRunner;
     }
 
-    @Hidden
-    @GetMapping(value={"/check"})
-    public String checkService() {
-        return "Welcome to the Orchestration Service!";
-    }
-
-    @Hidden
-    @GetMapping(value={"/feign"})
-    public String checkFeign() {
-        return functionServiceClient.getFunctionHome();
-    }
-
-
     @GetMapping("/workflows/{workflow-id}/start")
     public WorkflowExecution  startWorkflowGet(@PathVariable(name = "workflow-id") String workflowId) {
         return workflowRunner.startWorkflow(workflowId, null);
@@ -56,7 +40,7 @@ public class OrchestrationController {
 
     @PostMapping("/workflows/{workflow-id}/start")
     public WorkflowExecution startWorkflowPost(@PathVariable(name = "workflow-id") String workflowId, @RequestBody Map<String, Object> inputParameters) {
-        if(inputParametersValid(workflowId, inputParameters)){
+        if(inputDataValid(workflowId, inputParameters)){
             return workflowRunner.startWorkflow(workflowId, inputParameters);
         }
         return null;
@@ -89,7 +73,8 @@ public class OrchestrationController {
         return workflowExecutionRepository.findAll();
     }
 
-    private boolean inputParametersValid(String workflowId, Map<String, Object> inputParameters) {
+    private boolean inputDataValid(String workflowId, Map<String, Object> inputParameters) {
+        //TODO validate with schema
         return true;
     }
 

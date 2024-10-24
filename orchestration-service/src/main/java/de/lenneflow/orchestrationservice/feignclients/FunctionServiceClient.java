@@ -16,6 +16,6 @@ public interface FunctionServiceClient {
     @GetMapping("/api/functions/check")
     public String getFunctionHome();
 
-    @GetMapping("/api/functions/all")
+    @GetMapping("/api/functions/list")
     public List<Function> getAllFunctions();
 }

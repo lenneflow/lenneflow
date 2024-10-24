@@ -1,6 +1,7 @@
 package de.lenneflow.functionservice.util;
 
 
+import de.lenneflow.functionservice.enums.CloudProvider;
 import de.lenneflow.functionservice.feignmodels.KubernetesCluster;
 import de.lenneflow.functionservice.model.Function;
 import io.fabric8.kubernetes.api.model.*;
@@ -30,7 +31,8 @@ public class YamlEditor {
     }
 
 
-    public static Service createKubernetesServiceResource(Function function, String serviceType) {
+    public static Service createKubernetesServiceResource(Function function, CloudProvider cloudProvider) {
+        String serviceType = cloudProvider == CloudProvider.LOCAL ? "NodePort" : "LoadBalancer";
         return new ServiceBuilder().withApiVersion("v1").withKind("Service").withNewMetadata().withName(function.getName()).endMetadata().withNewSpec()
                 .withType(serviceType).withSelector(Collections.singletonMap("app", function.getName())).withPorts().addNewPort().withPort(function.getAssignedHostPort()).withTargetPort(new IntOrString(function.getServicePort())).endPort()
                 .endSpec().build();
@@ -59,7 +61,7 @@ public class YamlEditor {
         ingressAnnotations.put("kubernetes.io/ingress.class", "nginx");
         ingressAnnotations.put("nginx.ingress.kubernetes.io/use-regex", "true");
         return new IngressBuilder().withApiVersion("networking.k8s.io/v1").withKind("Ingress").withNewMetadata().withName(ingressName).withAnnotations(ingressAnnotations).endMetadata().withNewSpec()
-                .withIngressClassName("nginx").withRules().addNewRule().withHost(kubernetesCluster.getHostName()).withNewHttp().withPaths().addNewPath().withPath(function.getResourcePath())
+                .withIngressClassName("nginx").withRules().addNewRule().withHost(kubernetesCluster.getHostAddress()).withNewHttp().withPaths().addNewPath().withPath(function.getResourcePath())
                 .withPathType("Prefix").withNewBackend().withNewService().withName(function.getName()).withNewPort().withNumber(function.getAssignedHostPort()).endPort().endService().endBackend()
                 .endPath().endHttp().endRule().endSpec().build();
     }

@@ -31,5 +31,7 @@ public class FunctionDTO {
 
     private String inputSchema;
 
+    private String outputSchema;
+
 }
 

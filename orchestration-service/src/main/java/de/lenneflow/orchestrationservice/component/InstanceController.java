@@ -104,6 +104,9 @@ public class InstanceController {
         Map<String, Object> output = functionDto.getOutputData();
         workflowStepInstance.setOutputData(output);
         workflowStepInstance.setRunCount(workflowStepInstance.getRunCount() + 1);
+        if(functionDto.getFailureReason() != null && !functionDto.getFailureReason().isEmpty()){
+            workflowStepInstance.setFailureReason(functionDto.getFailureReason());
+        }
         workflowStepInstanceRepository.save(workflowStepInstance);
     }
 
@@ -117,6 +120,54 @@ public class InstanceController {
         workflowInstanceRepository.save(workflowInstance);
         execution.setEndTime(LocalDateTime.now());
         workflowExecutionRepository.save(execution);
+    }
+
+    public void setFailureReason(WorkflowInstance workflowInstance, WorkflowExecution execution, String failureReason){
+        workflowInstance.setFailureReason(failureReason);
+        workflowInstanceRepository.save(workflowInstance);
+        execution.setFailureReason(failureReason);
+        workflowExecutionRepository.save(execution);
+    }
+
+    public void deleteLastWorkflowInstances(int keepDaysCount, int maxInstancesCount){
+        LocalDateTime now = LocalDateTime.now();
+        List<WorkflowExecution> executionsToDelete = new ArrayList<>();
+        List<WorkflowInstance> instancesToDelete = new ArrayList<>();
+        List<WorkflowExecution> instances = workflowExecutionRepository.findAll();
+
+        //Sort from oldest to newest
+        List<WorkflowExecution> sortedExecutions = new ArrayList<>(instances.stream().sorted((o1, o2) -> {
+            if (o1.getStartTime().isBefore(o2.getStartTime())) {
+                return -1;
+            }
+            if (o1.getStartTime().isAfter(o2.getStartTime())) {
+                return 1;
+            }
+            return 0;
+        }).toList());
+
+        //iterate over the sorted executions and add the oldest to the list to remove
+        for (WorkflowExecution execution : sortedExecutions) {
+            if(execution.getStartTime().plusDays(keepDaysCount).isBefore(now)){
+                executionsToDelete.add(execution);
+                instancesToDelete.add(workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId()));
+            }else {
+                if(sortedExecutions.size()-executionsToDelete.size() >= maxInstancesCount){
+                    executionsToDelete.add(execution);
+                    instancesToDelete.add(workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId()));
+                }else {
+                    break;
+                }
+            }
+        }
+
+        //Delete objects from database
+        for(WorkflowInstance instance : instancesToDelete){
+            List<WorkflowStepInstance> stepInstances = workflowStepInstanceRepository.findByWorkflowInstanceUid(instance.getUid());
+            workflowStepInstanceRepository.deleteAll(stepInstances);
+            workflowInstanceRepository.delete(instance);
+        }
+        workflowExecutionRepository.deleteAll(executionsToDelete);
     }
 
 

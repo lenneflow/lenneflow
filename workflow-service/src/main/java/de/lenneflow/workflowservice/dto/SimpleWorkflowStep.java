@@ -1,12 +1,10 @@
 package de.lenneflow.workflowservice.dto;
 
-import io.swagger.v3.oas.annotations.Hidden;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -16,8 +14,6 @@ import java.util.Map;
 @NoArgsConstructor
 public class SimpleWorkflowStep {
 
-    @Hidden
-    private String uid;
 
     private String name;
 
@@ -33,9 +29,4 @@ public class SimpleWorkflowStep {
 
     private Map<String, Object> inputData = new LinkedHashMap<>();
 
-    @Hidden
-    private LocalDateTime creationTime;
-
-    @Hidden
-    private LocalDateTime updateTime;
 }

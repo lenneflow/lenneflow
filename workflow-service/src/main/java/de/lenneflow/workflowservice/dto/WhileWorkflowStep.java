@@ -16,9 +16,6 @@ import java.util.Map;
 @NoArgsConstructor
 public class WhileWorkflowStep {
 
-
-    private String uid;
-
     private String name;
 
     private String workflowId;
@@ -36,8 +33,4 @@ public class WhileWorkflowStep {
     private Map<String, Object> inputData = new LinkedHashMap<>();
 
     private Integer retryCount;
-
-    private LocalDateTime creationTime;
-
-    private LocalDateTime updateTime;
 }

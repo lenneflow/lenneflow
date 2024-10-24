@@ -15,5 +15,6 @@ public enum RunStatus implements Serializable {
     SCHEDULED,
     TIMED_OUT,
     NEW,
+    DEPLOYING_FUNCTIONS,
     SKIPPED;
 }

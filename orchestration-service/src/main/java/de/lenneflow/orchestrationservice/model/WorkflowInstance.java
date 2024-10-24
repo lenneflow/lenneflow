@@ -41,6 +41,8 @@ public class WorkflowInstance {
 
     private long timeOutInSeconds = Long.MAX_VALUE;
 
+    private String failureReason;
+
     private LocalDateTime created;
 
     private LocalDateTime updated;

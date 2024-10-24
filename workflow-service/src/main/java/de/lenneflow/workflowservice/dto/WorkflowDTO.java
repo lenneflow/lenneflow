@@ -12,9 +12,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class WorkflowDTO {
 
-    @Hidden
-    private String uid;
-
     private String name;
 
     private String description;

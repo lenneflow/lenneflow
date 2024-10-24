@@ -43,7 +43,7 @@ public class WorkflowExecution {
 
     private LocalDateTime endTime;
 
-    private String errors;
+    private String failureReason;
 
     private Map<String, Object> runOutput = new HashMap<>();
 

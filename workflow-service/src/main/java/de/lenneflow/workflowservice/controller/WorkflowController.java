@@ -4,9 +4,9 @@ import de.lenneflow.workflowservice.dto.WorkflowDTO;
 import de.lenneflow.workflowservice.model.Workflow;
 import de.lenneflow.workflowservice.repository.WorkflowRepository;
 import de.lenneflow.workflowservice.repository.WorkflowStepRepository;
+import de.lenneflow.workflowservice.util.ObjectMapper;
 import de.lenneflow.workflowservice.util.Validator;
 import io.swagger.v3.oas.annotations.Hidden;
-import org.modelmapper.ModelMapper;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -21,7 +21,6 @@ public class WorkflowController {
     WorkflowRepository workflowRepository;
     final WorkflowStepRepository workflowStepRepository;
     private final Validator validator;
-    private final ModelMapper modelMapper = new ModelMapper();
 
     public WorkflowController(WorkflowRepository workflowRepository, WorkflowStepRepository workflowStepRepository, Validator validator) {
         this.workflowRepository = workflowRepository;
@@ -29,45 +28,30 @@ public class WorkflowController {
         this.validator = validator;
     }
 
-    @Hidden
-    @GetMapping(value={ "/check"})
-    public String checkService() {
-        return "Welcome to the Workflow Service!";
-    }
-
     @GetMapping("/{id}")
     public Workflow getWorkflow(@PathVariable String id) {
         return workflowRepository.findByUid(id);
     }
 
-    @GetMapping
-    public Workflow getWorkflowByName(@RequestParam String name) {
+    @GetMapping("/workflow-name/{workflow-name}")
+    public Workflow getWorkflowByName(@PathVariable("workflow-name") String name) {
         return workflowRepository.findByName(name);
     }
 
-    @GetMapping("/all")
+    @GetMapping("/list")
     public List<Workflow> getAllWorkflows() {
         return workflowRepository.findAll();
     }
 
     @PostMapping
-    public WorkflowDTO addNewWorkflow(@RequestBody WorkflowDTO workflowDTO) {
-        Workflow workflow = modelMapper.map(workflowDTO, Workflow.class);
+    public Workflow addNewWorkflow(@RequestBody WorkflowDTO workflowDTO) {
+        Workflow workflow = ObjectMapper.mapToWorkflow(workflowDTO);
         workflow.setUid(UUID.randomUUID().toString());
-        validator.validateWorkflow(workflow);
         workflow.setCreated(LocalDateTime.now());
         workflow.setUpdated(LocalDateTime.now());
-        return modelMapper.map(workflowRepository.save(workflow), WorkflowDTO.class);
+        validator.validateWorkflow(workflow);
+        return workflowRepository.save(workflow);
     }
-
-//    @PostMapping("/{id}")
-//    public WorkflowDTO patchWorkflow(@RequestBody WorkflowDTO workflowDTO, @PathVariable String id) {
-//        Workflow workflow = workflowRepository.findByUid(id);
-//        modelMapper.map(workflowDTO, workflow);
-//        validator.validateWorkflow(workflow);
-//        workflow.setUpdated(LocalDateTime.now());
-//        return modelMapper.map(workflowRepository.save(workflow), WorkflowDTO.class);
-//    }
 
     @DeleteMapping("/{id}")
     public void deleteWorkflow(@PathVariable String id) {
@@ -75,4 +59,5 @@ public class WorkflowController {
         workflowStepRepository.deleteAll(workflow.getSteps());
         workflowRepository.delete(workflow);
     }
+
 }

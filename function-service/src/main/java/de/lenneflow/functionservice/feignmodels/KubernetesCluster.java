@@ -1,5 +1,7 @@
 package de.lenneflow.functionservice.feignmodels;
 
+import de.lenneflow.functionservice.enums.CloudProvider;
+import de.lenneflow.functionservice.enums.ClusterStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,30 +20,44 @@ public class KubernetesCluster {
 
     private String clusterName;
 
-    private String description;
-
     private String region;
 
-    private boolean create;
+    private String description;
 
-    private String roleArn;
+    private String kubernetesVersion;
 
-    private String securityGroupId;
+    private CloudProvider cloudProvider;
 
-    private List<String> subnetIds = new ArrayList<>();
+    private int desiredNodeCount;
+
+    private int minimumNodeCount;
+
+    private int maximumNodeCount;
+
+    private String instanceType;
+
+    private String amiType;
+
+    private String apiServerEndpoint;
+
+    private String caCertificate;
 
     private List<String> supportedFunctionTypes = new ArrayList<>();
 
-    private List<Integer> usedHostPorts = new ArrayList<>();
+    private ClusterStatus status;
 
     private String cloudCredentialUid;
 
-    private String apiCredentialUid;
+    private List<Integer> usedHostPorts = new ArrayList<>();
+
+    private String kubernetesAccessTokenUid;
 
     private String ingressServiceName;
 
     private String serviceUser;
 
-    private String hostName;
+    private String hostAddress;
+
+    private boolean managed;
 
 }

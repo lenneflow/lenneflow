@@ -14,7 +14,9 @@ import de.lenneflow.workerservice.model.CloudCredential;
 import de.lenneflow.workerservice.repository.KubernetesClusterRepository;
 import de.lenneflow.workerservice.repository.CloudCredentialRepository;
 import de.lenneflow.workerservice.repository.AccessTokenRepository;
+import de.lenneflow.workerservice.util.ObjectMapper;
 import de.lenneflow.workerservice.util.PayloadValidator;
+import de.lenneflow.workerservice.util.Util;
 import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -48,22 +50,10 @@ public class WorkerController {
 
     @PostMapping("/cluster/register")
     public ResponseEntity<KubernetesCluster> createLocalKubernetesCluster(@RequestBody UnmanagedClusterDTO clusterDTO) {
-
         payloadValidator.validate(clusterDTO);
-
-        KubernetesCluster kubernetesCluster = new KubernetesCluster();
+        KubernetesCluster kubernetesCluster = ObjectMapper.mapToKubernetesCluster(clusterDTO);
         kubernetesCluster.setUid(UUID.randomUUID().toString());
-        kubernetesCluster.setClusterName(clusterDTO.getClusterName());
-        kubernetesCluster.setDescription(clusterDTO.getDescription());
-        kubernetesCluster.setSupportedFunctionTypes(clusterDTO.getSupportedFunctionTypes());
-        kubernetesCluster.setApiServerEndpoint(clusterDTO.getApiServerEndpoint());
-        kubernetesCluster.setCaCertificate(clusterDTO.getCaCertificate());
-        kubernetesCluster.setKubernetesAccessTokenUid(clusterDTO.getKubernetesAccessTokenUid());
-        kubernetesCluster.setHostName(clusterDTO.getHostName());
-        kubernetesCluster.setCloudProvider(clusterDTO.getCloudProvider());
-        kubernetesCluster.setCloudCredentialUid(clusterDTO.getCloudCredentialUid());
         kubernetesCluster.setStatus(ClusterStatus.REGISTRED);
-        kubernetesCluster.setManaged(false);
         kubernetesCluster.setIngressServiceName(kubernetesCluster.getClusterName().toLowerCase() + "-ingress");
         kubernetesCluster.setServiceUser(SERVICE_ACCOUNT_NAME);
         kubernetesCluster.setCreated(LocalDateTime.now());
@@ -87,23 +77,9 @@ public class WorkerController {
         clusterDTO.setAccessKey(cloudCredential.getAccessKey());
         clusterDTO.setSecretKey(cloudCredential.getSecretKey());
 
-        //create new kubernetes cluster
-        KubernetesCluster kubernetesCluster = new KubernetesCluster();
+        KubernetesCluster kubernetesCluster = ObjectMapper.mapToKubernetesCluster(clusterDTO);
         kubernetesCluster.setUid(UUID.randomUUID().toString());
-        kubernetesCluster.setClusterName(clusterDTO.getClusterName());
-        kubernetesCluster.setRegion(clusterDTO.getRegion());
-        kubernetesCluster.setDescription(clusterDTO.getDescription());
-        kubernetesCluster.setKubernetesVersion(clusterDTO.getKubernetesVersion());
-        kubernetesCluster.setCloudProvider(clusterDTO.getCloudProvider());
-        kubernetesCluster.setDesiredNodeCount(clusterDTO.getDesiredNodeCount());
-        kubernetesCluster.setMinimumNodeCount(clusterDTO.getMinimumNodeCount());
-        kubernetesCluster.setMaximumNodeCount(clusterDTO.getMaximumNodeCount());
-        kubernetesCluster.setInstanceType(clusterDTO.getInstanceType());
-        kubernetesCluster.setAmiType(clusterDTO.getAmiType());
-        kubernetesCluster.setSupportedFunctionTypes(clusterDTO.getSupportedFunctionTypes());
         kubernetesCluster.setStatus(ClusterStatus.NEW);
-        kubernetesCluster.setCloudCredentialUid(clusterDTO.getCloudCredentialUid());
-        kubernetesCluster.setManaged(true);
         kubernetesCluster.setCreated(LocalDateTime.now());
         kubernetesCluster.setUpdated(LocalDateTime.now());
 
@@ -150,19 +126,27 @@ public class WorkerController {
     }
 
     @GetMapping("/clusters")
-    public List<KubernetesCluster> getAllClusters() {
+    public List<KubernetesCluster> getAllClusters()
+    {
         return kubernetesClusterRepository.findAll();
     }
 
+
     @PostMapping("/cluster/{uid}/update")
-    public ResponseEntity<KubernetesCluster> updateWorker(@RequestBody KubernetesCluster kubernetesCluster, @PathVariable String uid) {
+    public ResponseEntity<KubernetesCluster> updateWorker(@RequestBody UnmanagedClusterDTO unmanagedClusterDTO, @PathVariable String uid) {
+        payloadValidator.validate(unmanagedClusterDTO);
         KubernetesCluster foundCluster = kubernetesClusterRepository.findByUid(uid);
         if(foundCluster == null) {
             throw new ResourceNotFoundException(KUBERNETES_CLUSTER_NOT_FOUND);
         }
         checkIfClusterIsManaged(foundCluster, false);
-        payloadValidator.validate(kubernetesCluster);
-        KubernetesCluster savedKubernetesCluster = kubernetesClusterRepository.save(kubernetesCluster);
+        KubernetesCluster cluster =  ObjectMapper.mapToKubernetesCluster(unmanagedClusterDTO);
+        cluster.setUid(foundCluster.getUid());
+        cluster.setStatus(foundCluster.getStatus());
+        cluster.setCreated(foundCluster.getCreated());
+        cluster.setUpdated(LocalDateTime.now());
+        payloadValidator.validate(cluster);
+        KubernetesCluster savedKubernetesCluster = kubernetesClusterRepository.save(cluster);
         return new ResponseEntity<>(savedKubernetesCluster, HttpStatus.OK);
     }
 
@@ -193,12 +177,6 @@ public class WorkerController {
             waitForCompleteDeletion(foundKubernetesCluster);
         }
         kubernetesClusterRepository.delete(foundKubernetesCluster);
-    }
-
-    @Hidden
-    @GetMapping(value={ "/check"})
-    public String checkService() {
-        return "Welcome to the Worker Service!";
     }
 
     @Hidden
@@ -239,11 +217,7 @@ public class WorkerController {
             if(kubernetesClusterFromApi.getStatus() == ClusterStatus.CREATED || start.plusMinutes(Math.max(timeOutInMinutes, 1)).isBefore(LocalDateTime.now())) {
                 break;
             }
-            try {
-                Thread.sleep(60000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            Util.pause(60000);
         }
     }
 
@@ -259,11 +233,7 @@ public class WorkerController {
             if(start.plusMinutes(25).isBefore(LocalDateTime.now())) {
                 throw new InternalServiceException("The deletion of " + kubernetesCluster.getClusterName() + " failed!\nPlease check it manually");
             }
-            try {
-                Thread.sleep(60000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            Util.pause(60000);
         }
     }
 
@@ -283,4 +253,5 @@ public class WorkerController {
             throw new PayloadNotValidException("The Kubernetes Cluster is managed by Lenneflow. This change is not available");
         }
     }
+
 }

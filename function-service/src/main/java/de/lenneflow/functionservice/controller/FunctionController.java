@@ -9,7 +9,6 @@ import de.lenneflow.functionservice.model.Function;
 import de.lenneflow.functionservice.repository.FunctionRepository;
 import de.lenneflow.functionservice.util.Validator;
 import io.swagger.v3.oas.annotations.Hidden;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,22 +23,14 @@ public class FunctionController {
     final
     FunctionRepository functionRepository;
     final Validator validator;
-    final ModelMapper modelMapper;
-    final KubernetesController kubernetesController;
+    final DeploymentController deploymentController;
     final WorkerServiceClient workerServiceClient;
 
-    public FunctionController(FunctionRepository functionRepository, Validator validator, KubernetesController kubernetesController, WorkerServiceClient workerServiceClient) {
+    public FunctionController(FunctionRepository functionRepository, Validator validator, DeploymentController deploymentController, WorkerServiceClient workerServiceClient) {
         this.functionRepository = functionRepository;
         this.validator = validator;
-        this.kubernetesController = kubernetesController;
+        this.deploymentController = deploymentController;
         this.workerServiceClient = workerServiceClient;
-        modelMapper = new ModelMapper();
-    }
-
-    @Hidden
-    @GetMapping(value={ "/check"})
-    public String checkService() {
-        return "Welcome to the Function Service! Everything is working fine!";
     }
 
     @GetMapping("/{uid}")
@@ -60,14 +51,14 @@ public class FunctionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Function addFunction(@RequestBody FunctionDTO functionDTO) {
-        Function function = modelMapper.map(functionDTO, Function.class);
+        Function function = createFunction(functionDTO);
         function.setUid(UUID.randomUUID().toString());
         validator.validateFunction(function);
         function.setCreationTime(LocalDateTime.now());
         function.setUpdateTime(LocalDateTime.now());
         Function savedFunction = functionRepository.save(function);
         if(!function.isLazyDeployment()){
-            new Thread(() -> kubernetesController.deployFunctionImageToWorker(savedFunction)).start();
+            new Thread(() -> deploymentController.deployFunctionImageToWorker(savedFunction)).start();
         }
         return savedFunction;
     }
@@ -81,11 +72,10 @@ public class FunctionController {
         functionRepository.save(function);
     }
 
-    @GetMapping(value = "/deploy-function", params = "function-id")
-    @ResponseStatus(value = HttpStatus.OK)
-    public void deployFunction(@RequestParam(name = "function-id") String functionId) {
+    @GetMapping( "/deploy-function/function-id/{function-id}")
+    public void deployFunction(@PathVariable("function-id") String functionId) {
         Function function = functionRepository.findByUid(functionId);
-        kubernetesController.deployFunctionImageToWorker(function);
+        deploymentController.deployFunctionImageToWorker(function);
     }
 
     @GetMapping(value = "/cluster/{id}/check-connection")
@@ -95,7 +85,7 @@ public class FunctionController {
         if(foundKubernetesCluster == null) {
             throw new ResourceNotFoundException("KUBERNETES_CLUSTER_NOT_FOUND");
         }
-        kubernetesController.checkWorkerConnection(foundKubernetesCluster);
+        deploymentController.checkConnectionToKubernetes(foundKubernetesCluster);
     }
 
 
@@ -106,5 +96,22 @@ public class FunctionController {
            throw new ResourceNotFoundException("Function not found");
         }
         functionRepository.delete(function);
+    }
+
+    private Function createFunction(FunctionDTO functionDTO) {
+        Function function = new Function();
+        function.setName(functionDTO.getName());
+        function.setDescription(functionDTO.getDescription());
+        function.setType(functionDTO.getType());
+        function.setPackageRepository(functionDTO.getPackageRepository());
+        function.setResourcePath(functionDTO.getResourcePath());
+        function.setServicePort(functionDTO.getServicePort());
+        function.setLazyDeployment(functionDTO.isLazyDeployment());
+        function.setImageName(functionDTO.getImageName());
+        function.setInputSchema(functionDTO.getInputSchema());
+        function.setOutputSchema(functionDTO.getOutputSchema());
+        function.setCreationTime(LocalDateTime.now());
+        function.setUpdateTime(LocalDateTime.now());
+        return function;
     }
 }

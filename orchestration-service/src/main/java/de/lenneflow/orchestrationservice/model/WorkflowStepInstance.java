@@ -65,7 +65,7 @@ public class WorkflowStepInstance {
 
     private LocalDateTime updated;
 
-    private String errorMessage;
+    private String failureReason;
 
     private LocalDateTime scheduledTime;
 
@@ -90,7 +90,7 @@ public class WorkflowStepInstance {
         this.workflowInstanceUid = workflowInstanceUid;
         this.controlStructure = step.getControlStructure();
         this.retryCount = step.getRetryCount();
-        this.errorMessage = "";
+        this.failureReason = "";
 
     }
 }

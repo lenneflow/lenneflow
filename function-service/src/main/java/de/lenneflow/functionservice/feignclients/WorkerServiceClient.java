@@ -1,7 +1,7 @@
 package de.lenneflow.functionservice.feignclients;
 
 
-import de.lenneflow.functionservice.feignmodels.ApiCredential;
+import de.lenneflow.functionservice.feignmodels.AccessToken;
 import de.lenneflow.functionservice.feignmodels.KubernetesCluster;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,16 +15,16 @@ import java.util.List;
 @FeignClient(name = "worker-service")
 public interface WorkerServiceClient {
 
-    @GetMapping("/api/workers/clusters/{id}")
-    KubernetesCluster getKubernetesClusterById(@PathVariable String id);
+    @GetMapping("/api/workers/cluster/{uid}")
+    KubernetesCluster getKubernetesClusterById(@PathVariable String uid);
 
     @GetMapping("/api/workers/clusters")
     List<KubernetesCluster> getKubernetesClusterList();
 
-    @PostMapping("/api/workers/clusters/{uid}/update-used-ports")
+    @PostMapping("/api/workers/cluster/{uid}/update-used-ports")
     KubernetesCluster updateUsedPorts(@PathVariable("uid") String clusterUid, @RequestBody List<Integer> usedPorts);
 
-    @GetMapping("/api/workers/clusters/{uid}/api-credential")
-    ApiCredential getApiCredential(@PathVariable("uid") String clusterUid);
+    @GetMapping("/api/workers/cluster/{uid}/connection-token")
+    AccessToken getK8sConnectionToken(@PathVariable("uid") String clusterUid);
 
 }
