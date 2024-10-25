@@ -6,13 +6,18 @@ import de.lenneflow.orchestrationservice.model.WorkflowExecution;
 import de.lenneflow.orchestrationservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
-import de.lenneflow.orchestrationservice.component.WorkflowRunner;
+import de.lenneflow.orchestrationservice.helpercomponents.WorkflowRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Rest controller for the orchestration service
+ *
+ * @author Idrissa Ganemtore
+ */
 @RestController
 @RequestMapping("/api/control")
 public class OrchestrationController {
@@ -34,13 +39,13 @@ public class OrchestrationController {
     }
 
     @GetMapping("/workflows/{workflow-id}/start")
-    public WorkflowExecution  startWorkflowGet(@PathVariable(name = "workflow-id") String workflowId) {
+    public WorkflowExecution startWorkflowGet(@PathVariable(name = "workflow-id") String workflowId) {
         return workflowRunner.startWorkflow(workflowId, null);
     }
 
     @PostMapping("/workflows/{workflow-id}/start")
     public WorkflowExecution startWorkflowPost(@PathVariable(name = "workflow-id") String workflowId, @RequestBody Map<String, Object> inputParameters) {
-        if(inputDataValid(workflowId, inputParameters)){
+        if (inputDataValid(workflowId, inputParameters)) {
             return workflowRunner.startWorkflow(workflowId, inputParameters);
         }
         return null;
@@ -65,7 +70,7 @@ public class OrchestrationController {
 
     @GetMapping("/workflows/executions/{execution-id}/state")
     public WorkflowExecution workflowRunState(@PathVariable(name = "execution-id") String executionId) {
-        return workflowRunner.executionState(executionId);
+        return workflowRunner.getCurrentExecutionState(executionId);
     }
 
     @GetMapping("/workflows/executions")

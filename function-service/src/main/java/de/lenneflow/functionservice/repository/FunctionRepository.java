@@ -6,6 +6,10 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 
+/**
+ * Function repository
+ * @author Idrissa Ganemtore
+ */
 public interface FunctionRepository extends MongoRepository<Function, String> {
 
     Function findByUid(String uid);

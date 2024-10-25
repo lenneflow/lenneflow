@@ -7,6 +7,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Data transfer object for the entity function
+ * @author Idrissa Ganemtore
+ */
 @Getter
 @Setter
 @AllArgsConstructor

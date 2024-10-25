@@ -11,7 +11,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
-
+/**
+ * This is the feign client class for the worker service. This class acts as the interface between the function service and the
+ * worker service. It will make rest calls to the worker service and return the responses.
+ * @author Idrissa Ganemtore
+ */
 @FeignClient(name = "worker-service")
 public interface WorkerServiceClient {
 

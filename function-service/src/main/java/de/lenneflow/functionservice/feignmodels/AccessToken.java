@@ -9,11 +9,15 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
+/**
+ * This is the access token data transfer object used by the feign controller to retrieve a token from the worker service.
+ * @author Idrissa Ganemtore
+ */
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-
 public class AccessToken {
 
     private String uid;

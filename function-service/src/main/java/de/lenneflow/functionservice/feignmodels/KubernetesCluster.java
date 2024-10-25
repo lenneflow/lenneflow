@@ -10,6 +10,10 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This is the cluster data transfer object used by the feign controller to retrieve a cluster object from the worker service.
+ * @author Idrissa Ganemtore
+ */
 @Getter
 @Setter
 @AllArgsConstructor

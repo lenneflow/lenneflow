@@ -15,6 +15,11 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * DB entity for workflow instance
+ *
+ * @author Idrissa Ganemtore
+ */
 @Getter
 @Setter
 @AllArgsConstructor

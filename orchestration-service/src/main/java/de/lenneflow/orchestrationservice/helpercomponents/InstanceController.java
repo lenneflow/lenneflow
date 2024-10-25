@@ -1,4 +1,4 @@
-package de.lenneflow.orchestrationservice.component;
+package de.lenneflow.orchestrationservice.helpercomponents;
 
 import de.lenneflow.orchestrationservice.dto.FunctionDto;
 import de.lenneflow.orchestrationservice.enums.RunOrderLabel;
@@ -20,6 +20,13 @@ import org.springframework.stereotype.Controller;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * This is the controller class for workflow and step instances.
+ * For every run, instances of workflow and workflow steps are created.
+ * Instances here are normal persisted entities.
+ *
+ * @author Idrissa Ganemtore
+ */
 @Controller
 public class InstanceController {
 
@@ -45,8 +52,8 @@ public class InstanceController {
      * From a workflow ID, this method will create a new workflow instance to run.
      * It will also create all the workflow step instances.
      *
-     * @param workflowId      workflow ID.
-     * @param inputData the specific input parameters.
+     * @param workflowId workflow ID.
+     * @param inputData  the specific input parameters.
      * @return the created workflow instance.
      */
     public WorkflowInstance createWorkflowInstance(String workflowId, Map<String, Object> inputData) {
@@ -59,6 +66,13 @@ public class InstanceController {
         return workflowInstanceRepository.save(workflowInstance);
     }
 
+    /**
+     * create the list of workflow step instances for a given workflow instance.
+     *
+     * @param workflowInstance the workflow instance
+     * @param inputData        the input data of the workflow
+     * @return the workflow step instances list.
+     */
     private List<WorkflowStepInstance> createWorkflowStepInstances(WorkflowInstance workflowInstance, Map<String, Object> inputData) {
         List<WorkflowStepInstance> workflowStepInstances = new ArrayList<>();
         List<WorkflowStepInstance> result = new ArrayList<>();
@@ -73,7 +87,7 @@ public class InstanceController {
             if (i == 0) {
                 stepInstance.setRunOrderLabel(RunOrderLabel.FIRST);
                 stepInstance.setNextStepId(workflowStepInstances.get(i + 1).getUid());
-                if(inputData != null && !inputData.isEmpty()){
+                if (inputData != null && !inputData.isEmpty()) {
                     stepInstance.setInputData(inputData);
                 }
                 result.add(workflowStepInstanceRepository.save(stepInstance));
@@ -96,7 +110,7 @@ public class InstanceController {
      * Updates the workflow step instance status and output data.
      *
      * @param workflowStepInstance the workflow step instance to update.
-     * @param functionDto             the executed functionDto belonging to the workflow instance.
+     * @param functionDto          the executed functionDto belonging to the workflow instance.
      */
     public void updateWorkflowStepInstance(WorkflowStepInstance workflowStepInstance, FunctionDto functionDto) {
         workflowStepInstance.setRunStatus(functionDto.getRunStatus());
@@ -104,32 +118,59 @@ public class InstanceController {
         Map<String, Object> output = functionDto.getOutputData();
         workflowStepInstance.setOutputData(output);
         workflowStepInstance.setRunCount(workflowStepInstance.getRunCount() + 1);
-        if(functionDto.getFailureReason() != null && !functionDto.getFailureReason().isEmpty()){
+        if (functionDto.getFailureReason() != null && !functionDto.getFailureReason().isEmpty()) {
             workflowStepInstance.setFailureReason(functionDto.getFailureReason());
         }
         workflowStepInstanceRepository.save(workflowStepInstance);
     }
 
+    /**
+     * Updates the status of workflow instance and workflow execution
+     *
+     * @param workflowInstance the workflow instance
+     * @param execution        the workflow execution
+     * @param runStatus        the status
+     */
     public void updateWorkflowInstanceAndExecutionStatus(WorkflowInstance workflowInstance, WorkflowExecution execution, RunStatus runStatus) {
         updateWorkflowInstanceStatus(workflowInstance, runStatus);
         updateWorkflowExecutionStatus(execution, runStatus);
     }
 
-    public void setWorkflowRunEndTime(WorkflowInstance workflowInstance, WorkflowExecution execution){
+    /**
+     * Sets the finished time of a workflow run.
+     *
+     * @param workflowInstance the workflow instance
+     * @param execution        the workflow execution
+     */
+    public void setWorkflowRunEndTime(WorkflowInstance workflowInstance, WorkflowExecution execution) {
         workflowInstance.setEndTime(LocalDateTime.now());
         workflowInstanceRepository.save(workflowInstance);
         execution.setEndTime(LocalDateTime.now());
         workflowExecutionRepository.save(execution);
     }
 
-    public void setFailureReason(WorkflowInstance workflowInstance, WorkflowExecution execution, String failureReason){
+    /**
+     * Sets the failure reason to the workflow and to the workflow execution
+     *
+     * @param workflowInstance the workflow instance
+     * @param execution        the workflow execution
+     * @param failureReason    the failure reason
+     */
+    public void setFailureReason(WorkflowInstance workflowInstance, WorkflowExecution execution, String failureReason) {
         workflowInstance.setFailureReason(failureReason);
         workflowInstanceRepository.save(workflowInstance);
         execution.setFailureReason(failureReason);
         workflowExecutionRepository.save(execution);
     }
 
-    public void deleteLastWorkflowInstances(int keepDaysCount, int maxInstancesCount){
+
+    /**
+     * This function deletes old workflow runs.
+     *
+     * @param keepDaysCount     the max number of days to keep runs.
+     * @param maxInstancesCount the max number of runs to keep.
+     */
+    public void deleteLastWorkflowInstances(int keepDaysCount, int maxInstancesCount) {
         LocalDateTime now = LocalDateTime.now();
         List<WorkflowExecution> executionsToDelete = new ArrayList<>();
         List<WorkflowInstance> instancesToDelete = new ArrayList<>();
@@ -148,21 +189,20 @@ public class InstanceController {
 
         //iterate over the sorted executions and add the oldest to the list to remove
         for (WorkflowExecution execution : sortedExecutions) {
-            if(execution.getStartTime().plusDays(keepDaysCount).isBefore(now)){
+            if (execution.getStartTime().plusDays(keepDaysCount).isBefore(now)) {
                 executionsToDelete.add(execution);
                 instancesToDelete.add(workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId()));
-            }else {
-                if(sortedExecutions.size()-executionsToDelete.size() >= maxInstancesCount){
+            } else {
+                if (sortedExecutions.size() - executionsToDelete.size() >= maxInstancesCount) {
                     executionsToDelete.add(execution);
                     instancesToDelete.add(workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId()));
-                }else {
+                } else {
                     break;
                 }
             }
         }
-
         //Delete objects from database
-        for(WorkflowInstance instance : instancesToDelete){
+        for (WorkflowInstance instance : instancesToDelete) {
             List<WorkflowStepInstance> stepInstances = workflowStepInstanceRepository.findByWorkflowInstanceUid(instance.getUid());
             workflowStepInstanceRepository.deleteAll(stepInstances);
             workflowInstanceRepository.delete(instance);
@@ -175,7 +215,7 @@ public class InstanceController {
      * Updated the workflow instance status
      *
      * @param workflowInstance the workflow instance to update.
-     * @param runStatus the run status
+     * @param runStatus        the run status
      */
     public void updateWorkflowInstanceStatus(WorkflowInstance workflowInstance, RunStatus runStatus) {
         workflowInstance.setRunStatus(runStatus);

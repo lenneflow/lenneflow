@@ -1,4 +1,4 @@
-package de.lenneflow.functionservice.controller;
+package de.lenneflow.functionservice.helpercomponents;
 
 import de.lenneflow.functionservice.enums.CloudProvider;
 import de.lenneflow.functionservice.enums.DeploymentState;
@@ -18,14 +18,22 @@ import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
+/**
+ * Helper class containing methods used for the deployment of a function.
+ * @author Idrissa Ganemtore
+ */
 @Component
 public class DeploymentController {
+
+    private static final Logger logger = LoggerFactory.getLogger(DeploymentController.class);
 
     public static final String NAMESPACE = "lenneflow";
     public static final String SERVICE_ACCOUNT_NAME = "lenneflow-sa";
@@ -40,15 +48,24 @@ public class DeploymentController {
         this.functionRepository = functionRepository;
     }
 
+    /**
+     * Checks if the kubernetes cluster is reachable
+     * @param kubernetesCluster the cluster to reach.
+     */
     public void checkConnectionToKubernetes(KubernetesCluster kubernetesCluster) {
         KubernetesClient client = getKubernetesClient(kubernetesCluster);
         String apiVersion = client.getApiVersion();
         client.close();
         if(apiVersion == null || apiVersion.isEmpty()){
+            logger.error("Impossible to connect to Kubernetes cluster");
             throw new InternalServiceException("The connection to the kubernetesCluster " + kubernetesCluster.getClusterName() + " was not possible");
         }
     }
 
+    /**
+     * Deploys a function to a randomly selected kubernetes cluster.
+     * @param function the function to deploy
+     */
     public void deployFunctionImageToWorker(Function function) {
         KubernetesCluster kubernetesCluster = getKubernetesClusterForFunction(function);
         checkConnectionToKubernetes(kubernetesCluster);
@@ -92,6 +109,12 @@ public class DeploymentController {
         workerServiceClient.updateUsedPorts(kubernetesCluster.getUid(), ports);
     }
 
+    /**
+     * returns the full url of a deployed function.
+     * @param kubernetesCluster the cluster
+     * @param function the deployed function
+     * @return the URL of the deployed function
+     */
     private String getFunctionServiceUrl(KubernetesCluster kubernetesCluster, Function function) {
         String functionResourcePath = function.getResourcePath().startsWith("/") ? function.getResourcePath() : "/%s".formatted(function.getResourcePath());
         if(kubernetesCluster.getCloudProvider() == CloudProvider.LOCAL) {
@@ -100,12 +123,24 @@ public class DeploymentController {
         return getLoadBalancerAssignedHostName(kubernetesCluster) + ":" + function.getAssignedHostPort() + functionResourcePath;
     }
 
+    /**
+     * If a function is deployed in the cloud, the load balancer will attribute the path.
+     * This method retrieves the root path of the functions.
+     * @param kubernetesCluster the cluster
+     * @return the root path
+     */
     private String getLoadBalancerAssignedHostName(KubernetesCluster kubernetesCluster) {
         String hostname = "";
         //TODO
         return hostname;
     }
 
+    /**
+     * After a kubernetes deployment of a function is done, it can take some minutes until it is ready.
+     * This function tracks the state of the deployed resource in the background and updates the entity
+     * @param kubernetesCluster the cluster
+     * @param function the deployed function
+     */
     private void waitAndUpdateDeploymentState(KubernetesCluster kubernetesCluster, Function function) {
         new Thread(() ->{
             try {
@@ -127,11 +162,21 @@ public class DeploymentController {
         }).start();
     }
 
+    /**
+     * Updates the state of function entity
+     * @param function function
+     * @param deploymentState new state
+     */
     private void updateFunctionDeploymentState(Function function, DeploymentState deploymentState) {
         function.setDeploymentState(deploymentState);
         functionRepository.save(function);
     }
 
+    /**
+     * Creates the ingress resource in the cluster. If a ingress resource already exists, it will update it.
+     * @param kubernetesCluster the cluster
+     * @param function the function that should be targeted in the ingress resource
+     */
     private void createOrUpdateIngress(KubernetesCluster kubernetesCluster, Function function) {
         KubernetesClient client = getKubernetesClient(kubernetesCluster);
         Ingress currentIngress = client.network().v1().ingresses().inNamespace(NAMESPACE).withName(kubernetesCluster.getIngressServiceName()).get();
@@ -150,6 +195,10 @@ public class DeploymentController {
 
     }
 
+    /**
+     * Function that creates the default namespace for the application in the kubernetes cluster.
+     * @param kubernetesCluster the target cluster
+     */
     private void createNamespace(KubernetesCluster kubernetesCluster) {
         KubernetesClient client = getKubernetesClient(kubernetesCluster);
         Namespace ns = new NamespaceBuilder().withNewMetadata().withName(NAMESPACE)
@@ -163,6 +212,10 @@ public class DeploymentController {
         }
     }
 
+    /**
+     * Function that creates the default service account for the application in the kubernetes cluster.
+     * @param kubernetesCluster the target cluster
+     */
     private void createServiceAccount(KubernetesCluster kubernetesCluster) {
         KubernetesClient client = getKubernetesClient(kubernetesCluster);
         try {
@@ -181,6 +234,13 @@ public class DeploymentController {
         }
     }
 
+    /**
+     * Randomly selects a cluster from a list a clusters tagged for this function type.
+     * In case no cluster is tagged with the function type, a cluster will be randomly selected between all
+     * existing clusters
+     * @param function the function
+     * @return the cluster
+     */
     private KubernetesCluster getKubernetesClusterForFunction(Function function) {
         String functionType = function.getType();
         List<KubernetesCluster> filteredClusters = getClusters(functionType);
@@ -198,6 +258,12 @@ public class DeploymentController {
         return filteredClusters.get(random.nextInt(filteredClusters.size()));
     }
 
+    /**
+     * Find the list of clusters that accepts the entered function type.
+     * If no cluster for exists for the function type, an empty list will be returned.
+     * @param functionType the function type
+     * @return a list of clusters
+     */
     private List<KubernetesCluster> getClusters(String functionType) {
         List<KubernetesCluster> kubernetesClusters = new ArrayList<>();
         List<KubernetesCluster> allClusters = workerServiceClient.getKubernetesClusterList();
@@ -206,9 +272,15 @@ public class DeploymentController {
                 kubernetesClusters.add(kubernetesCluster);
             }
         }
+        logger.debug("return all clusters");
         return kubernetesClusters;
     }
 
+    /**
+     * Creates a kubernetes client using the credentials.
+     * @param kubernetesCluster the cluster
+     * @return the kubernetes client Object
+     */
     private KubernetesClient getKubernetesClient(KubernetesCluster kubernetesCluster) {
         AccessToken token = workerServiceClient.getK8sConnectionToken(kubernetesCluster.getUid());
         String  masterUrl = kubernetesCluster.getApiServerEndpoint();

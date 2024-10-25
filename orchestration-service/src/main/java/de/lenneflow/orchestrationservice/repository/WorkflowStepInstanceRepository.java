@@ -6,6 +6,11 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 
+/**
+ * Repository for the workflow step instance entity
+ *
+ * @author Idrissa Ganemtore
+ */
 public interface WorkflowStepInstanceRepository extends MongoRepository<WorkflowStepInstance, String> {
 
     WorkflowStepInstance findByUid(String uid);

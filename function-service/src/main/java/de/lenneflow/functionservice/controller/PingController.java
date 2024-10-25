@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Basic Controller that contains methods to check that the application is reachable
+ * @author Idrissa Ganemtore
  */
 @RestController
 public class PingController {

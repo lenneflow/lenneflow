@@ -5,6 +5,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+/**
+ * This is the global exception handler for the function service. It is annotated as controller advise
+ * and send responses with error messages to the rest calls.
+ *
+ * @author Idrissa Ganemtore
+ */
 @ControllerAdvice
 public class GlobalExceptionHandler {
 

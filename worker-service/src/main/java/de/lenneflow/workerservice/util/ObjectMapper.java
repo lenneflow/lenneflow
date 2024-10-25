@@ -2,15 +2,12 @@ package de.lenneflow.workerservice.util;
 
 import de.lenneflow.workerservice.dto.ManagedClusterDTO;
 import de.lenneflow.workerservice.dto.UnmanagedClusterDTO;
-import de.lenneflow.workerservice.enums.ClusterStatus;
 import de.lenneflow.workerservice.model.KubernetesCluster;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 public class ObjectMapper {
 
 
+    private ObjectMapper(){}
 
     public static KubernetesCluster mapToKubernetesCluster(ManagedClusterDTO clusterDTO) {
         KubernetesCluster kubernetesCluster = new KubernetesCluster();

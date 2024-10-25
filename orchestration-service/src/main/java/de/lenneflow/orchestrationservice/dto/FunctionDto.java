@@ -9,6 +9,11 @@ import lombok.Setter;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Data transfer object for the function entity
+ *
+ * @author Idrissa Ganemtore
+ */
 @Getter
 @Setter
 @AllArgsConstructor

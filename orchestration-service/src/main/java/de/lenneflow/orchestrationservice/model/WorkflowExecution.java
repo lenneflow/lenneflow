@@ -16,6 +16,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * DB entity for Workflow execution
+ *
+ * @author Idrissa Ganemtore
+ */
 @Getter
 @Setter
 @AllArgsConstructor
@@ -47,7 +52,7 @@ public class WorkflowExecution {
 
     private Map<String, Object> runOutput = new HashMap<>();
 
-    public WorkflowExecution(Workflow workflow, WorkflowInstance workflowInstance){
+    public WorkflowExecution(Workflow workflow, WorkflowInstance workflowInstance) {
         this.runId = UUID.randomUUID().toString();
         this.workflowInstanceId = workflowInstance.getUid();
         this.workflowName = workflow.getName();

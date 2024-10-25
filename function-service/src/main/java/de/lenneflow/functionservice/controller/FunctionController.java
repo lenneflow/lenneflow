@@ -5,10 +5,13 @@ import de.lenneflow.functionservice.dto.FunctionDTO;
 import de.lenneflow.functionservice.exception.ResourceNotFoundException;
 import de.lenneflow.functionservice.feignclients.WorkerServiceClient;
 import de.lenneflow.functionservice.feignmodels.KubernetesCluster;
+import de.lenneflow.functionservice.helpercomponents.DeploymentController;
 import de.lenneflow.functionservice.model.Function;
 import de.lenneflow.functionservice.repository.FunctionRepository;
+import de.lenneflow.functionservice.util.ObjectMapper;
 import de.lenneflow.functionservice.util.Validator;
-import io.swagger.v3.oas.annotations.Hidden;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,9 +19,16 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Central REST Controller for the function service
+ * @author Idrissa Ganemtore
+ */
+
 @RestController
 @RequestMapping("/api/functions")
 public class FunctionController {
+
+    private static final Logger logger = LoggerFactory.getLogger(FunctionController.class);
 
     final
     FunctionRepository functionRepository;
@@ -51,11 +61,11 @@ public class FunctionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Function addFunction(@RequestBody FunctionDTO functionDTO) {
-        Function function = createFunction(functionDTO);
+        Function function = ObjectMapper.mapToFunction(functionDTO);
         function.setUid(UUID.randomUUID().toString());
         validator.validateFunction(function);
-        function.setCreationTime(LocalDateTime.now());
-        function.setUpdateTime(LocalDateTime.now());
+        function.setCreated(LocalDateTime.now());
+        function.setUpdated(LocalDateTime.now());
         Function savedFunction = functionRepository.save(function);
         if(!function.isLazyDeployment()){
             new Thread(() -> deploymentController.deployFunctionImageToWorker(savedFunction)).start();
@@ -66,9 +76,10 @@ public class FunctionController {
     @PostMapping("/{id}")
     public void updateFunction(@RequestBody Function function, @PathVariable String id) {
         if(function == null) {
+            logger.error("function is null");
             throw new ResourceNotFoundException("Function not found");
         }
-        function.setUpdateTime(LocalDateTime.now());
+        function.setUpdated(LocalDateTime.now());
         functionRepository.save(function);
     }
 
@@ -93,25 +104,10 @@ public class FunctionController {
     public void deleteFunction(@PathVariable String id) {
         Function function = functionRepository.findByUid(id);
         if (function == null) {
+            logger.error("Function is null");
            throw new ResourceNotFoundException("Function not found");
         }
         functionRepository.delete(function);
     }
 
-    private Function createFunction(FunctionDTO functionDTO) {
-        Function function = new Function();
-        function.setName(functionDTO.getName());
-        function.setDescription(functionDTO.getDescription());
-        function.setType(functionDTO.getType());
-        function.setPackageRepository(functionDTO.getPackageRepository());
-        function.setResourcePath(functionDTO.getResourcePath());
-        function.setServicePort(functionDTO.getServicePort());
-        function.setLazyDeployment(functionDTO.isLazyDeployment());
-        function.setImageName(functionDTO.getImageName());
-        function.setInputSchema(functionDTO.getInputSchema());
-        function.setOutputSchema(functionDTO.getOutputSchema());
-        function.setCreationTime(LocalDateTime.now());
-        function.setUpdateTime(LocalDateTime.now());
-        return function;
-    }
 }

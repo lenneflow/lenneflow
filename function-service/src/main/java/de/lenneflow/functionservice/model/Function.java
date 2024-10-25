@@ -13,6 +13,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
+/**
+ * Function Entity.
+ * @author Idrissa Ganemtore
+ */
 @Getter
 @Setter
 @AllArgsConstructor
@@ -46,9 +50,9 @@ public class Function {
 
     private String serviceUrl;
 
-    private LocalDateTime creationTime;
+    private LocalDateTime created;
 
-    private LocalDateTime updateTime;
+    private LocalDateTime updated;
 
     private String inputSchema;
 
