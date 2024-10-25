@@ -5,6 +5,7 @@ import de.lenneflow.orchestrationservice.enums.ControlStructure;
 import de.lenneflow.orchestrationservice.enums.DeploymentState;
 import de.lenneflow.orchestrationservice.enums.RunOrderLabel;
 import de.lenneflow.orchestrationservice.enums.RunStatus;
+import de.lenneflow.orchestrationservice.exception.InternalServiceException;
 import de.lenneflow.orchestrationservice.feignclients.FunctionServiceClient;
 import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.orchestrationservice.feignmodels.DecisionCase;
@@ -24,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -72,7 +74,7 @@ public class WorkflowRunner {
         WorkflowExecution execution = createWorkflowExecution(workflow, workflowInstance);
 
         instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.DEPLOYING_FUNCTIONS);
-        findUndeployedFunctionAndDeploy(workflowInstance);
+        checkAndWaitUntilFullDeployment(workflowInstance, execution, 10);
 
         instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.RUNNING);
         WorkflowStepInstance firstStepInstance = instanceController.getStartStep(workflowInstance);
@@ -234,14 +236,46 @@ public class WorkflowRunner {
      *
      * @param workflowInstance the workflow instance to run
      */
-    private void findUndeployedFunctionAndDeploy(WorkflowInstance workflowInstance) {
+    private void checkAndWaitUntilFullDeployment(WorkflowInstance workflowInstance, WorkflowExecution execution, int minutesToWait) {
         List<WorkflowStepInstance> steps = workflowStepInstanceRepository.findByWorkflowInstanceUid(workflowInstance.getUid());
         for (WorkflowStepInstance step : steps) {
             Function function = functionServiceClient.getFunctionByUid(step.getFunctionId());
-            if (function != null && function.getDeploymentState() != DeploymentState.DEPLOYED) {
-                //TODO
+            if (function != null && function.isLazyDeployment()  && function.getDeploymentState() == DeploymentState.UNDEPLOYED) {
+                functionServiceClient.deployFunction(step.getFunctionId());
+            }else if(function != null && !function.isLazyDeployment() && function.getDeploymentState() == DeploymentState.UNDEPLOYED) {
+                String reason = "Function " + function.getName() + " is undeployed but the lazy deployment flag is not set!";
+                terminateWorkflowRun(execution, workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason);
+                throw new InternalServiceException(reason);
             }
         }
+        while (true) {
+            LocalDateTime start = LocalDateTime.now();
+            if (allFunctionsDeployed(steps)) {
+                break;
+            }
+            if (start.plusMinutes(minutesToWait).isBefore(LocalDateTime.now())) {
+                String reason = "All functions could not be deployed in time. Workflow run will be cancelled!";
+                terminateWorkflowRun(execution, workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason);
+                throw new InternalServiceException(reason);
+            }
+            Util.pause(5000);
+
+        }
+    }
+
+    /**
+     * Loop over all steps and check if all functions are deployed
+     * @param steps the workflow steps
+     * @return the result
+     */
+    private boolean allFunctionsDeployed(List<WorkflowStepInstance> steps){
+        for (WorkflowStepInstance step : steps) {
+            Function function = functionServiceClient.getFunctionByUid(step.getFunctionId());
+            if (function != null && function.getDeploymentState() == DeploymentState.DEPLOYING) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

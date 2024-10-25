@@ -103,4 +103,12 @@ public class Util {
             throw new InternalServiceException("Parse error " + e.getMessage());
         }
     }
+
+    public static void pause(int millis){
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
 }

@@ -20,6 +20,8 @@ import java.util.Map;
 @NoArgsConstructor
 public class Function implements Serializable {
 
+    private String uid;
+
     private String executionId;
 
     private String stepInstanceId;
@@ -36,21 +38,27 @@ public class Function implements Serializable {
 
     private PackageRepository packageRepository;
 
-    private DeploymentState deploymentState;
+    private DeploymentState deploymentState = DeploymentState.UNDEPLOYED;
 
     private String resourcePath;
 
-    private int servingPort;
-
     private String imageName;
 
-    private String inputSchema;
+    private boolean lazyDeployment;
+
+    private int servicePort;
+
+    private int assignedHostPort;
 
     private String serviceUrl;
 
-    private LocalDateTime creationTime;
+    private LocalDateTime created;
 
-    private LocalDateTime updateTime;
+    private LocalDateTime updated;
+
+    private String inputSchema;
+
+    private String outputSchema;
 
     private Map<String, Object> inputData = new HashMap<>();
 

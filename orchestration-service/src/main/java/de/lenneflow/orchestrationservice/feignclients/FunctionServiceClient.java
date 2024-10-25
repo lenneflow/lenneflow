@@ -4,6 +4,7 @@ import de.lenneflow.orchestrationservice.feignmodels.Function;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.List;
 
@@ -17,11 +18,14 @@ import java.util.List;
 public interface FunctionServiceClient {
 
     @GetMapping("/api/functions/{uid}")
-    public Function getFunctionByUid(@PathVariable String uid);
+    Function getFunctionByUid(@PathVariable String uid);
 
     @GetMapping("/api/functions/check")
-    public String getFunctionHome();
+    String getFunctionHome();
 
     @GetMapping("/api/functions/list")
-    public List<Function> getAllFunctions();
+    List<Function> getAllFunctions();
+
+    @GetMapping("/deploy-function/function-id/{function-id}")
+    void deployFunction(@PathVariable("function-id") String functionId);
 }
