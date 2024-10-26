@@ -7,8 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @AllArgsConstructor
@@ -19,11 +17,12 @@ public class NodeGroupDTO {
 
     private String description;
 
-    private int minNodeCount;
+    private int minimumNodeCount;
 
+    private int maximumNodeCount;
+
+    @Hidden
     private int desiredNodeCount;
-
-    private int maxNodeCount;
 
     @Hidden
     private String clusterName;
@@ -33,6 +32,5 @@ public class NodeGroupDTO {
 
     @Hidden
     private CloudProvider cloudProvider;
-
 
 }
