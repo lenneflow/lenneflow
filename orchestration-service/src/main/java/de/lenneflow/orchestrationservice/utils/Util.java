@@ -27,8 +27,6 @@ public class Util {
     private Util() {
     }
 
-    private static final ObjectMapper mapper = new ObjectMapper();
-
     /**
      * Deserializes a byte array and returns a function dto object.
      *
@@ -83,26 +81,6 @@ public class Util {
         return functionDto;
     }
 
-
-    /**
-     * Validates a json object against a given json schema.
-     *
-     * @param jsonSchema the json schema
-     * @param version    the schema version
-     * @param payload    the json object to validate
-     * @return te result of the validation
-     */
-    public static boolean validateJson(String jsonSchema, JsonSchemaVersion version, String payload) {
-        try {
-            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.valueOf(version.toString()));
-            JsonSchema schema = factory.getSchema(jsonSchema);
-            JsonNode jsonNode = mapper.readTree(payload);
-            Set<ValidationMessage> errors = schema.validate(jsonNode);
-            return errors.isEmpty();
-        } catch (JsonProcessingException e) {
-            throw new InternalServiceException("Parse error " + e.getMessage());
-        }
-    }
 
     public static void pause(int millis){
         try {

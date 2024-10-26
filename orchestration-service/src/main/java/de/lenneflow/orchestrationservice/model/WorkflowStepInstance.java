@@ -96,6 +96,5 @@ public class WorkflowStepInstance {
         this.controlStructure = step.getControlStructure();
         this.retryCount = step.getRetryCount();
         this.failureReason = "";
-
     }
 }

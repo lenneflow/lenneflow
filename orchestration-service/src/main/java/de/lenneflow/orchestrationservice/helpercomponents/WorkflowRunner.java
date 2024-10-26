@@ -1,6 +1,7 @@
 package de.lenneflow.orchestrationservice.helpercomponents;
 
 import de.lenneflow.orchestrationservice.dto.FunctionDto;
+import de.lenneflow.orchestrationservice.dto.FunctionPayload;
 import de.lenneflow.orchestrationservice.enums.ControlStructure;
 import de.lenneflow.orchestrationservice.enums.DeploymentState;
 import de.lenneflow.orchestrationservice.enums.RunOrderLabel;
@@ -19,6 +20,7 @@ import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
 import de.lenneflow.orchestrationservice.utils.ExpressionEvaluator;
 import de.lenneflow.orchestrationservice.utils.Util;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +39,8 @@ import java.util.Objects;
  */
 @Component
 public class WorkflowRunner {
+
+    @Value("${qms.api.root.link}")  private String callBackRoot;
 
     final FunctionServiceClient functionServiceClient;
     final WorkflowServiceClient workflowServiceClient;
@@ -65,11 +69,11 @@ public class WorkflowRunner {
      * associated to the step and run the workflow step.
      *
      * @param workflowId      The Name od the workflow to run.
-     * @param inputParameters The input parameters for the workflow run.
+     * @param inputData The input parameters for the workflow run.
      * @return a workflow execution object.
      */
-    public WorkflowExecution startWorkflow(String workflowId, Map<String, Object> inputParameters) {
-        WorkflowInstance workflowInstance = instanceController.createWorkflowInstance(workflowId, inputParameters);
+    public WorkflowExecution startWorkflow(String workflowId, Map<String, Object> inputData) {
+        WorkflowInstance workflowInstance = instanceController.createWorkflowInstance(workflowId, inputData);
         Workflow workflow = workflowServiceClient.getWorkflowById(workflowId);
         WorkflowExecution execution = createWorkflowExecution(workflow, workflowInstance);
 
@@ -177,7 +181,14 @@ public class WorkflowRunner {
     public void processFunctionDtoFromQueue(FunctionDto functionDto) {
         Map<String, Object> inputData = functionDto.getInputData();
         String serviceUrl = functionDto.getServiceUrl();
-        ResponseEntity<Void> response = restTemplate.exchange(serviceUrl, HttpMethod.POST, new HttpEntity<>(inputData), Void.class);
+        String callBackLink = callBackRoot + "/" + functionDto.getExecutionId() + "/" + functionDto.getStepInstanceId() + "/" + functionDto.getWorkflowInstanceId();
+
+        FunctionPayload functionPayload = new FunctionPayload();
+        functionPayload.setInputData(inputData);
+        functionPayload.setCallBackLink(callBackLink);
+        functionPayload.setFailureReason("");
+
+        ResponseEntity<Void> response = restTemplate.exchange(serviceUrl, HttpMethod.POST, new HttpEntity<>(functionPayload), Void.class);
         if (response.getStatusCode().value() != 200) {
             functionDto.setRunStatus(RunStatus.CANCELED);
             functionDto.setFailureReason("Could not send request to the cluster!");
@@ -259,7 +270,6 @@ public class WorkflowRunner {
                 throw new InternalServiceException(reason);
             }
             Util.pause(5000);
-
         }
     }
 
@@ -324,7 +334,6 @@ public class WorkflowRunner {
         if (failureReason != null && !failureReason.isEmpty()) {
             instanceController.setFailureReason(workflowInstance, execution, failureReason);
         }
-
         instanceController.deleteLastWorkflowInstances(30, 30);
     }
 

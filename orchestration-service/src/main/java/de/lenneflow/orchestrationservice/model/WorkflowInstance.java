@@ -51,9 +51,9 @@ public class WorkflowInstance {
 
     private LocalDateTime created;
 
-    private JsonSchema inputDataSchema;
+    private Map<String, Object> inputData = new LinkedHashMap<>();
 
-    private JsonSchema outputDataSchema;
+    private Map<String, Object> outputData = new LinkedHashMap<>();
 
     private LocalDateTime updated;
 
@@ -69,8 +69,6 @@ public class WorkflowInstance {
         this.runStatus = RunStatus.NEW;
         this.restartable = workflow.isRestartable();
         this.timeOutInSeconds = workflow.getTimeOutInSeconds();
-        this.outputDataSchema = workflow.getOutputDataSchema();
-        this.inputDataSchema = workflow.getInputDataSchema();
         this.created = LocalDateTime.now();
         this.updated = LocalDateTime.now();
         this.startTime = LocalDateTime.now();
