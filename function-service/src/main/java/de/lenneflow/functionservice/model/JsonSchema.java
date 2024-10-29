@@ -1,17 +1,14 @@
-package de.lenneflow.workflowservice.model;
+package de.lenneflow.functionservice.model;
 
-import de.lenneflow.workflowservice.enums.JsonSchemaVersion;
+import de.lenneflow.functionservice.enums.JsonSchemaVersion;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @Getter
 @Setter

@@ -45,6 +45,7 @@ public class WorkflowController {
         return workflowRepository.findAll();
     }
 
+
     @PostMapping
     public Workflow addNewWorkflow(@RequestBody WorkflowDTO workflowDTO) {
         validator.validate(workflowDTO);

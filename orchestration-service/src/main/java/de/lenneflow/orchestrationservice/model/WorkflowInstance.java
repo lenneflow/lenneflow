@@ -2,8 +2,6 @@ package de.lenneflow.orchestrationservice.model;
 
 
 import de.lenneflow.orchestrationservice.enums.RunStatus;
-import de.lenneflow.orchestrationservice.feignmodels.JsonSchema;
-import de.lenneflow.orchestrationservice.feignmodels.Workflow;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -60,19 +58,5 @@ public class WorkflowInstance {
     private LocalDateTime startTime;
 
     private LocalDateTime endTime;
-
-    public WorkflowInstance(Workflow workflow) {
-        this.uid = UUID.randomUUID().toString();
-        this.name = workflow.getName();
-        this.description = workflow.getDescription();
-        this.workflowUid = workflow.getUid();
-        this.runStatus = RunStatus.NEW;
-        this.restartable = workflow.isRestartable();
-        this.timeOutInSeconds = workflow.getTimeOutInSeconds();
-        this.created = LocalDateTime.now();
-        this.updated = LocalDateTime.now();
-        this.startTime = LocalDateTime.now();
-
-    }
 
 }

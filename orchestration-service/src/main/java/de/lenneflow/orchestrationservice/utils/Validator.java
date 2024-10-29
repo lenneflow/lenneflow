@@ -28,7 +28,7 @@ public class Validator {
      * @param dataToValidate    the object to validate
      * @return te result of the validation
      */
-    public static void validateInputOutputData(String jsonSchema, JsonSchemaVersion version, Map<String, Object> dataToValidate) {
+    public static void validateJsonData(String jsonSchema, JsonSchemaVersion version, Map<String, Object> dataToValidate) {
         try {
             JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.valueOf(version.toString()));
             JsonSchema schema = factory.getSchema(jsonSchema);

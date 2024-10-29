@@ -4,8 +4,10 @@ import de.lenneflow.orchestrationservice.exception.PayloadNotValidException;
 import de.lenneflow.orchestrationservice.feignclients.FunctionServiceClient;
 import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
+import de.lenneflow.orchestrationservice.helpercomponents.InstanceController;
 import de.lenneflow.orchestrationservice.model.GlobalInputData;
 import de.lenneflow.orchestrationservice.model.WorkflowExecution;
+import de.lenneflow.orchestrationservice.model.WorkflowInstance;
 import de.lenneflow.orchestrationservice.repository.GlobalInputDataRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Rest controller for the orchestration service
@@ -33,15 +36,17 @@ public class OrchestrationController {
     final WorkflowInstanceRepository workflowInstanceRepository;
     final WorkflowStepInstanceRepository workflowStepInstanceRepository;
     final WorkflowRunner workflowRunner;
+    final InstanceController instanceController;
     final GlobalInputDataRepository globalInputDataRepository;
 
-    public OrchestrationController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient, FunctionServiceClient functionServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowRunner workflowRunner, GlobalInputDataRepository globalInputDataRepository) {
+    public OrchestrationController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient, FunctionServiceClient functionServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowRunner workflowRunner, InstanceController instanceController, GlobalInputDataRepository globalInputDataRepository) {
         this.workflowExecutionRepository = workflowExecutionRepository;
         this.workflowServiceClient = workflowServiceClient;
         this.functionServiceClient = functionServiceClient;
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.workflowStepInstanceRepository = workflowStepInstanceRepository;
         this.workflowRunner = workflowRunner;
+        this.instanceController = instanceController;
         this.globalInputDataRepository = globalInputDataRepository;
     }
 
@@ -55,8 +60,12 @@ public class OrchestrationController {
         if (workflow == null) {
             throw new PayloadNotValidException("Could not find workflow with id " + workflowId);
         }
-        Validator.validateInputOutputData(workflow.getInputDataSchema().getSchema(), workflow.getInputDataSchema().getSchemaVersion(), globalInputData.getInputData());
-        return workflowRunner.startWorkflow(workflowId, globalInputData.getInputData());
+        Validator.validateJsonData(workflow.getInputDataSchema().getSchema(), workflow.getInputDataSchema().getSchemaVersion(), globalInputData.getInputData());
+
+        //create an instance for the workflow
+        WorkflowInstance workflowInstance = instanceController.createWorkflowInstance(workflow, globalInputData.getInputData());
+
+        return workflowRunner.startWorkflow(workflowInstance, workflow);
     }
 
     @PostMapping("/workflows/{workflow-id}/start")
@@ -65,8 +74,12 @@ public class OrchestrationController {
         if (workflow == null) {
             throw new PayloadNotValidException("Could not find workflow with id " + workflowId);
         }
-        Validator.validateInputOutputData(workflow.getInputDataSchema().getSchema(), workflow.getInputDataSchema().getSchemaVersion(), inputData);
-        return workflowRunner.startWorkflow(workflowId, inputData);
+        Validator.validateJsonData(workflow.getInputDataSchema().getSchema(), workflow.getInputDataSchema().getSchemaVersion(), inputData);
+
+        //create an instance for the workflow
+        WorkflowInstance workflowInstance = instanceController.createWorkflowInstance(workflow, inputData);
+
+        return workflowRunner.startWorkflow(workflowInstance, workflow);
     }
 
     @GetMapping("/workflows/runs/{run-id}/stop")
@@ -98,6 +111,7 @@ public class OrchestrationController {
     @PostMapping("/workflows/input-data")
     public GlobalInputData createGlobalInputData(@RequestBody GlobalInputData globalInputData) {
         Validator.validate(globalInputData);
+        globalInputData.setUid(UUID.randomUUID().toString());
         return globalInputDataRepository.save(globalInputData);
     }
 

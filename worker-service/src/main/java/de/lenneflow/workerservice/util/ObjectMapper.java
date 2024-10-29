@@ -1,8 +1,15 @@
 package de.lenneflow.workerservice.util;
 
+import de.lenneflow.workerservice.dto.AccessTokenDto;
 import de.lenneflow.workerservice.dto.ManagedClusterDTO;
 import de.lenneflow.workerservice.dto.UnmanagedClusterDTO;
+import de.lenneflow.workerservice.exception.InternalServiceException;
+import de.lenneflow.workerservice.model.AccessToken;
 import de.lenneflow.workerservice.model.KubernetesCluster;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class ObjectMapper {
 
@@ -37,10 +44,29 @@ public class ObjectMapper {
         kubernetesCluster.setApiServerEndpoint(clusterDTO.getApiServerEndpoint());
         kubernetesCluster.setCaCertificate(clusterDTO.getCaCertificate());
         kubernetesCluster.setKubernetesAccessTokenUid(clusterDTO.getKubernetesAccessTokenUid());
-        kubernetesCluster.setHostAddress(clusterDTO.getHostName());
+        kubernetesCluster.setHostUrl(clusterDTO.getHostUrl().toLowerCase().startsWith("http")?clusterDTO.getHostUrl(): "http://"+clusterDTO.getHostUrl().toLowerCase());
         kubernetesCluster.setCloudProvider(clusterDTO.getCloudProvider());
         kubernetesCluster.setCloudCredentialUid(clusterDTO.getCloudCredentialUid());
         kubernetesCluster.setManaged(false);
         return kubernetesCluster;
+    }
+
+
+    public static AccessToken mapToAccessToken(AccessTokenDto accessTokenDto) {
+        AccessToken accessToken = new AccessToken();
+        accessToken.setToken(accessTokenDto.getToken());
+        accessToken.setDescription(accessTokenDto.getDescription());
+        if(accessTokenDto.getExpiration() == null || accessTokenDto.getExpiration().isBlank()){
+            accessToken.setExpiration(LocalDateTime.now().plusYears(5));
+        }else{
+            try {
+                LocalDateTime expiration = LocalDate.parse(accessTokenDto.getExpiration(), DateTimeFormatter.ofPattern("dd.MM.yyyy")).atStartOfDay();
+                accessToken.setExpiration(expiration);
+            }catch (Exception e){
+                throw new InternalServiceException("Could not parse expiration date " + accessTokenDto.getExpiration());
+            }
+
+        }
+        return accessToken;
     }
 }

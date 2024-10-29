@@ -7,7 +7,9 @@ import de.lenneflow.functionservice.feignclients.WorkerServiceClient;
 import de.lenneflow.functionservice.feignmodels.KubernetesCluster;
 import de.lenneflow.functionservice.helpercomponents.DeploymentController;
 import de.lenneflow.functionservice.model.Function;
+import de.lenneflow.functionservice.model.JsonSchema;
 import de.lenneflow.functionservice.repository.FunctionRepository;
+import de.lenneflow.functionservice.repository.JsonSchemaRepository;
 import de.lenneflow.functionservice.util.ObjectMapper;
 import de.lenneflow.functionservice.util.Validator;
 import org.slf4j.Logger;
@@ -35,12 +37,14 @@ public class FunctionController {
     final Validator validator;
     final DeploymentController deploymentController;
     final WorkerServiceClient workerServiceClient;
+    final JsonSchemaRepository jsonSchemaRepository;
 
-    public FunctionController(FunctionRepository functionRepository, Validator validator, DeploymentController deploymentController, WorkerServiceClient workerServiceClient) {
+    public FunctionController(FunctionRepository functionRepository, Validator validator, DeploymentController deploymentController, WorkerServiceClient workerServiceClient, JsonSchemaRepository jsonSchemaRepository) {
         this.functionRepository = functionRepository;
         this.validator = validator;
         this.deploymentController = deploymentController;
         this.workerServiceClient = workerServiceClient;
+        this.jsonSchemaRepository = jsonSchemaRepository;
     }
 
     @GetMapping("/{uid}")
@@ -53,7 +57,7 @@ public class FunctionController {
         return functionRepository.findByName(name);
     }
 
-    @GetMapping("/all")
+    @GetMapping("/list")
     public List<Function> getAllFunctions() {
         return functionRepository.findAll();
     }
@@ -61,9 +65,12 @@ public class FunctionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Function addFunction(@RequestBody FunctionDTO functionDTO) {
+        validator.validate(functionDTO);
         Function function = ObjectMapper.mapToFunction(functionDTO);
         function.setUid(UUID.randomUUID().toString());
-        validator.validateFunction(function);
+        function.setInputSchema(jsonSchemaRepository.findByUid(functionDTO.getInputSchemaUid()));
+        function.setOutputSchema(jsonSchemaRepository.findByUid(functionDTO.getOutputSchemaUid()));
+        validator.validate(function);
         function.setCreated(LocalDateTime.now());
         function.setUpdated(LocalDateTime.now());
         Function savedFunction = functionRepository.save(function);
@@ -75,6 +82,7 @@ public class FunctionController {
 
     @PostMapping("/{id}")
     public void updateFunction(@RequestBody Function function, @PathVariable String id) {
+        //TODO
         if(function == null) {
             logger.error("function is null");
             throw new ResourceNotFoundException("Function not found");
@@ -108,6 +116,25 @@ public class FunctionController {
            throw new ResourceNotFoundException("Function not found");
         }
         functionRepository.delete(function);
+    }
+
+    @PostMapping("/json-schema")
+    public JsonSchema addJsonSchema(@RequestBody JsonSchema jsonSchema) {
+        jsonSchema.setUid(UUID.randomUUID().toString());
+        jsonSchema.setCreated(LocalDateTime.now());
+        jsonSchema.setUpdated(LocalDateTime.now());
+        validator.validateJsonSchema(jsonSchema);
+        return jsonSchemaRepository.save(jsonSchema);
+    }
+
+    @GetMapping("/json-schema/list")
+    public List<JsonSchema> getJsonSchemaList() {
+        return jsonSchemaRepository.findAll();
+    }
+
+    @GetMapping("/json-schema/{uid}")
+    public JsonSchema getJsonSchema(@PathVariable String uid) {
+        return jsonSchemaRepository.findByUid(uid);
     }
 
 }

@@ -60,7 +60,7 @@ public class KubernetesCluster {
 
     private String serviceUser;
 
-    private String hostAddress;
+    private String hostUrl;
 
     private boolean managed;
 

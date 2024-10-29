@@ -31,4 +31,7 @@ public interface WorkerServiceClient {
     @GetMapping("/api/workers/cluster/{uid}/connection-token")
     AccessToken getK8sConnectionToken(@PathVariable("uid") String clusterUid);
 
+    @GetMapping("/api/workers/ping")
+    String ping();
+
 }

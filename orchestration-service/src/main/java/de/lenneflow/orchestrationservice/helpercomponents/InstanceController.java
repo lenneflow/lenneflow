@@ -15,6 +15,7 @@ import de.lenneflow.orchestrationservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
 import de.lenneflow.orchestrationservice.utils.ExpressionEvaluator;
+import de.lenneflow.orchestrationservice.utils.ObjectMapper;
 import org.springframework.stereotype.Controller;
 
 import java.time.LocalDateTime;
@@ -52,34 +53,42 @@ public class InstanceController {
      * From a workflow ID, this method will create a new workflow instance to run.
      * It will also create all the workflow step instances.
      *
-     * @param workflowId workflow ID.
+     * @param workflow workflow.
      * @param inputData  the specific input parameters.
      * @return the created workflow instance.
      */
-    public WorkflowInstance createWorkflowInstance(String workflowId, Map<String, Object> inputData) {
-        Workflow workflow = workflowServiceClient.getWorkflowById(workflowId);
-        WorkflowInstance workflowInstance = new WorkflowInstance(workflow);
-        workflowInstanceRepository.save(workflowInstance);
+    public WorkflowInstance createWorkflowInstance(Workflow workflow, Map<String, Object> inputData) {
+
+        //create an instance for the workflow
+        WorkflowInstance workflowInstance = ObjectMapper.mapToWorkflowInstance(workflow);
+        workflowInstance.setUid(UUID.randomUUID().toString());
         workflowInstance.setRunStatus(RunStatus.NEW);
-        List<WorkflowStepInstance> stepInstances = createWorkflowStepInstances(workflowInstance, inputData);
+        workflowInstance.setInputData(inputData);
+        workflowInstance.setCreated(LocalDateTime.now());
+        workflowInstance.setUpdated(LocalDateTime.now());
+        workflowInstanceRepository.save(workflowInstance);
+
+        //create workflow step instances for the workflow
+        List<WorkflowStepInstance> stepInstances = createWorkflowStepInstances(workflow, workflowInstance);
         workflowInstance.setStepInstances(stepInstances);
-        return workflowInstanceRepository.save(workflowInstance);
+        workflowInstanceRepository.save(workflowInstance);
+
+        return workflowInstance;
     }
 
     /**
      * create the list of workflow step instances for a given workflow instance.
      *
      * @param workflowInstance the workflow instance
-     * @param inputData        the input data of the workflow
      * @return the workflow step instances list.
      */
-    private List<WorkflowStepInstance> createWorkflowStepInstances(WorkflowInstance workflowInstance, Map<String, Object> inputData) {
+    public List<WorkflowStepInstance> createWorkflowStepInstances(Workflow workflow, WorkflowInstance workflowInstance) {
         List<WorkflowStepInstance> workflowStepInstances = new ArrayList<>();
         List<WorkflowStepInstance> result = new ArrayList<>();
         List<WorkflowStep> steps = workflowServiceClient.getStepListByWorkflowId(workflowInstance.getWorkflowUid());
         List<WorkflowStep> sorted = steps.stream().sorted(Comparator.comparing(WorkflowStep::getExecutionOrder)).toList();
         for (WorkflowStep step : sorted) {
-            WorkflowStepInstance stepInstance = new WorkflowStepInstance(step, workflowInstance.getUid());
+            WorkflowStepInstance stepInstance = new WorkflowStepInstance(workflow, step, workflowInstance.getUid());
             workflowStepInstances.add(stepInstance);
         }
         for (int i = 0; i < sorted.size(); i++) {
@@ -87,9 +96,6 @@ public class InstanceController {
             if (i == 0) {
                 stepInstance.setRunOrderLabel(RunOrderLabel.FIRST);
                 stepInstance.setNextStepId(workflowStepInstances.get(i + 1).getUid());
-                if (inputData != null && !inputData.isEmpty()) {
-                    stepInstance.setInputData(inputData);
-                }
                 result.add(workflowStepInstanceRepository.save(stepInstance));
             } else if (i == workflowStepInstances.size() - 1) {
                 stepInstance.setRunOrderLabel(RunOrderLabel.LAST);

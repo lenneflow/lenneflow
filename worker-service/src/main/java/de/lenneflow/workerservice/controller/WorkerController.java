@@ -1,5 +1,6 @@
 package de.lenneflow.workerservice.controller;
 
+import de.lenneflow.workerservice.dto.AccessTokenDto;
 import de.lenneflow.workerservice.dto.ManagedClusterDTO;
 import de.lenneflow.workerservice.dto.UnmanagedClusterDTO;
 import de.lenneflow.workerservice.dto.NodeGroupDTO;
@@ -104,6 +105,15 @@ public class WorkerController {
     public ResponseEntity<CloudCredential> createCloudClusterCredential(@RequestBody CloudCredential cloudCredential) {
         cloudCredential.setUid(UUID.randomUUID().toString());
         CloudCredential savedCredential = cloudCredentialRepository.save(cloudCredential);
+        return new ResponseEntity<>(savedCredential, HttpStatus.OK);
+    }
+
+    @PostMapping("/cluster/api-token")
+    public ResponseEntity<AccessToken> createLocalApiToken(@RequestBody AccessTokenDto accessTokenDto) {
+        AccessToken accessToken = ObjectMapper.mapToAccessToken(accessTokenDto);
+        accessToken.setUid(UUID.randomUUID().toString());
+        accessToken.setUpdated(LocalDateTime.now());
+        AccessToken savedCredential = accessTokenRepository.save(accessToken);
         return new ResponseEntity<>(savedCredential, HttpStatus.OK);
     }
 

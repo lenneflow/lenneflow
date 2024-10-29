@@ -10,6 +10,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import java.time.LocalDateTime;
 
@@ -50,13 +51,17 @@ public class Function {
 
     private String serviceUrl;
 
+    @DocumentReference
+    private JsonSchema inputSchema;
+
+    @DocumentReference
+    private JsonSchema outputSchema;
+
     private LocalDateTime created;
 
     private LocalDateTime updated;
 
-    private String inputSchema;
 
-    private String outputSchema;
 
 }
 

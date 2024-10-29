@@ -84,7 +84,7 @@ public class DeploymentController {
         String functionServiceUrl = getFunctionServiceUrl(kubernetesCluster, function);
         function.setServiceUrl(functionServiceUrl);
         functionRepository.save(function);
-        waitAndUpdateDeploymentState(kubernetesCluster, function);
+        new Thread(() -> waitAndUpdateDeploymentState(kubernetesCluster, function)).start(); ;
     }
 
 
@@ -118,7 +118,7 @@ public class DeploymentController {
     private String getFunctionServiceUrl(KubernetesCluster kubernetesCluster, Function function) {
         String functionResourcePath = function.getResourcePath().startsWith("/") ? function.getResourcePath() : "/%s".formatted(function.getResourcePath());
         if(kubernetesCluster.getCloudProvider() == CloudProvider.LOCAL) {
-            return kubernetesCluster.getHostAddress() + functionResourcePath;
+            return kubernetesCluster.getHostUrl() + functionResourcePath;
         }
         return getLoadBalancerAssignedHostName(kubernetesCluster) + ":" + function.getAssignedHostPort() + functionResourcePath;
     }
@@ -142,24 +142,23 @@ public class DeploymentController {
      * @param function the deployed function
      */
     private void waitAndUpdateDeploymentState(KubernetesCluster kubernetesCluster, Function function) {
-        new Thread(() ->{
+            updateFunctionDeploymentState(function, DeploymentState.DEPLOYING);
             try {
                 Thread.sleep(15000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            updateFunctionDeploymentState(function, DeploymentState.DEPLOYING);
+
             KubernetesClient client = getKubernetesClient(kubernetesCluster);
             String deploymentName = function.getName();
 
             client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).waitUntilCondition(
                     d -> ( d.getStatus().getReadyReplicas() > 0), 5, MINUTES);
-            if(client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).isReady()){
+            if(client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).get().getStatus().getReadyReplicas() > 0){
                 updateFunctionDeploymentState(function, DeploymentState.DEPLOYED);
                 return;
             }
             updateFunctionDeploymentState(function, DeploymentState.FAILED);
-        }).start();
     }
 
     /**
@@ -190,6 +189,7 @@ public class DeploymentController {
             Ingress updatedIngressResource = YamlEditor.addPathToKubernetesIngressResource(currentIngress, function);
             client.resource(updatedIngressResource).inNamespace(NAMESPACE).patch();
         } catch (Exception e) {
+            e.printStackTrace();
             throw new InternalServiceException("It was not possible to create the ingress service ");
         }
 

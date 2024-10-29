@@ -1,5 +1,8 @@
 package de.lenneflow.orchestrationservice.helpercomponents;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import de.lenneflow.orchestrationservice.dto.FunctionDto;
 import de.lenneflow.orchestrationservice.dto.FunctionPayload;
 import de.lenneflow.orchestrationservice.enums.ControlStructure;
@@ -20,6 +23,8 @@ import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
 import de.lenneflow.orchestrationservice.utils.ExpressionEvaluator;
 import de.lenneflow.orchestrationservice.utils.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -28,6 +33,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,6 +45,8 @@ import java.util.Objects;
  */
 @Component
 public class WorkflowRunner {
+
+    private static final Logger logger = LoggerFactory.getLogger(WorkflowRunner.class);
 
     @Value("${qms.api.root.link}")  private String callBackRoot;
 
@@ -68,17 +76,14 @@ public class WorkflowRunner {
      * This is the start method of every workflow run. This method searches for the starting workflow step, gets the function
      * associated to the step and run the workflow step.
      *
-     * @param workflowId      The Name od the workflow to run.
-     * @param inputData The input parameters for the workflow run.
+     * @param workflowInstance      The workflow instance.
+     * @param workflow      The workflow.
      * @return a workflow execution object.
      */
-    public WorkflowExecution startWorkflow(String workflowId, Map<String, Object> inputData) {
-        WorkflowInstance workflowInstance = instanceController.createWorkflowInstance(workflowId, inputData);
-        Workflow workflow = workflowServiceClient.getWorkflowById(workflowId);
-        WorkflowExecution execution = createWorkflowExecution(workflow, workflowInstance);
+    public WorkflowExecution startWorkflow(WorkflowInstance workflowInstance, Workflow workflow) {
 
-        instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.DEPLOYING_FUNCTIONS);
-        checkAndWaitUntilFullDeployment(workflowInstance, execution, 10);
+        workflowInstance.setStartTime(LocalDateTime.now());
+        WorkflowExecution execution = createWorkflowExecution(workflow, workflowInstance);
 
         instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.RUNNING);
         WorkflowStepInstance firstStepInstance = instanceController.getStartStep(workflowInstance);
@@ -87,7 +92,15 @@ public class WorkflowRunner {
         functionDto.setStepInstanceId(firstStepInstance.getUid());
         functionDto.setExecutionId(execution.getRunId());
         functionDto.setWorkflowInstanceId(workflowInstance.getUid());
-        runStep(functionDto, firstStepInstance);
+
+        List<Function> undeployedFunctions = getUndeployedFunctions(workflowInstance);
+        if(undeployedFunctions.isEmpty()){
+            instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.RUNNING);
+            runStep(functionDto, firstStepInstance);
+        }else{
+            instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.DEPLOYING_FUNCTIONS);
+            new Thread(() -> WaitUntilFullDeploymentAndRunStep(undeployedFunctions, workflowInstance, execution,functionDto, firstStepInstance, 10)).start();
+        }
         return workflowExecutionRepository.findByRunId(execution.getRunId());
     }
 
@@ -148,6 +161,7 @@ public class WorkflowRunner {
      * @param resultFunctionDto function object
      */
     public void processResultFromQueue(FunctionDto resultFunctionDto) {
+        logger.info("Start processing function {} with the state {} from the results queue.", resultFunctionDto.getName(), resultFunctionDto.getRunStatus());
         WorkflowExecution execution = workflowExecutionRepository.findByRunId(resultFunctionDto.getExecutionId());
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(resultFunctionDto.getWorkflowInstanceId());
         WorkflowStepInstance workflowStepInstance = workflowStepInstanceRepository.findByUid(resultFunctionDto.getStepInstanceId());
@@ -169,6 +183,7 @@ public class WorkflowRunner {
                 processStepCancelledOrFailedWithTerminalError(execution, workflowInstance, workflowStepInstance);
                 break;
             default:
+                logger.error("The state {} is unknown.", resultFunctionDto.getRunStatus());
                 throw new IllegalStateException("Unexpected value: " + resultFunctionDto.getRunStatus());
         }
     }
@@ -179,17 +194,20 @@ public class WorkflowRunner {
      * @param functionDto the function dto object
      */
     public void processFunctionDtoFromQueue(FunctionDto functionDto) {
+        logger.info("Start processing function {} from send queue.", functionDto.getName());
         Map<String, Object> inputData = functionDto.getInputData();
         String serviceUrl = functionDto.getServiceUrl();
-        String callBackLink = callBackRoot + "/" + functionDto.getExecutionId() + "/" + functionDto.getStepInstanceId() + "/" + functionDto.getWorkflowInstanceId();
+        String callBackUrl = callBackRoot + "/" + functionDto.getExecutionId() + "/" + functionDto.getStepInstanceId() + "/" + functionDto.getWorkflowInstanceId();
 
         FunctionPayload functionPayload = new FunctionPayload();
         functionPayload.setInputData(inputData);
-        functionPayload.setCallBackLink(callBackLink);
+        functionPayload.setCallBackUrl(callBackUrl);
         functionPayload.setFailureReason("");
 
+        logger.info("Send function {} with a post request to the url {}", functionDto.getName(), serviceUrl);
         ResponseEntity<Void> response = restTemplate.exchange(serviceUrl, HttpMethod.POST, new HttpEntity<>(functionPayload), Void.class);
         if (response.getStatusCode().value() != 200) {
+            logger.error("send request to the url {} failed.", serviceUrl);
             functionDto.setRunStatus(RunStatus.CANCELED);
             functionDto.setFailureReason("Could not send request to the cluster!");
             //in case of send failure, the dto is added directly to the result queue with the run status cancelled.
@@ -241,18 +259,39 @@ public class WorkflowRunner {
     }
 
 
+    private List<Function> getUndeployedFunctions(WorkflowInstance workflowInstance) {
+        List<Function> undeployedFunctions = new ArrayList<>();
+        List<WorkflowStepInstance> steps = workflowStepInstanceRepository.findByWorkflowInstanceUid(workflowInstance.getUid());
+        for (WorkflowStepInstance step : steps) {
+            if(step.getControlStructure() == ControlStructure.SWITCH){
+                for(DecisionCase decisionCase : step.getDecisionCases()){
+                    Function dcFunction = functionServiceClient.getFunctionByUid(decisionCase.getFunctionId());
+                    if(dcFunction != null && dcFunction.getDeploymentState() != DeploymentState.DEPLOYED){
+                        undeployedFunctions.add(dcFunction);
+                    }
+                }
+            }else{
+                Function stepFunction = functionServiceClient.getFunctionByUid(step.getFunctionId());
+                if(stepFunction != null && stepFunction.getDeploymentState() != DeploymentState.DEPLOYED){
+                    undeployedFunctions.add(stepFunction);
+                }
+            }
+        }
+
+        return undeployedFunctions;
+    }
+
     /**
      * In case the lazy deployment flag is true, the function is deployed by runtime.
      * This method search for all undeployed functions in a workflow instance and performs the deployment.
      *
      * @param workflowInstance the workflow instance to run
      */
-    private void checkAndWaitUntilFullDeployment(WorkflowInstance workflowInstance, WorkflowExecution execution, int minutesToWait) {
+    private void WaitUntilFullDeploymentAndRunStep(List<Function> undeployedFunctions, WorkflowInstance workflowInstance, WorkflowExecution execution, FunctionDto functionDto, WorkflowStepInstance stepInstance, int minutesToWait) {
         List<WorkflowStepInstance> steps = workflowStepInstanceRepository.findByWorkflowInstanceUid(workflowInstance.getUid());
-        for (WorkflowStepInstance step : steps) {
-            Function function = functionServiceClient.getFunctionByUid(step.getFunctionId());
+        for (Function function : undeployedFunctions) {
             if (function != null && function.isLazyDeployment()  && function.getDeploymentState() == DeploymentState.UNDEPLOYED) {
-                functionServiceClient.deployFunction(step.getFunctionId());
+                functionServiceClient.deployFunction(function.getUid());
             }else if(function != null && !function.isLazyDeployment() && function.getDeploymentState() == DeploymentState.UNDEPLOYED) {
                 String reason = "Function " + function.getName() + " is undeployed but the lazy deployment flag is not set!";
                 terminateWorkflowRun(execution, workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason);
@@ -262,6 +301,8 @@ public class WorkflowRunner {
         while (true) {
             LocalDateTime start = LocalDateTime.now();
             if (allFunctionsDeployed(steps)) {
+                instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.RUNNING);
+                runStep(functionDto, stepInstance);
                 break;
             }
             if (start.plusMinutes(minutesToWait).isBefore(LocalDateTime.now())) {
@@ -346,13 +387,23 @@ public class WorkflowRunner {
      */
     private Function getFunctionToExecute(WorkflowStepInstance stepInstance) {
         if (Objects.requireNonNull(stepInstance.getControlStructure()) == ControlStructure.SWITCH) {
-            String switchCase = expressionEvaluator.readDataFromPath(stepInstance.getWorkflowInstanceUid(), stepInstance.getSwitchCase());
+            String switchCase = expressionEvaluator.evaluateStringExpression(stepInstance.getWorkflowInstanceUid(), stepInstance.getSwitchCase());
             DecisionCase decisionCase = getDecisionCaseByName(stepInstance.getDecisionCases(), switchCase);
             if (decisionCase != null) {
-                return functionServiceClient.getFunctionByUid(decisionCase.getFunctionId());
+                Function func = functionServiceClient.getFunctionByUid(decisionCase.getFunctionId());
+                func.setInputData(decisionCase.getInputData());
+                stepInstance.setInputData(decisionCase.getInputData());
+                stepInstance.setSelectedCaseName(decisionCase.getName());
+                workflowStepInstanceRepository.save(stepInstance);
+                return func;
             }
             if ((decisionCase = getDecisionCaseByName(stepInstance.getDecisionCases(), "default")) != null) {
-                return functionServiceClient.getFunctionByUid(decisionCase.getFunctionId());
+                Function func =  functionServiceClient.getFunctionByUid(decisionCase.getFunctionId());
+                func.setInputData(decisionCase.getInputData());
+                stepInstance.setInputData(decisionCase.getInputData());
+                stepInstance.setSelectedCaseName(decisionCase.getName());
+                workflowStepInstanceRepository.save(stepInstance);
+                return func;
             }
             return null;
         }

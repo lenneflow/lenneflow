@@ -2,6 +2,8 @@ package de.lenneflow.orchestrationservice.feignclients;
 
 import de.lenneflow.orchestrationservice.feignmodels.Function;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,12 +22,12 @@ public interface FunctionServiceClient {
     @GetMapping("/api/functions/{uid}")
     Function getFunctionByUid(@PathVariable String uid);
 
-    @GetMapping("/api/functions/check")
+    @GetMapping("/api/functions/ping")
     String getFunctionHome();
 
     @GetMapping("/api/functions/list")
     List<Function> getAllFunctions();
 
-    @GetMapping("/deploy-function/function-id/{function-id}")
+    @GetMapping("/api/functions/deploy-function/function-id/{function-id}")
     void deployFunction(@PathVariable("function-id") String functionId);
 }

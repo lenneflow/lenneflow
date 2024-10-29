@@ -29,7 +29,7 @@ public class UnmanagedClusterDTO {
 
     private String kubernetesAccessTokenUid;
 
-    private String hostName;
+    private String hostUrl;
 
     private CloudProvider cloudProvider;
 

@@ -30,7 +30,7 @@ public class FunctionDto {
 
     private String serviceUrl;
 
-    private String callBackLink;
+    private String callBackUrl;
 
     private String failureReason;
 

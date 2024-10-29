@@ -56,9 +56,9 @@ public class Function implements Serializable {
 
     private LocalDateTime updated;
 
-    private String inputSchema;
+    private JsonSchema inputSchema;
 
-    private String outputSchema;
+    private JsonSchema outputSchema;
 
     private Map<String, Object> inputData = new HashMap<>();
 

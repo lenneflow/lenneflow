@@ -1,8 +1,11 @@
 package de.lenneflow.functionservice.util;
 
+import de.lenneflow.functionservice.dto.FunctionDTO;
 import de.lenneflow.functionservice.exception.PayloadNotValidException;
 import de.lenneflow.functionservice.model.Function;
+import de.lenneflow.functionservice.model.JsonSchema;
 import de.lenneflow.functionservice.repository.FunctionRepository;
+import de.lenneflow.functionservice.repository.JsonSchemaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -18,18 +21,38 @@ public class Validator {
 
     final
     FunctionRepository functionRepository;
+    private final JsonSchemaRepository jsonSchemaRepository;
 
-    public Validator(FunctionRepository functionRepository) {
+    public Validator(FunctionRepository functionRepository, JsonSchemaRepository jsonSchemaRepository) {
         this.functionRepository = functionRepository;
+        this.jsonSchemaRepository = jsonSchemaRepository;
+    }
+
+
+    public void validate(FunctionDTO functionDTO)  {
+        if(functionDTO.getInputSchemaUid() == null || functionDTO.getInputSchemaUid().isEmpty()){
+            throw new PayloadNotValidException("Please provide the input data schema uid!");
+        }
+        JsonSchema inputSchema = jsonSchemaRepository.findByUid(functionDTO.getInputSchemaUid());
+        if(inputSchema == null){
+            throw new PayloadNotValidException("input data schema does not exist!");
+        }
+        if(functionDTO.getOutputSchemaUid() == null || functionDTO.getOutputSchemaUid().isEmpty()){
+            throw new PayloadNotValidException("Please provide the output data schema uid!");
+        }
+        JsonSchema outputSchema = jsonSchemaRepository.findByUid(functionDTO.getOutputSchemaUid());
+        if(outputSchema == null){
+            throw new PayloadNotValidException("output data schema does not exist!");
+        }
     }
 
     /**
      * Validates the function object
      * @param function the function to validate
      */
-    public void validateFunction(Function function) {
+    public void validate(Function function) {
         checkMandatoryFields(function);
-        validateInputSchema(function);
+        //validateJsonSchema(function);
         checkUniqueValues(function);
     }
 
@@ -47,10 +70,9 @@ public class Validator {
 
     /**
      * validates the input schema specified in the function.
-     * @param function the function to validate
+     * @param schema the schema to validate
      */
-    private void validateInputSchema(Function function) {
-        String schema = function.getInputSchema();
+    public void validateJsonSchema(JsonSchema schema) {
         //TODO Validate schema itself
 
     }
@@ -65,6 +87,9 @@ public class Validator {
             logger.error("function name is mandatory");
             throw new PayloadNotValidException("Function Name is required");
         }
+        if(!function.getName().toLowerCase().equals(function.getName())){
+            throw new PayloadNotValidException("Function name is incorrect! It must be lowercase");
+        }
         if(function.getImageName() == null || function.getImageName().isEmpty()) {
             logger.error("function image name is mandatory");
             throw new PayloadNotValidException("Image Name is required");
@@ -77,7 +102,7 @@ public class Validator {
             logger.error("function type is mandatory");
             throw new PayloadNotValidException("Function Type is required");
         }
-        if(function.getInputSchema() == null || function.getInputSchema().isEmpty()) {
+        if(function.getInputSchema() == null) {
             logger.error("function input schema is mandatory");
             throw new PayloadNotValidException("Input Schema is required");
         }

@@ -33,9 +33,9 @@ public class FunctionDTO {
 
     private String imageName;
 
-    private String inputSchema;
+    private String inputSchemaUid;
 
-    private String outputSchema;
+    private String outputSchemaUid;
 
 }
 

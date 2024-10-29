@@ -128,7 +128,7 @@ public class Validator {
             throw new PayloadNotValidException("CloudProvider is required");
         }
         if (unmanagedClusterDTO.getCloudProvider() == CloudProvider.LOCAL) {
-            if (unmanagedClusterDTO.getHostName() == null || unmanagedClusterDTO.getHostName().isEmpty()) {
+            if (unmanagedClusterDTO.getHostUrl() == null || unmanagedClusterDTO.getHostUrl().isEmpty()) {
                 throw new PayloadNotValidException("HostName is required");
             }
             if (unmanagedClusterDTO.getKubernetesAccessTokenUid() == null || unmanagedClusterDTO.getKubernetesAccessTokenUid().isEmpty()) {

@@ -28,8 +28,6 @@ public class ObjectMapper {
         function.setServicePort(functionDTO.getServicePort());
         function.setLazyDeployment(functionDTO.isLazyDeployment());
         function.setImageName(functionDTO.getImageName());
-        function.setInputSchema(functionDTO.getInputSchema());
-        function.setOutputSchema(functionDTO.getOutputSchema());
         return function;
     }
 }

@@ -8,7 +8,6 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
@@ -23,40 +22,12 @@ public class QueueController {
 
     final AmqpAdmin admin;
     final RabbitTemplate rabbitTemplate;
-    final WorkflowRunner workflowRunner;
 
 
-    public QueueController(AmqpAdmin admin, RabbitTemplate rabbitTemplate, WorkflowRunner workflowRunner) {
+    public QueueController(AmqpAdmin admin, RabbitTemplate rabbitTemplate) {
         this.admin = admin;
         this.rabbitTemplate = rabbitTemplate;
-        this.workflowRunner = workflowRunner;
     }
-
-    /**
-     * Listener for the function queue. this queue contains the functions from different workflow instances that
-     * should be processed.
-     *
-     * @param serializedFunction the serialized function from the queue.
-     */
-    @RabbitListener(queues = AppConfiguration.FUNCTIONQUEUE)
-    public void functionListener(byte[] serializedFunction) {
-        FunctionDto functionDto = Util.deserializeFunction(serializedFunction);
-        new Thread(() -> workflowRunner.processFunctionDtoFromQueue(functionDto)).start();
-
-    }
-
-    /**
-     * Listener for the function result queue. this queue contains the functions from the workers that
-     * should be processed.
-     *
-     * @param serializedFunction the serialized function from the queue.
-     */
-    @RabbitListener(queues = AppConfiguration.FUNCTIONRESULTQUEUE)
-    public void functionResultListener(byte[] serializedFunction) {
-        FunctionDto resultFunctionDto = Util.deserializeFunction(serializedFunction);
-        workflowRunner.processResultFromQueue(resultFunctionDto);
-    }
-
 
     /**
      * Adds a function object to the function queue.

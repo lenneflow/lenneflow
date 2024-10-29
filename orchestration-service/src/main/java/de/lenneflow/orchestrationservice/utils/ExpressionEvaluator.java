@@ -6,7 +6,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import de.lenneflow.orchestrationservice.exception.InternalServiceException;
+import de.lenneflow.orchestrationservice.feignmodels.Workflow;
+import de.lenneflow.orchestrationservice.model.WorkflowInstance;
 import de.lenneflow.orchestrationservice.model.WorkflowStepInstance;
+import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
@@ -24,11 +27,13 @@ public class ExpressionEvaluator {
 
     final
     WorkflowStepInstanceRepository workflowStepInstanceRepository;
+    final WorkflowInstanceRepository workflowInstanceRepository;
     final ObjectMapper objectMapper = new ObjectMapper();
 
 
-    public ExpressionEvaluator(WorkflowStepInstanceRepository workflowStepInstanceRepository) {
+    public ExpressionEvaluator(WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowInstanceRepository workflowInstanceRepository) {
         this.workflowStepInstanceRepository = workflowStepInstanceRepository;
+        this.workflowInstanceRepository = workflowInstanceRepository;
     }
 
     /**
@@ -71,18 +76,31 @@ public class ExpressionEvaluator {
      * @param dataPath            the data path
      * @return the result of the evaluation
      */
-    public String readDataFromPath(String workflowInstanceUid, String dataPath) {
+    public Object readDataFromPath(String workflowInstanceUid, String dataPath) {
         dataPath = dataPath.replace("[", "").replace("]", "");
         String[] stringParts = dataPath.split("\\.");
+
+        if(stringParts[0].trim().equalsIgnoreCase("workflow") && (stringParts[1].trim().equalsIgnoreCase("input") || stringParts[1].trim().equalsIgnoreCase("inputData"))){
+            WorkflowInstance instance = workflowInstanceRepository.findByUid(workflowInstanceUid);
+            if(instance == null){
+                throw new InternalServiceException("Workflow instance not found for uid: " + workflowInstanceUid);
+            }
+            Map<String, Object> inputData = instance.getInputData();
+            return getMapValueByPath(inputData, getJsonPath(stringParts));
+
+        }
         WorkflowStepInstance step = workflowStepInstanceRepository.findByNameAndWorkflowInstanceUid(stringParts[0].trim(), workflowInstanceUid);
+        if(step == null){
+            throw new InternalServiceException("Workflow step was not found for workflow instance uid: " + workflowInstanceUid);
+        }
         return switch (stringParts[1].toLowerCase().trim()) {
             case "output", "outputdata" -> {
                 Map<String, Object> outputData = step.getOutputData();
-                yield getMapValueByPath(outputData, getJsonPath(stringParts)).toString();
+                yield getMapValueByPath(outputData, getJsonPath(stringParts));
             }
             case "input", "inputdata" -> {
                 Map<String, Object> inputData = step.getInputData();
-                yield getMapValueByPath(inputData, getJsonPath(stringParts)).toString();
+                yield getMapValueByPath(inputData, getJsonPath(stringParts));
             }
             default -> throw new InternalServiceException("Invalid data path: " + dataPath);
         };
@@ -166,7 +184,7 @@ public class ExpressionEvaluator {
     private EvaluationValue evaluateExpression(String workflowInstanceUid, String expression) {
         String[] subStrings = StringUtils.substringsBetween(expression, "[", "]");
         for (String s : subStrings) {
-            expression = expression.replace(s, readDataFromPath(workflowInstanceUid, s));
+            expression = expression.replace(s, readDataFromPath(workflowInstanceUid, s).toString());
         }
         expression = expression.replace("[", "").replace("]", "");
         Expression exp = new Expression(expression);

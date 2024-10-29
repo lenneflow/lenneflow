@@ -4,6 +4,7 @@ import de.lenneflow.orchestrationservice.enums.ControlStructure;
 import de.lenneflow.orchestrationservice.enums.RunStatus;
 import de.lenneflow.orchestrationservice.enums.RunOrderLabel;
 import de.lenneflow.orchestrationservice.feignmodels.DecisionCase;
+import de.lenneflow.orchestrationservice.feignmodels.Workflow;
 import de.lenneflow.orchestrationservice.feignmodels.WorkflowStep;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -52,6 +53,8 @@ public class WorkflowStepInstance {
 
     private List<DecisionCase> decisionCases = new ArrayList<>();
 
+    private String selectedCaseName;
+
     private String switchCase;
 
     private String stopCondition;
@@ -85,12 +88,18 @@ public class WorkflowStepInstance {
     private Map<String, Object> outputData = new LinkedHashMap<>();
 
 
-    public WorkflowStepInstance(WorkflowStep step, String workflowInstanceUid) {
+    public WorkflowStepInstance(Workflow workflow, WorkflowStep step, String workflowInstanceUid) {
         this.uid = UUID.randomUUID().toString();
         this.description = step.getDescription();
         this.name = step.getName();
+        this.workflowName = workflow.getName();
+        this.workflowUid = workflow.getUid();
+        this.executionOrder = step.getExecutionOrder();
+        this.decisionCases = step.getDecisionCases();
         this.inputData = step.getInputData();
         this.functionId = step.getFunctionId();
+        this.switchCase = step.getSwitchCase();
+        this.stopCondition = step.getStopCondition();
         this.runStatus = RunStatus.NEW;
         this.workflowInstanceUid = workflowInstanceUid;
         this.controlStructure = step.getControlStructure();

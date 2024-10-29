@@ -17,7 +17,7 @@ public class FunctionPayload {
 
     private RunStatus runStatus;
 
-    private String callBackLink;
+    private String callBackUrl;
 
     private String failureReason;
 

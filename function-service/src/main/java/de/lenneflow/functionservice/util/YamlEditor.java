@@ -98,12 +98,13 @@ public class YamlEditor {
      * @return the {@link Ingress} resource
      */
     public static Ingress createKubernetesIngressResource(KubernetesCluster kubernetesCluster, Function function) {
-        String ingressName = kubernetesCluster.getClusterName().toLowerCase() + "-ingress";
+        String ingressName = kubernetesCluster.getIngressServiceName();
+        String host = kubernetesCluster.getHostUrl().toLowerCase().replace("http://", "").replace("https://", "").trim();
         Map<String, String> ingressAnnotations = new HashMap<>();
         ingressAnnotations.put("kubernetes.io/ingress.class", "nginx");
         ingressAnnotations.put("nginx.ingress.kubernetes.io/use-regex", "true");
         return new IngressBuilder().withApiVersion("networking.k8s.io/v1").withKind("Ingress").withNewMetadata().withName(ingressName).withAnnotations(ingressAnnotations).endMetadata().withNewSpec()
-                .withIngressClassName("nginx").withRules().addNewRule().withHost(kubernetesCluster.getHostAddress()).withNewHttp().withPaths().addNewPath().withPath(function.getResourcePath())
+                .withIngressClassName("nginx").withRules().addNewRule().withHost(host).withNewHttp().withPaths().addNewPath().withPath(function.getResourcePath())
                 .withPathType("Prefix").withNewBackend().withNewService().withName(function.getName()).withNewPort().withNumber(function.getAssignedHostPort()).endPort().endService().endBackend()
                 .endPath().endHttp().endRule().endSpec().build();
     }
