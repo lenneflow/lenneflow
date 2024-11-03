@@ -34,6 +34,7 @@ public class WorkerController {
 
     private static final String KUBERNETES_CLUSTER_NOT_FOUND = "KubernetesCluster not found";
     public static final String SERVICE_ACCOUNT_NAME = "lenneflow-sa";
+    public static final String NAMESPACE = "lenneflow";
 
     final Validator validator;
     final CloudClusterController cloudClusterController;
@@ -81,6 +82,8 @@ public class WorkerController {
         KubernetesCluster kubernetesCluster = ObjectMapper.mapToKubernetesCluster(clusterDTO);
         kubernetesCluster.setUid(UUID.randomUUID().toString());
         kubernetesCluster.setStatus(ClusterStatus.NEW);
+        kubernetesCluster.setIngressServiceName(kubernetesCluster.getClusterName().toLowerCase() + "-ingress");
+        kubernetesCluster.setServiceUser(SERVICE_ACCOUNT_NAME);
         kubernetesCluster.setCreated(LocalDateTime.now());
         kubernetesCluster.setUpdated(LocalDateTime.now());
 
@@ -101,7 +104,7 @@ public class WorkerController {
         return new ResponseEntity<>(saved, HttpStatus.OK);
     }
 
-    @PostMapping("/cloud-provider/credentials")
+    @PostMapping("/cloud/credentials")
     public ResponseEntity<CloudCredential> createCloudClusterCredential(@RequestBody CloudCredential cloudCredential) {
         cloudCredential.setUid(UUID.randomUUID().toString());
         CloudCredential savedCredential = cloudCredentialRepository.save(cloudCredential);
@@ -187,6 +190,8 @@ public class WorkerController {
             throw new ResourceNotFoundException("KubernetesCluster with id " + uid + " not found");
         }
         if(foundKubernetesCluster.isManaged()){
+            cloudClusterController.deleteAllResourcesInNamespace(foundKubernetesCluster, NAMESPACE);
+            Util.pause(10000);
             HttpStatusCode status = cloudClusterController.deleteCluster(foundKubernetesCluster.getClusterName(), foundKubernetesCluster.getCloudProvider(), foundKubernetesCluster.getRegion());
             if(status.value() != HttpStatus.OK.value() && status.value() != HttpStatus.CREATED.value()) {
                 throw new InternalServiceException("Could not delete the Kubernetes Cluster on the " + foundKubernetesCluster.getCloudProvider() + " cloud!");
@@ -257,6 +262,7 @@ public class WorkerController {
         kubernetesCluster.setApiServerEndpoint(kubernetesClusterFromApi.getApiServerEndpoint());
         kubernetesCluster.setCaCertificate(kubernetesClusterFromApi.getCaCertificate());
         kubernetesCluster.setStatus(kubernetesClusterFromApi.getStatus());
+        kubernetesCluster.setHostUrl(kubernetesClusterFromApi.getHostUrl());
         kubernetesCluster.setMinimumNodeCount(kubernetesClusterFromApi.getMinimumNodeCount());
         kubernetesCluster.setMaximumNodeCount(kubernetesClusterFromApi.getMaximumNodeCount());
         kubernetesCluster.setDesiredNodeCount(kubernetesClusterFromApi.getDesiredNodeCount());

@@ -2,6 +2,7 @@ package de.lenneflow.functionservice.controller;
 
 
 import de.lenneflow.functionservice.dto.FunctionDTO;
+import de.lenneflow.functionservice.enums.DeploymentState;
 import de.lenneflow.functionservice.exception.ResourceNotFoundException;
 import de.lenneflow.functionservice.feignclients.WorkerServiceClient;
 import de.lenneflow.functionservice.feignmodels.KubernetesCluster;
@@ -97,6 +98,14 @@ public class FunctionController {
         deploymentController.deployFunctionImageToWorker(function);
     }
 
+    @GetMapping( "/undeploy-function/function-id/{function-id}")
+    public void unDeployFunction(@PathVariable("function-id") String functionId) {
+        Function function = functionRepository.findByUid(functionId);
+        deploymentController.undeployFunction(function);
+        function.setDeploymentState(DeploymentState.UNDEPLOYED);
+        functionRepository.save(function);
+    }
+
     @GetMapping(value = "/cluster/{id}/check-connection")
     @ResponseStatus(value = HttpStatus.OK)
     public void checkConnection(@PathVariable String id) {
@@ -114,6 +123,9 @@ public class FunctionController {
         if (function == null) {
             logger.error("Function is null");
            throw new ResourceNotFoundException("Function not found");
+        }
+        if(function.getDeploymentState() == DeploymentState.DEPLOYED){
+            deploymentController.undeployFunction(function);
         }
         functionRepository.delete(function);
     }

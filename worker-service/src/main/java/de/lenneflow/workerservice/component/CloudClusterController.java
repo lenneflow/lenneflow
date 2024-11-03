@@ -5,6 +5,10 @@ import de.lenneflow.workerservice.dto.NodeGroupDTO;
 import de.lenneflow.workerservice.enums.CloudProvider;
 import de.lenneflow.workerservice.model.AccessToken;
 import de.lenneflow.workerservice.model.KubernetesCluster;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -53,6 +57,29 @@ public class CloudClusterController {
         String deleteClusterUrl = k8sApiRootEndpoint + "/cluster/" + clusterName+ "/provider/"+ cloudProvider.toString() +  "/region/" + region;
         ResponseEntity<Void> response = restTemplate.exchange(deleteClusterUrl, HttpMethod.DELETE, null, Void.class);
         return  response.getStatusCode();
+    }
+
+    public void deleteAllResourcesInNamespace(KubernetesCluster kubernetesCluster, String namespace) {
+        KubernetesClient client = getKubernetesClient(kubernetesCluster);
+        client.apps().deployments().inNamespace(namespace).delete();
+        client.services().inNamespace(namespace).delete();
+    }
+
+    /**
+     * Creates a kubernetes client using the credentials.
+     * @param kubernetesCluster the cluster
+     * @return the kubernetes client Object
+     */
+    private KubernetesClient getKubernetesClient(KubernetesCluster kubernetesCluster) {
+        AccessToken token = getConnectionToken(kubernetesCluster.getClusterName(), kubernetesCluster.getCloudProvider(), kubernetesCluster.getRegion());
+        String  masterUrl = kubernetesCluster.getApiServerEndpoint();
+
+        Config config = new ConfigBuilder()
+                .withMasterUrl(masterUrl)
+                .withTrustCerts(true)
+                .withOauthToken(token.getToken())
+                .build();
+        return new KubernetesClientBuilder().withConfig(config).build();
     }
 
 

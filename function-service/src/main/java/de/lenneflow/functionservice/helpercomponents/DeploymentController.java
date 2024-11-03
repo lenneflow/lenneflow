@@ -1,6 +1,5 @@
 package de.lenneflow.functionservice.helpercomponents;
 
-import de.lenneflow.functionservice.enums.CloudProvider;
 import de.lenneflow.functionservice.enums.DeploymentState;
 import de.lenneflow.functionservice.exception.InternalServiceException;
 import de.lenneflow.functionservice.feignclients.WorkerServiceClient;
@@ -78,13 +77,21 @@ public class DeploymentController {
         Service service = YamlEditor.createKubernetesServiceResource(function, kubernetesCluster.getCloudProvider());
         client.resource(deployment).inNamespace(NAMESPACE).create();
         client.resource(service).inNamespace(NAMESPACE).create();
-        if(kubernetesCluster.getCloudProvider() == CloudProvider.LOCAL) {
-            createOrUpdateIngress(kubernetesCluster,function);
-        }
+        createOrUpdateIngress(kubernetesCluster,function);
         String functionServiceUrl = getFunctionServiceUrl(kubernetesCluster, function);
         function.setServiceUrl(functionServiceUrl);
         functionRepository.save(function);
         new Thread(() -> waitAndUpdateDeploymentState(kubernetesCluster, function)).start(); ;
+    }
+
+    public void undeployFunction(Function function) {
+        KubernetesCluster kubernetesCluster = getKubernetesClusterForFunction(function);
+        checkConnectionToKubernetes(kubernetesCluster);
+        KubernetesClient client = getKubernetesClient(kubernetesCluster);
+        client.services().inNamespace(NAMESPACE).withName(function.getName()).delete();
+        client.apps().deployments().inNamespace(NAMESPACE).withName(function.getName()).delete();
+        removeIngressPath(kubernetesCluster, function);
+
     }
 
 
@@ -117,22 +124,9 @@ public class DeploymentController {
      */
     private String getFunctionServiceUrl(KubernetesCluster kubernetesCluster, Function function) {
         String functionResourcePath = function.getResourcePath().startsWith("/") ? function.getResourcePath() : "/%s".formatted(function.getResourcePath());
-        if(kubernetesCluster.getCloudProvider() == CloudProvider.LOCAL) {
-            return kubernetesCluster.getHostUrl() + functionResourcePath;
-        }
-        return getLoadBalancerAssignedHostName(kubernetesCluster) + ":" + function.getAssignedHostPort() + functionResourcePath;
-    }
-
-    /**
-     * If a function is deployed in the cloud, the load balancer will attribute the path.
-     * This method retrieves the root path of the functions.
-     * @param kubernetesCluster the cluster
-     * @return the root path
-     */
-    private String getLoadBalancerAssignedHostName(KubernetesCluster kubernetesCluster) {
-        String hostname = "";
-        //TODO
-        return hostname;
+        String hostUrl =  kubernetesCluster.getHostUrl();
+        hostUrl.replace("http://", "").replace("https://", "");
+        return "http://" + hostUrl + functionResourcePath;
     }
 
     /**
@@ -189,11 +183,29 @@ public class DeploymentController {
             Ingress updatedIngressResource = YamlEditor.addPathToKubernetesIngressResource(currentIngress, function);
             client.resource(updatedIngressResource).inNamespace(NAMESPACE).patch();
         } catch (Exception e) {
-            e.printStackTrace();
             throw new InternalServiceException("It was not possible to create the ingress service ");
         }
 
     }
+
+    private void removeIngressPath(KubernetesCluster kubernetesCluster, Function function) {
+        KubernetesClient client = getKubernetesClient(kubernetesCluster);
+        Ingress currentIngress = client.network().v1().ingresses().inNamespace(NAMESPACE).withName(kubernetesCluster.getIngressServiceName()).get();
+        try {
+            if (currentIngress != null) {
+                if(currentIngress.getSpec().getRules().get(0).getHttp().getPaths().size() > 1){
+                    currentIngress.getSpec().getRules().get(0).getHttp().getPaths().removeIf(path -> path.getPath().equals(function.getResourcePath()));
+                    client.resource(currentIngress).inNamespace(NAMESPACE).patch();
+                }else{
+                    client.network().v1().ingresses().inNamespace(NAMESPACE).withName(kubernetesCluster.getIngressServiceName()).delete();
+                }
+            }
+        } catch (Exception e) {
+            throw new InternalServiceException("It was not possible to create the ingress service ");
+        }
+    }
+
+
 
     /**
      * Function that creates the default namespace for the application in the kubernetes cluster.
