@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: callback-service
+  labels:
+    app: callback-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: callback-service
+  template:
+    metadata:
+      labels:
+        app: callback-service
+    spec:
+      serviceAccountName: lenneflow-sa
+      hostNetwork: true
+      containers:
+      - name: callback-service
+        image: lenneflow/callback-service
+        ports:
+        - containerPort: 47007
+          hostPort: 47007
+        readinessProbe:
+            httpGet:
+              port: 47007
+              path: /actuator/health
+            initialDelaySeconds: 60
+            timeoutSeconds: 2
+            periodSeconds: 20
+            failureThreshold: 5
+        livenessProbe:
+            httpGet:
+              port: 47007
+              path: /actuator/info
+            initialDelaySeconds: 60
+            timeoutSeconds: 2
+            periodSeconds: 20
+            failureThreshold: 5

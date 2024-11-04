@@ -39,6 +39,13 @@ spec:
                 name: workflow-service
                 port:
                   number: 47005
+          - path: /api/callback
+            pathType: Prefix
+            backend:
+              service:
+                name: callback-service
+                port:
+                  number: 47007
           - path: /admin
             pathType: Prefix
             backend:

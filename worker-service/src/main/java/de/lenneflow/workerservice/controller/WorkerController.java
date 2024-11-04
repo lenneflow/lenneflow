@@ -191,7 +191,7 @@ public class WorkerController {
         }
         if(foundKubernetesCluster.isManaged()){
             cloudClusterController.deleteAllResourcesInNamespace(foundKubernetesCluster, NAMESPACE);
-            Util.pause(10000);
+            Util.pause(5000);
             HttpStatusCode status = cloudClusterController.deleteCluster(foundKubernetesCluster.getClusterName(), foundKubernetesCluster.getCloudProvider(), foundKubernetesCluster.getRegion());
             if(status.value() != HttpStatus.OK.value() && status.value() != HttpStatus.CREATED.value()) {
                 throw new InternalServiceException("Could not delete the Kubernetes Cluster on the " + foundKubernetesCluster.getCloudProvider() + " cloud!");
@@ -276,7 +276,6 @@ public class WorkerController {
         }
         if(!expectedToBeManaged && kubernetesCluster.isManaged()) {
             throw new PayloadNotValidException("The Kubernetes Cluster is managed by Lenneflow. This change is not available for managed clusters");
-
         }
     }
 
