@@ -5,6 +5,8 @@ docker push lenneflow/orchestration-service
 
 docker push lenneflow/function-service
 
-docker push lenneflow/localCluster-service
+docker push lenneflow/worker-service
 
 docker push lenneflow/workflow-service
+
+docker push lenneflow/callback-service

@@ -9,4 +9,4 @@ sudo docker push lenneflow/worker-service
 
 sudo docker push lenneflow/workflow-service
 
-#sudo docker push lenneflow/gateway-service
+sudo docker push lenneflow/callback-service

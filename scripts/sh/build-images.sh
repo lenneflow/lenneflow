@@ -27,9 +27,9 @@ cd workflow-service
 docker build -t lenneflow/workflow-service .
 cd ..
 
-#cd gateway-service
-#docker build -t lenneflow/gateway-service .
-#cd ..
+cd callback-service
+docker build -t lenneflow/callback-service .
+cd ..
 
 
 docker images

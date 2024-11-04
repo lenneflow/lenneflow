@@ -9,6 +9,6 @@ EXPOSE 47004
 
 RUN mkdir /app
 
-COPY --from=build /home/gradle/src/build/libs/*.jar /app/localCluster-service.jar
+COPY --from=build /home/gradle/src/build/libs/*.jar /app/worker-service.jar
 
-ENTRYPOINT ["java","-jar","/app/localCluster-service.jar"]
+ENTRYPOINT ["java","-jar","/app/worker-service.jar"]
