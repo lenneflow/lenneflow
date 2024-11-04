@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/workflows")
+@RequestMapping("/api/workflow")
 public class WorkflowController {
 
     final WorkflowRepository workflowRepository;
@@ -30,12 +30,12 @@ public class WorkflowController {
         this.validator = validator;
     }
 
-    @GetMapping("/{id}")
-    public Workflow getWorkflow(@PathVariable String id) {
-        return workflowRepository.findByUid(id);
+    @GetMapping("/{uid}")
+    public Workflow getWorkflow(@PathVariable String uid) {
+        return workflowRepository.findByUid(uid);
     }
 
-    @GetMapping("/workflow-name/{workflow-name}")
+    @GetMapping("/name/{workflow-name}")
     public Workflow getWorkflowByName(@PathVariable("workflow-name") String name) {
         return workflowRepository.findByName(name);
     }
@@ -46,7 +46,7 @@ public class WorkflowController {
     }
 
 
-    @PostMapping
+    @PostMapping("/create")
     public Workflow addNewWorkflow(@RequestBody WorkflowDTO workflowDTO) {
         validator.validate(workflowDTO);
         Workflow workflow = ObjectMapper.mapToWorkflow(workflowDTO);
@@ -61,7 +61,7 @@ public class WorkflowController {
         return workflowRepository.save(workflow);
     }
 
-    @PostMapping("/json-schema")
+    @PostMapping("/json-schema/create")
     public JsonSchema addJsonSchema(@RequestBody JsonSchema jsonSchema) {
         jsonSchema.setUid(UUID.randomUUID().toString());
         jsonSchema.setCreated(LocalDateTime.now());
@@ -80,9 +80,9 @@ public class WorkflowController {
         return jsonSchemaRepository.findByUid(uid);
     }
 
-    @DeleteMapping("/{id}")
-    public void deleteWorkflow(@PathVariable String id) {
-        Workflow workflow = workflowRepository.findByUid(id);
+    @DeleteMapping("/{uid}")
+    public void deleteWorkflow(@PathVariable String uid) {
+        Workflow workflow = workflowRepository.findByUid(uid);
         workflowStepRepository.deleteAll(workflow.getSteps());
         workflowRepository.delete(workflow);
     }

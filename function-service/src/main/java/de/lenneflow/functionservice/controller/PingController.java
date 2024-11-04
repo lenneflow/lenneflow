@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @author Idrissa Ganemtore
  */
 @RestController
-@RequestMapping("/api/functions")
+@RequestMapping("/api/function")
 public class PingController {
 
     final WorkerServiceClient workerServiceClient;

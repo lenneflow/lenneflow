@@ -50,15 +50,15 @@ public class OrchestrationController {
         this.globalInputDataRepository = globalInputDataRepository;
     }
 
-    @GetMapping("/workflows/{workflow-id}/input-data/{input-data-id}/start")
-    public WorkflowExecution startWorkflowGet(@PathVariable(name = "workflow-id") String workflowId, @PathVariable("input-data-id") String inputdataId) {
+    @GetMapping("/workflow/{workflow-uid}/input-data/{input-data-id}/start")
+    public WorkflowExecution startWorkflowGet(@PathVariable(name = "workflow-uid") String workflowId, @PathVariable("input-data-id") String inputdataId) {
         GlobalInputData globalInputData = globalInputDataRepository.findByUid(inputdataId);
         Workflow workflow = workflowServiceClient.getWorkflowById(workflowId);
         if (globalInputData == null) {
             throw new PayloadNotValidException("Could not find global input data with id " + inputdataId);
         }
         if (workflow == null) {
-            throw new PayloadNotValidException("Could not find workflow with id " + workflowId);
+            throw new PayloadNotValidException("Could not find a workflow with id " + workflowId);
         }
         Validator.validateJsonData(workflow.getInputDataSchema().getSchema(), workflow.getInputDataSchema().getSchemaVersion(), globalInputData.getInputData());
 
@@ -68,8 +68,19 @@ public class OrchestrationController {
         return workflowRunner.startWorkflow(workflowInstance, workflow);
     }
 
-    @PostMapping("/workflows/{workflow-id}/start")
-    public WorkflowExecution startWorkflowPost(@PathVariable(name = "workflow-id") String workflowId, @RequestBody Map<String, Object> inputData) {
+    @GetMapping("/workflow/{workflow-uid}/start")
+    public WorkflowExecution startWorkflowGet2(@PathVariable(name = "workflow-uid") String workflowId) {
+        Workflow workflow = workflowServiceClient.getWorkflowById(workflowId);
+        if (workflow == null) {
+            throw new PayloadNotValidException("Could not find workflow with id " + workflowId);
+        }
+        //create an instance for the workflow
+        WorkflowInstance workflowInstance = instanceController.createWorkflowInstance(workflow, null);
+        return workflowRunner.startWorkflow(workflowInstance, workflow);
+    }
+
+    @PostMapping("/workflow/{workflow-uid}/start")
+    public WorkflowExecution startWorkflowPost(@PathVariable(name = "workflow-uid") String workflowId, @RequestBody Map<String, Object> inputData) {
         Workflow workflow = workflowServiceClient.getWorkflowById(workflowId);
         if (workflow == null) {
             throw new PayloadNotValidException("Could not find workflow with id " + workflowId);
@@ -82,41 +93,41 @@ public class OrchestrationController {
         return workflowRunner.startWorkflow(workflowInstance, workflow);
     }
 
-    @GetMapping("/workflows/runs/{run-id}/stop")
-    public WorkflowExecution stopWorkflow(@PathVariable(name = "run-id") String executionId) {
+    @GetMapping("/workflow/run/{uid}/stop")
+    public WorkflowExecution stopWorkflow(@PathVariable(name = "uid") String executionId) {
         return workflowRunner.stopWorkflow(executionId);
     }
 
-    @GetMapping("/workflows/runs/{run-id}/pause")
+    @GetMapping("/workflow/run/{uid}/pause")
     @ResponseStatus(HttpStatus.OK)
-    public WorkflowExecution pauseWorkflow(@PathVariable(name = "run-id") String executionId) {
+    public WorkflowExecution pauseWorkflow(@PathVariable(name = "uid") String executionId) {
         return workflowRunner.pauseWorkflow(executionId);
     }
 
-    @GetMapping("/workflows/runs/{run-id}/resume")
-    public WorkflowExecution resumeWorkflow(@PathVariable(name = "run-id") String executionId) {
+    @GetMapping("/workflow/run/{uid}/resume")
+    public WorkflowExecution resumeWorkflow(@PathVariable(name = "uid") String executionId) {
         return workflowRunner.resumeWorkflow(executionId);
     }
 
-    @GetMapping("/workflows/runs/{run-id}/state")
-    public WorkflowExecution workflowRunState(@PathVariable(name = "run-id") String executionId) {
+    @GetMapping("/workflow/run/{uid}/state")
+    public WorkflowExecution workflowRunState(@PathVariable(name = "uid") String executionId) {
         return workflowRunner.getCurrentExecutionState(executionId);
     }
 
-    @GetMapping("/workflows/runs")
+    @GetMapping("/workflow/run/list")
     public List<WorkflowExecution> executionList() {
         return workflowExecutionRepository.findAll();
     }
 
-    @PostMapping("/workflows/input-data")
+    @PostMapping("/workflow/input-data")
     public GlobalInputData createGlobalInputData(@RequestBody GlobalInputData globalInputData) {
         Validator.validate(globalInputData);
         globalInputData.setUid(UUID.randomUUID().toString());
         return globalInputDataRepository.save(globalInputData);
     }
 
-    @PostMapping("/workflows/input-data/{input-data-uid}")
-    public GlobalInputData updateGlobalInputData(@RequestBody GlobalInputData globalInputData, @PathVariable("input-data-uid") String inputDataUid) {
+    @PostMapping("/workflow/input-data/{uid}/update")
+    public GlobalInputData updateGlobalInputData(@RequestBody GlobalInputData globalInputData, @PathVariable("uid") String inputDataUid) {
         Validator.validate(globalInputData);
         GlobalInputData found = globalInputDataRepository.findByUid(inputDataUid);
         if (found == null) {
@@ -126,8 +137,8 @@ public class OrchestrationController {
         return globalInputDataRepository.save(globalInputData);
     }
 
-    @GetMapping("/workflows/input-data/{input-data-uid}")
-    public GlobalInputData getGlobalInputData(@PathVariable("input-data-uid") String inputDataUid) {
+    @GetMapping("/workflows/input-data/{uid}")
+    public GlobalInputData getGlobalInputData(@PathVariable("uid") String inputDataUid) {
         GlobalInputData found = globalInputDataRepository.findByUid(inputDataUid);
         if (found == null) {
             throw new PayloadNotValidException("Input data with id " + inputDataUid + " not found");

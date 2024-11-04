@@ -3,6 +3,7 @@ package de.lenneflow.functionservice.controller;
 
 import de.lenneflow.functionservice.dto.FunctionDTO;
 import de.lenneflow.functionservice.enums.DeploymentState;
+import de.lenneflow.functionservice.exception.InternalServiceException;
 import de.lenneflow.functionservice.exception.ResourceNotFoundException;
 import de.lenneflow.functionservice.feignclients.WorkerServiceClient;
 import de.lenneflow.functionservice.feignmodels.KubernetesCluster;
@@ -28,7 +29,7 @@ import java.util.UUID;
  */
 
 @RestController
-@RequestMapping("/api/functions")
+@RequestMapping("/api/function")
 public class FunctionController {
 
     private static final Logger logger = LoggerFactory.getLogger(FunctionController.class);
@@ -53,8 +54,8 @@ public class FunctionController {
         return functionRepository.findByUid(uid);
     }
 
-    @GetMapping
-    public Function getFunctionByName(@RequestParam(value = "name") String name) {
+    @GetMapping("/name/{function-name}")
+    public Function getFunctionByName(@PathVariable("function-name") String name) {
         return functionRepository.findByName(name);
     }
 
@@ -63,7 +64,7 @@ public class FunctionController {
         return functionRepository.findAll();
     }
 
-    @PostMapping
+    @PostMapping("create")
     @ResponseStatus(HttpStatus.CREATED)
     public Function addFunction(@RequestBody FunctionDTO functionDTO) {
         validator.validate(functionDTO);
@@ -81,35 +82,55 @@ public class FunctionController {
         return savedFunction;
     }
 
-    @PostMapping("/{id}")
-    public void updateFunction(@RequestBody Function function, @PathVariable String id) {
-        //TODO
-        if(function == null) {
-            logger.error("function is null");
-            throw new ResourceNotFoundException("Function not found");
+    @PostMapping("/{uid}/update")
+    public void updateFunction(@RequestBody  FunctionDTO functionDTO, @PathVariable String uid) {
+        validator.validate(functionDTO);
+        Function foundFunction = functionRepository.findByUid(uid);
+        if(foundFunction == null) {
+            logger.error("function with UID {} not found", uid);
+            throw new ResourceNotFoundException("function with UID " + uid + " not found");
+        }
+        Function function = ObjectMapper.mapToFunction(functionDTO);
+        function.setUid(foundFunction.getUid());
+        if(foundFunction.getDeploymentState() == DeploymentState.UNDEPLOYED){
+            function.setUpdated(LocalDateTime.now());
+            function.setDeploymentState(DeploymentState.UNDEPLOYED);
+            functionRepository.save(function);
+            return;
+        }
+        if(foundFunction.getDeploymentState() == DeploymentState.DEPLOYING){
+            throw new InternalServiceException("Function is currently deploying! No change is allowed!");
+        }
+        if(isNewDeploymentNecessary(foundFunction, function)){
+            deploymentController.undeployFunction(foundFunction);
+            function.setUpdated(LocalDateTime.now());
+            Function savedFunction = functionRepository.save(function);
+            new Thread(() -> deploymentController.deployFunctionImageToWorker(savedFunction)).start();
+            return;
         }
         function.setUpdated(LocalDateTime.now());
         functionRepository.save(function);
+
     }
 
-    @GetMapping( "/deploy-function/function-id/{function-id}")
-    public void deployFunction(@PathVariable("function-id") String functionId) {
+    @GetMapping( "/{uid}/deploy")
+    public void deployFunction(@PathVariable("uid") String functionId) {
         Function function = functionRepository.findByUid(functionId);
         deploymentController.deployFunctionImageToWorker(function);
     }
 
-    @GetMapping( "/undeploy-function/function-id/{function-id}")
-    public void unDeployFunction(@PathVariable("function-id") String functionId) {
+    @GetMapping( "/{uid}/undeploy")
+    public void unDeployFunction(@PathVariable("uid") String functionId) {
         Function function = functionRepository.findByUid(functionId);
         deploymentController.undeployFunction(function);
         function.setDeploymentState(DeploymentState.UNDEPLOYED);
         functionRepository.save(function);
     }
 
-    @GetMapping(value = "/cluster/{id}/check-connection")
+    @GetMapping(value = "/cluster/{uid}/check-connection")
     @ResponseStatus(value = HttpStatus.OK)
-    public void checkConnection(@PathVariable String id) {
-        KubernetesCluster foundKubernetesCluster = workerServiceClient.getKubernetesClusterById(id);
+    public void checkConnection(@PathVariable String uid) {
+        KubernetesCluster foundKubernetesCluster = workerServiceClient.getKubernetesClusterById(uid);
         if(foundKubernetesCluster == null) {
             throw new ResourceNotFoundException("KUBERNETES_CLUSTER_NOT_FOUND");
         }
@@ -117,9 +138,9 @@ public class FunctionController {
     }
 
 
-    @DeleteMapping("/{id}")
-    public void deleteFunction(@PathVariable String id) {
-        Function function = functionRepository.findByUid(id);
+    @DeleteMapping("/{uid}")
+    public void deleteFunction(@PathVariable String uid) {
+        Function function = functionRepository.findByUid(uid);
         if (function == null) {
             logger.error("Function is null");
            throw new ResourceNotFoundException("Function not found");
@@ -147,6 +168,23 @@ public class FunctionController {
     @GetMapping("/json-schema/{uid}")
     public JsonSchema getJsonSchema(@PathVariable String uid) {
         return jsonSchemaRepository.findByUid(uid);
+    }
+
+
+    private boolean isNewDeploymentNecessary(Function oldFunction, Function newFunction) {
+        if(!oldFunction.getImageName().equals(newFunction.getImageName())){
+            return true;
+        }
+        if(oldFunction.getServicePort() != newFunction.getServicePort()){
+            return true;
+        }
+        if(!oldFunction.getName().equals(newFunction.getName())){
+            return true;
+        }
+        if(!oldFunction.getResourcePath().equals(newFunction.getResourcePath())){
+            return true;
+        }
+        return oldFunction.getAssignedHostPort() != newFunction.getAssignedHostPort();
     }
 
 }

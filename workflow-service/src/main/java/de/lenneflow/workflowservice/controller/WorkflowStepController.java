@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/workflows/steps")
+@RequestMapping("/api/workflow/step")
 public class WorkflowStepController {
 
     final WorkflowStepRepository workflowStepRepository;
@@ -31,18 +31,18 @@ public class WorkflowStepController {
         this.validator = validator;
     }
 
-    @GetMapping("/step-id/{step-id}")
-    public WorkflowStep getStep(@PathVariable("step-id") String stepId) {
+    @GetMapping("/{uid}")
+    public WorkflowStep getStep(@PathVariable("uid") String stepId) {
         return workflowStepRepository.findByUid(stepId);
     }
 
-    @GetMapping("/step-name/{step-name}/workflow-id/{workflow-id}")
-    public WorkflowStep getStepByNameAndWorkflowId(@PathVariable("step-name") String name, @PathVariable("workflow-id") String workflowId) {
+    @GetMapping("/name/{step-name}/workflow-uid/{workflow-uid}")
+    public WorkflowStep getStepByNameAndWorkflowId(@PathVariable("step-name") String name, @PathVariable("workflow-uid") String workflowId) {
         return workflowStepRepository.findByNameAndWorkflowUid(name, workflowId);
     }
 
-    @GetMapping("/workflow-id/{workflow-id}")
-    public List<WorkflowStep> getWorkflowStepsByWorkflowID(@PathVariable("workflow-id") String workflowId) {
+    @GetMapping("/workflow-uid/{workflow-uid}")
+    public List<WorkflowStep> getWorkflowStepsByWorkflowID(@PathVariable("workflow-uid") String workflowId) {
         return workflowStepRepository.findByWorkflowUid(workflowId);
     }
 
@@ -56,7 +56,7 @@ public class WorkflowStepController {
         return workflowStepRepository.findAll();
     }
 
-    @PostMapping("/simple")
+    @PostMapping("/simple/create")
     public WorkflowStep addSimpleWorkflowStep(@RequestBody SimpleWorkflowStep simpleWorkflowStep) {
         WorkflowStep workflowStep = ObjectMapper.mapToWorkflowStep(simpleWorkflowStep);
         workflowStep.setUid(UUID.randomUUID().toString());
@@ -67,7 +67,7 @@ public class WorkflowStepController {
         return saveWorkflowStep(workflowStep);
     }
 
-    @PostMapping("/switch")
+    @PostMapping("/switch/create")
     public WorkflowStep addSwitchWorkflowStep(@RequestBody SwitchWorkflowStep switchWorkflowStep) {
         WorkflowStep workflowStep = ObjectMapper.mapToWorkflowStep(switchWorkflowStep);
         workflowStep.setUid(UUID.randomUUID().toString());
@@ -78,7 +78,7 @@ public class WorkflowStepController {
         return saveWorkflowStep(workflowStep);
     }
 
-    @PostMapping("/while")
+    @PostMapping("/while/create")
     public WorkflowStep addWhileWorkflowStep(@RequestBody WhileWorkflowStep whileWorkflowStep) {
         WorkflowStep workflowStep = ObjectMapper.mapToWorkflowStep(whileWorkflowStep);
         workflowStep.setUid(UUID.randomUUID().toString());
@@ -89,7 +89,7 @@ public class WorkflowStepController {
         return saveWorkflowStep(workflowStep);
     }
 
-    @PostMapping("/sub-workflow")
+    @PostMapping("/sub-workflow/create")
     public WorkflowStep addSubWorkflowStep(@RequestBody SubWorkflowStep subWorkflowStep) {
         WorkflowStep workflowStep = ObjectMapper.mapToWorkflowStep(subWorkflowStep);
         workflowStep.setUid(UUID.randomUUID().toString());
@@ -100,41 +100,41 @@ public class WorkflowStepController {
         return saveWorkflowStep(workflowStep);
     }
 
-    @PostMapping("/simple/{id}")
-    public WorkflowStep updateWorkflowStep(@PathVariable String id, @RequestBody SimpleWorkflowStep simpleWorkflowStep) {
-        WorkflowStep workflowStep = workflowStepRepository.findByUid(id);
+    @PostMapping("/simple/{uid}/update")
+    public WorkflowStep updateWorkflowStep(@PathVariable String uid, @RequestBody SimpleWorkflowStep simpleWorkflowStep) {
+        WorkflowStep workflowStep = workflowStepRepository.findByUid(uid);
         ObjectMapper.mapToWorkflowStep(workflowStep, simpleWorkflowStep);
         validator.validate(workflowStep);
         return patchWorkflowStep(workflowStep);
     }
 
-    @PostMapping("/switch/{id}")
-    public WorkflowStep updateWorkflowStep(@PathVariable String id, @RequestBody SwitchWorkflowStep switchWorkflowStep) {
-        WorkflowStep workflowStep = workflowStepRepository.findByUid(id);
+    @PostMapping("/switch/{uid}/update")
+    public WorkflowStep updateWorkflowStep(@PathVariable String uid, @RequestBody SwitchWorkflowStep switchWorkflowStep) {
+        WorkflowStep workflowStep = workflowStepRepository.findByUid(uid);
         ObjectMapper.mapToWorkflowStep(workflowStep, switchWorkflowStep);
         validator.validate(workflowStep);
         return patchWorkflowStep(workflowStep);
     }
 
-    @PostMapping("/while/{id}")
-    public WorkflowStep updateWorkflowStep(@PathVariable String id, @RequestBody WhileWorkflowStep whileWorkflowStep) {
-        WorkflowStep workflowStep = workflowStepRepository.findByUid(id);
+    @PostMapping("/while/{uid}/update")
+    public WorkflowStep updateWorkflowStep(@PathVariable String uid, @RequestBody WhileWorkflowStep whileWorkflowStep) {
+        WorkflowStep workflowStep = workflowStepRepository.findByUid(uid);
         ObjectMapper.mapToWorkflowStep(workflowStep, whileWorkflowStep);
         validator.validate(workflowStep);
         return patchWorkflowStep(workflowStep);
     }
 
-    @PostMapping("/sub-workflow/{id}")
-    public WorkflowStep updateWorkflowStep(@PathVariable String id, @RequestBody SubWorkflowStep subWorkflowStep) {
-        WorkflowStep workflowStep = workflowStepRepository.findByUid(id);
+    @PostMapping("/sub-workflow/{uid}/update")
+    public WorkflowStep updateWorkflowStep(@PathVariable String uid, @RequestBody SubWorkflowStep subWorkflowStep) {
+        WorkflowStep workflowStep = workflowStepRepository.findByUid(uid);
         ObjectMapper.mapToWorkflowStep(workflowStep, subWorkflowStep);
         validator.validate(workflowStep);
         return patchWorkflowStep(workflowStep);
     }
 
-    @DeleteMapping("/{id}")
-    public void deleteWorkflowStep(@PathVariable String id) {
-        WorkflowStep workflowStep = workflowStepRepository.findByUid(id);
+    @DeleteMapping("/{uid}")
+    public void deleteWorkflowStep(@PathVariable String uid) {
+        WorkflowStep workflowStep = workflowStepRepository.findByUid(uid);
         workflowStepRepository.delete(workflowStep);
     }
 

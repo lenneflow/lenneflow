@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Basic Controller that contains methods to check that the application is reachable
  */
 @RestController
-@RequestMapping("/api/workers")
+@RequestMapping("/api/worker")
 public class PingController {
 
     @Hidden

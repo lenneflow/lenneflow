@@ -1,6 +1,7 @@
 package de.lenneflow.functionservice.util;
 
 import de.lenneflow.functionservice.dto.FunctionDTO;
+import de.lenneflow.functionservice.exception.InternalServiceException;
 import de.lenneflow.functionservice.exception.PayloadNotValidException;
 import de.lenneflow.functionservice.model.Function;
 import de.lenneflow.functionservice.model.JsonSchema;
@@ -28,8 +29,35 @@ public class Validator {
         this.jsonSchemaRepository = jsonSchemaRepository;
     }
 
+    /**
+     * Validates the function object
+     * @param function the function to validate
+     */
+    public void validate(Function function) {
+       if(function.getUid() == null || function.getUid().isEmpty()) {
+           throw new InternalServiceException("Function uid is mandatory");
+       }
+       if(function.getInputSchema() == null) {
+           throw new InternalServiceException("Input schema is mandatory");
+       }
+       if(function.getOutputSchema() == null) {
+           throw new InternalServiceException("Output schema is mandatory");
+       }
+    }
 
-    public void validate(FunctionDTO functionDTO)  {
+
+    /**
+     * Validates the functionDTO object
+     * @param functionDTO the functionDTO to validate
+     */
+    public void validate(FunctionDTO functionDTO) {
+        checkMandatoryFields(functionDTO);
+        checkSchema(functionDTO);
+        checkUniqueValues(functionDTO);
+    }
+
+
+    private void checkSchema(FunctionDTO functionDTO)  {
         if(functionDTO.getInputSchemaUid() == null || functionDTO.getInputSchemaUid().isEmpty()){
             throw new PayloadNotValidException("Please provide the input data schema uid!");
         }
@@ -47,20 +75,10 @@ public class Validator {
     }
 
     /**
-     * Validates the function object
-     * @param function the function to validate
-     */
-    public void validate(Function function) {
-        checkMandatoryFields(function);
-        //validateJsonSchema(function);
-        checkUniqueValues(function);
-    }
-
-    /**
      * Check all unique values of the function.
      * @param function function
      */
-    private void checkUniqueValues(Function function) {
+    private void checkUniqueValues(FunctionDTO function) {
         if(functionRepository.findByName(function.getName()) != null){
             String logMessage = String.format("Function with name '%s' already exists", function.getName());
             logger.error(logMessage);
@@ -69,20 +87,10 @@ public class Validator {
     }
 
     /**
-     * validates the input schema specified in the function.
-     * @param schema the schema to validate
-     */
-    public void validateJsonSchema(JsonSchema schema) {
-        //TODO Validate schema itself
-
-    }
-
-
-    /**
      * Check if all mandatory fields are present.
      * @param function function to validate
      */
-    private void checkMandatoryFields(Function function) {
+    private void checkMandatoryFields(FunctionDTO function) {
         if (function.getName() == null || function.getName().isEmpty()) {
             logger.error("function name is mandatory");
             throw new PayloadNotValidException("Function Name is required");
@@ -102,9 +110,15 @@ public class Validator {
             logger.error("function type is mandatory");
             throw new PayloadNotValidException("Function Type is required");
         }
-        if(function.getInputSchema() == null) {
-            logger.error("function input schema is mandatory");
-            throw new PayloadNotValidException("Input Schema is required");
-        }
+    }
+
+
+    /**
+     * validates the input schema specified in the function.
+     * @param schema the schema to validate
+     */
+    public void validateJsonSchema(JsonSchema schema) {
+        //TODO Validate schema itself
+
     }
 }

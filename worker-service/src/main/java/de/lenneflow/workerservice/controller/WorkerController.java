@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/workers")
+@RequestMapping("/api/worker")
 public class WorkerController {
 
     private static final String KUBERNETES_CLUSTER_NOT_FOUND = "KubernetesCluster not found";
@@ -146,7 +146,7 @@ public class WorkerController {
         throw new InternalServiceException("Could not find the Kubernetes Cluster to update");
     }
 
-    @GetMapping("/clusters")
+    @GetMapping("/cluster/list")
     public List<KubernetesCluster> getAllClusters()
     {
         return kubernetesClusterRepository.findAll();

@@ -7,18 +7,18 @@ import de.lenneflow.callbackservice.util.Validator;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/qms")
-public class ApiController {
+@RequestMapping("/api/callback")
+public class CallBackController {
 
     private final QueueController queueController;
 
-    public ApiController(QueueController queueController) {
+    public CallBackController(QueueController queueController) {
         this.queueController = queueController;
     }
 
 
-    @PostMapping("/callback/{executionId}/{stepInstanceId}/{workflowInstanceId}")
-    public void workerCallBack(@RequestBody FunctionPayload payload, @PathVariable String executionId, @PathVariable String stepInstanceId, @PathVariable String workflowInstanceId){
+    @PostMapping("/{execution-id}/{step-instance-id}/{workflow-instance-id}")
+    public void workerCallBack(@RequestBody FunctionPayload payload, @PathVariable("execution-id") String executionId, @PathVariable("step-instance-id") String stepInstanceId, @PathVariable("workflow-instance-id") String workflowInstanceId){
         Validator.validate(payload);
         FunctionDTO functionDTO = new FunctionDTO();
         functionDTO.setExecutionId(executionId);
