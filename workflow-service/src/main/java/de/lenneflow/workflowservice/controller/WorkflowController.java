@@ -1,5 +1,6 @@
 package de.lenneflow.workflowservice.controller;
 
+import de.lenneflow.workflowservice.dto.JsonSchemaDTO;
 import de.lenneflow.workflowservice.dto.WorkflowDTO;
 import de.lenneflow.workflowservice.model.JsonSchema;
 import de.lenneflow.workflowservice.model.Workflow;
@@ -62,7 +63,8 @@ public class WorkflowController {
     }
 
     @PostMapping("/json-schema/create")
-    public JsonSchema addJsonSchema(@RequestBody JsonSchema jsonSchema) {
+    public JsonSchema addJsonSchema(@RequestBody JsonSchemaDTO jsonSchemaDTO) {
+        JsonSchema jsonSchema = ObjectMapper.mapToJsonSchema(jsonSchemaDTO);
         jsonSchema.setUid(UUID.randomUUID().toString());
         jsonSchema.setCreated(LocalDateTime.now());
         jsonSchema.setUpdated(LocalDateTime.now());

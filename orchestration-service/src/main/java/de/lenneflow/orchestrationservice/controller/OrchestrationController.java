@@ -1,5 +1,6 @@
 package de.lenneflow.orchestrationservice.controller;
 
+import de.lenneflow.orchestrationservice.dto.GlobalInputDataDto;
 import de.lenneflow.orchestrationservice.exception.PayloadNotValidException;
 import de.lenneflow.orchestrationservice.feignclients.FunctionServiceClient;
 import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
@@ -13,6 +14,7 @@ import de.lenneflow.orchestrationservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
 import de.lenneflow.orchestrationservice.helpercomponents.WorkflowRunner;
+import de.lenneflow.orchestrationservice.utils.ObjectMapper;
 import de.lenneflow.orchestrationservice.utils.Validator;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -50,8 +52,8 @@ public class OrchestrationController {
         this.globalInputDataRepository = globalInputDataRepository;
     }
 
-    @GetMapping("/workflow/{workflow-uid}/input-data/{input-data-id}/start")
-    public WorkflowExecution startWorkflowGet(@PathVariable(name = "workflow-uid") String workflowId, @PathVariable("input-data-id") String inputdataId) {
+    @GetMapping("/workflow/{workflow-uid}/input-data/{input-data-uid}/start")
+    public WorkflowExecution startWorkflowGet(@PathVariable(name = "workflow-uid") String workflowId, @PathVariable("input-data-uid") String inputdataId) {
         GlobalInputData globalInputData = globalInputDataRepository.findByUid(inputdataId);
         Workflow workflow = workflowServiceClient.getWorkflowById(workflowId);
         if (globalInputData == null) {
@@ -119,15 +121,17 @@ public class OrchestrationController {
         return workflowExecutionRepository.findAll();
     }
 
-    @PostMapping("/workflow/input-data")
-    public GlobalInputData createGlobalInputData(@RequestBody GlobalInputData globalInputData) {
+    @PostMapping("/workflow/input-data/create")
+    public GlobalInputData createGlobalInputData(@RequestBody GlobalInputDataDto globalInputDataDto) {
+        GlobalInputData globalInputData = ObjectMapper.mapToGlobalInputData(globalInputDataDto);
         Validator.validate(globalInputData);
         globalInputData.setUid(UUID.randomUUID().toString());
         return globalInputDataRepository.save(globalInputData);
     }
 
     @PostMapping("/workflow/input-data/{uid}/update")
-    public GlobalInputData updateGlobalInputData(@RequestBody GlobalInputData globalInputData, @PathVariable("uid") String inputDataUid) {
+    public GlobalInputData updateGlobalInputData(@RequestBody GlobalInputDataDto globalInputDataDto, @PathVariable("uid") String inputDataUid) {
+        GlobalInputData globalInputData = ObjectMapper.mapToGlobalInputData(globalInputDataDto);
         Validator.validate(globalInputData);
         GlobalInputData found = globalInputDataRepository.findByUid(inputDataUid);
         if (found == null) {
@@ -137,7 +141,7 @@ public class OrchestrationController {
         return globalInputDataRepository.save(globalInputData);
     }
 
-    @GetMapping("/workflows/input-data/{uid}")
+    @GetMapping("/workflow/input-data/{uid}")
     public GlobalInputData getGlobalInputData(@PathVariable("uid") String inputDataUid) {
         GlobalInputData found = globalInputDataRepository.findByUid(inputDataUid);
         if (found == null) {

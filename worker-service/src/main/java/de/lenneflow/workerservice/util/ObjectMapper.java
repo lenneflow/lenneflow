@@ -1,10 +1,12 @@
 package de.lenneflow.workerservice.util;
 
 import de.lenneflow.workerservice.dto.AccessTokenDto;
+import de.lenneflow.workerservice.dto.CloudCredentialDTO;
 import de.lenneflow.workerservice.dto.ManagedClusterDTO;
 import de.lenneflow.workerservice.dto.UnmanagedClusterDTO;
 import de.lenneflow.workerservice.exception.InternalServiceException;
 import de.lenneflow.workerservice.model.AccessToken;
+import de.lenneflow.workerservice.model.CloudCredential;
 import de.lenneflow.workerservice.model.KubernetesCluster;
 
 import java.time.LocalDate;
@@ -68,5 +70,15 @@ public class ObjectMapper {
 
         }
         return accessToken;
+    }
+
+    public static CloudCredential mapToCloudCredential(CloudCredentialDTO cloudCredentialDTO){
+        CloudCredential cloudCredential = new CloudCredential();
+        cloudCredential.setName(cloudCredentialDTO.getName());
+        cloudCredential.setDescription(cloudCredentialDTO.getDescription());
+        cloudCredential.setAccessKey(cloudCredentialDTO.getAccessKey());
+        cloudCredential.setSecretKey(cloudCredentialDTO.getSecretKey());
+        cloudCredential.setAccountId(cloudCredentialDTO.getAccountId());
+        return cloudCredential;
     }
 }

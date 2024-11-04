@@ -138,7 +138,6 @@ public class WorkflowStepController {
         workflowStepRepository.delete(workflowStep);
     }
 
-
     private WorkflowStep saveWorkflowStep(WorkflowStep workflowStep) {
         workflowStep.setCreated(LocalDateTime.now());
         workflowStep.setUpdated(LocalDateTime.now());

@@ -1,9 +1,6 @@
 package de.lenneflow.workerservice.controller;
 
-import de.lenneflow.workerservice.dto.AccessTokenDto;
-import de.lenneflow.workerservice.dto.ManagedClusterDTO;
-import de.lenneflow.workerservice.dto.UnmanagedClusterDTO;
-import de.lenneflow.workerservice.dto.NodeGroupDTO;
+import de.lenneflow.workerservice.dto.*;
 import de.lenneflow.workerservice.enums.ClusterStatus;
 import de.lenneflow.workerservice.exception.InternalServiceException;
 import de.lenneflow.workerservice.exception.PayloadNotValidException;
@@ -51,7 +48,7 @@ public class WorkerController {
     }
 
     @PostMapping("/cluster/register")
-    public ResponseEntity<KubernetesCluster> createLocalKubernetesCluster(@RequestBody UnmanagedClusterDTO clusterDTO) {
+    public KubernetesCluster createLocalKubernetesCluster(@RequestBody UnmanagedClusterDTO clusterDTO) {
         validator.validate(clusterDTO);
         KubernetesCluster kubernetesCluster = ObjectMapper.mapToKubernetesCluster(clusterDTO);
         kubernetesCluster.setUid(UUID.randomUUID().toString());
@@ -63,13 +60,12 @@ public class WorkerController {
 
         validator.validate(kubernetesCluster, false);
 
-        KubernetesCluster saved =  kubernetesClusterRepository.save(kubernetesCluster);
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+        return kubernetesClusterRepository.save(kubernetesCluster);
 
     }
 
     @PostMapping("/cluster/create")
-    public ResponseEntity<KubernetesCluster> createCloudKubernetesCluster(@RequestBody ManagedClusterDTO clusterDTO) {
+    public KubernetesCluster createCloudKubernetesCluster(@RequestBody ManagedClusterDTO clusterDTO) {
 
         validator.validate(clusterDTO);
         CloudCredential cloudCredential = cloudCredentialRepository.findByUid(clusterDTO.getCloudCredentialUid());
@@ -101,27 +97,28 @@ public class WorkerController {
 
         new Thread(() -> waitForCompleteCreation(saved, 25)).start();
 
-        return new ResponseEntity<>(saved, HttpStatus.OK);
+        return saved;
     }
 
-    @PostMapping("/cloud/credentials")
-    public ResponseEntity<CloudCredential> createCloudClusterCredential(@RequestBody CloudCredential cloudCredential) {
+    @PostMapping("/cloud/credentials/create")
+    public CloudCredential createCloudClusterCredential(@RequestBody CloudCredentialDTO cloudCredentialDTO) {
+        CloudCredential cloudCredential = ObjectMapper.mapToCloudCredential(cloudCredentialDTO);
         cloudCredential.setUid(UUID.randomUUID().toString());
-        CloudCredential savedCredential = cloudCredentialRepository.save(cloudCredential);
-        return new ResponseEntity<>(savedCredential, HttpStatus.OK);
+        cloudCredential.setCreated(LocalDateTime.now());
+        cloudCredential.setUpdated(LocalDateTime.now());
+        return cloudCredentialRepository.save(cloudCredential);
     }
 
-    @PostMapping("/cluster/api-token")
-    public ResponseEntity<AccessToken> createLocalApiToken(@RequestBody AccessTokenDto accessTokenDto) {
+    @PostMapping("/cluster/api-token/create")
+    public AccessToken createLocalApiToken(@RequestBody AccessTokenDto accessTokenDto) {
         AccessToken accessToken = ObjectMapper.mapToAccessToken(accessTokenDto);
         accessToken.setUid(UUID.randomUUID().toString());
         accessToken.setUpdated(LocalDateTime.now());
-        AccessToken savedCredential = accessTokenRepository.save(accessToken);
-        return new ResponseEntity<>(savedCredential, HttpStatus.OK);
+        return accessTokenRepository.save(accessToken);
     }
 
     @PostMapping("/cluster/node-group/update")
-    public ResponseEntity<KubernetesCluster> updateNodeGroup(@RequestBody NodeGroupDTO nodeGroupDTO) {
+    public KubernetesCluster updateNodeGroup(@RequestBody NodeGroupDTO nodeGroupDTO) {
         KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(nodeGroupDTO.getClusterUid());
         if(kubernetesCluster != null){
             checkIfClusterIsManaged(kubernetesCluster, true);
@@ -141,7 +138,7 @@ public class WorkerController {
             }
 
             new Thread(() -> waitForCompleteCreation(kubernetesCluster, 20)).start();
-            return new ResponseEntity<>(kubernetesCluster, HttpStatus.OK);
+            return kubernetesCluster;
         }
         throw new InternalServiceException("Could not find the Kubernetes Cluster to update");
     }

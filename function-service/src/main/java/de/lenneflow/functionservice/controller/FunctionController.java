@@ -64,7 +64,7 @@ public class FunctionController {
         return functionRepository.findAll();
     }
 
-    @PostMapping("create")
+    @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
     public Function addFunction(@RequestBody FunctionDTO functionDTO) {
         validator.validate(functionDTO);
@@ -151,7 +151,7 @@ public class FunctionController {
         functionRepository.delete(function);
     }
 
-    @PostMapping("/json-schema")
+    @PostMapping("/json-schema/create")
     public JsonSchema addJsonSchema(@RequestBody JsonSchema jsonSchema) {
         jsonSchema.setUid(UUID.randomUUID().toString());
         jsonSchema.setCreated(LocalDateTime.now());

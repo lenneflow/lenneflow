@@ -2,6 +2,7 @@ package de.lenneflow.workflowservice.util;
 
 import de.lenneflow.workflowservice.dto.*;
 import de.lenneflow.workflowservice.enums.ControlStructure;
+import de.lenneflow.workflowservice.model.JsonSchema;
 import de.lenneflow.workflowservice.model.Workflow;
 import de.lenneflow.workflowservice.model.WorkflowStep;
 
@@ -84,5 +85,14 @@ public class ObjectMapper {
         workflowStep.setFunctionId(simpleWorkflowStep.getFunctionId());
         workflowStep.setInputData(simpleWorkflowStep.getInputData());
         return workflowStep;
+    }
+
+    public static JsonSchema mapToJsonSchema(JsonSchemaDTO schemaDTO) {
+        JsonSchema jsonSchema = new JsonSchema();
+        jsonSchema.setSchema(schemaDTO.getSchema());
+        jsonSchema.setSchemaVersion(schemaDTO.getSchemaVersion());
+        jsonSchema.setName(schemaDTO.getName());
+        jsonSchema.setDescription(schemaDTO.getDescription());
+        return jsonSchema;
     }
 }
