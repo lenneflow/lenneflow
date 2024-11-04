@@ -10,6 +10,7 @@ import de.lenneflow.functionservice.repository.FunctionRepository;
 import de.lenneflow.functionservice.util.YamlEditor;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.autoscaling.v1.*;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -73,7 +74,7 @@ public class DeploymentController {
         createNamespace(kubernetesCluster);
         createServiceAccount(kubernetesCluster);
 
-        Deployment deployment = YamlEditor.createKubernetesDeploymentResource(function,2, SERVICE_ACCOUNT_NAME);
+        Deployment deployment = YamlEditor.createKubernetesDeploymentResource(function,1, SERVICE_ACCOUNT_NAME);
         Service service = YamlEditor.createKubernetesServiceResource(function, kubernetesCluster.getCloudProvider());
         client.resource(deployment).inNamespace(NAMESPACE).create();
         client.resource(service).inNamespace(NAMESPACE).create();
@@ -81,7 +82,7 @@ public class DeploymentController {
         String functionServiceUrl = getFunctionServiceUrl(kubernetesCluster, function);
         function.setServiceUrl(functionServiceUrl);
         functionRepository.save(function);
-        new Thread(() -> waitAndUpdateDeploymentState(kubernetesCluster, function)).start(); ;
+        new Thread(() -> waitAndUpdateDeploymentState(kubernetesCluster, function)).start();
     }
 
     public void undeployFunction(Function function) {
@@ -125,8 +126,8 @@ public class DeploymentController {
     private String getFunctionServiceUrl(KubernetesCluster kubernetesCluster, Function function) {
         String functionResourcePath = function.getResourcePath().startsWith("/") ? function.getResourcePath() : "/%s".formatted(function.getResourcePath());
         String hostUrl =  kubernetesCluster.getHostUrl();
-        hostUrl.replace("http://", "").replace("https://", "");
-        return "http://" + hostUrl + functionResourcePath;
+        String hostUrl2 = hostUrl.replace("http://", "").replace("https://", "");
+        return "http://" + hostUrl2 + functionResourcePath;
     }
 
     /**
@@ -147,12 +148,31 @@ public class DeploymentController {
             String deploymentName = function.getName();
 
             client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).waitUntilCondition(
-                    d -> ( d.getStatus().getReadyReplicas() > 0), 5, MINUTES);
+                    d -> (d.getStatus().getReadyReplicas() != null && d.getStatus().getReadyReplicas() > 0), 5, MINUTES);
             if(client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).get().getStatus().getReadyReplicas() > 0){
                 updateFunctionDeploymentState(function, DeploymentState.DEPLOYED);
+                client.resource(createHorizontalPodsAutoscaler(deploymentName, 1, 25)).inNamespace(NAMESPACE).create();
                 return;
             }
             updateFunctionDeploymentState(function, DeploymentState.FAILED);
+    }
+
+    private HorizontalPodAutoscaler createHorizontalPodsAutoscaler(String deploymentName, int minPods, int maxPods) {
+        return new HorizontalPodAutoscalerBuilder()
+                .withNewMetadata()
+                .withName(deploymentName)
+                .addToLabels("name", deploymentName)
+                .endMetadata()
+                .withNewSpec()
+                .withNewScaleTargetRef()
+                .withApiVersion("apps/v1")
+                .withKind("Deployment")
+                .withName(deploymentName)
+                .endScaleTargetRef()
+                .withMinReplicas(minPods)
+                .withMaxReplicas(maxPods)
+                .withTargetCPUUtilizationPercentage(50)
+                .endSpec().build();
     }
 
     /**
