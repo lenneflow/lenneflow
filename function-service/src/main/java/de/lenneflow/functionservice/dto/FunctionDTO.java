@@ -16,36 +16,37 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Schema(name = "Function")
 public class FunctionDTO {
 
-    @Schema(name = "Function name", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
-    @Schema(name = "Description", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String description;
 
-    @Schema(name = "The type of function", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String type;
 
-    @Schema(name = "Package repository", example = "DOCKER_HUB", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(example = "DOCKER_HUB", requiredMode = Schema.RequiredMode.REQUIRED)
     private PackageRepository packageRepository;
 
-    @Schema(name = "Resource path", example = "/api/function/process", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(example = "/api/function/process", requiredMode = Schema.RequiredMode.REQUIRED)
     private String resourcePath;
 
-    @Schema(name = "The container port of the function", example = "8080", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(example = "8080", requiredMode = Schema.RequiredMode.REQUIRED)
     private int servicePort;
 
-    @Schema(name = "Is lazy deployment", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private boolean lazyDeployment;
 
-    @Schema(name = "Repository image name", example = "lenneflow\\dummy-function-random", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(example = "lenneflow\\dummy-function-random", requiredMode = Schema.RequiredMode.REQUIRED)
     private String imageName;
 
-    @Schema(name = "ID of the Input Schema", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String inputSchemaUid;
 
-    @Schema(name = "ID of the Output Schema", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String outputSchemaUid;
 
 }

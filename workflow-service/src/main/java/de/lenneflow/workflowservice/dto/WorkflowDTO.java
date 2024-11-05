@@ -10,20 +10,21 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Schema(name = "Workflow")
 public class WorkflowDTO {
 
-    @Schema(name = "Workflow Name", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
-    @Schema(name = "Workflow Description", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String description;
 
-    @Schema(name = "Timeout", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private long timeOutInSeconds;
 
-    @Schema(name = "Input Data Schema", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String inputDataSchemaUid;
 
-    @Schema(name = "Output Data Schema", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String outputDataSchemaUid;
 }

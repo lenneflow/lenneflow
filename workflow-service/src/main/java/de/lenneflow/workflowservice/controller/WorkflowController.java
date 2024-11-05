@@ -9,6 +9,7 @@ import de.lenneflow.workflowservice.repository.WorkflowRepository;
 import de.lenneflow.workflowservice.repository.WorkflowStepRepository;
 import de.lenneflow.workflowservice.util.ObjectMapper;
 import de.lenneflow.workflowservice.util.Validator;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -31,22 +32,26 @@ public class WorkflowController {
         this.validator = validator;
     }
 
+    @Operation(summary = "Get Workflow by UID")
     @GetMapping("/{uid}")
     public Workflow getWorkflow(@PathVariable String uid) {
         return workflowRepository.findByUid(uid);
     }
 
+    @Operation(summary = "Get Workflow by Name")
     @GetMapping("/name/{workflow-name}")
     public Workflow getWorkflowByName(@PathVariable("workflow-name") String name) {
         return workflowRepository.findByName(name);
     }
 
+    @Operation(summary = "Get all Workflows")
     @GetMapping("/list")
     public List<Workflow> getAllWorkflows() {
         return workflowRepository.findAll();
     }
 
 
+    @Operation(summary = "Create a new Workflow")
     @PostMapping("/create")
     public Workflow addNewWorkflow(@RequestBody WorkflowDTO workflowDTO) {
         validator.validate(workflowDTO);
@@ -62,6 +67,7 @@ public class WorkflowController {
         return workflowRepository.save(workflow);
     }
 
+    @Operation(summary = "Create a new JSON Schema")
     @PostMapping("/json-schema/create")
     public JsonSchema addJsonSchema(@RequestBody JsonSchemaDTO jsonSchemaDTO) {
         JsonSchema jsonSchema = ObjectMapper.mapToJsonSchema(jsonSchemaDTO);
@@ -72,16 +78,19 @@ public class WorkflowController {
         return jsonSchemaRepository.save(jsonSchema);
     }
 
+    @Operation(summary = "Get all JSON Schema")
     @GetMapping("/json-schema/list")
     public List<JsonSchema> getJsonSchemaList() {
         return jsonSchemaRepository.findAll();
     }
 
+    @Operation(summary = "Get JSON Schema by UID")
     @GetMapping("/json-schema/{uid}")
     public JsonSchema getJsonSchema(@PathVariable String uid) {
         return jsonSchemaRepository.findByUid(uid);
     }
 
+    @Operation(summary = "Delete the Workflow and all Steps")
     @DeleteMapping("/{uid}")
     public void deleteWorkflow(@PathVariable String uid) {
         Workflow workflow = workflowRepository.findByUid(uid);

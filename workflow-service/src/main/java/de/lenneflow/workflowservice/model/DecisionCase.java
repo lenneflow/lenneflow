@@ -1,5 +1,6 @@
 package de.lenneflow.workflowservice.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,13 +15,18 @@ import java.util.Map;
 @NoArgsConstructor
 public class DecisionCase {
 
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String functionId;
 
+    @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String subWorkflowId;
 
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Map<String, Object> inputData = new LinkedHashMap<>();
 
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer retryCount;
 }

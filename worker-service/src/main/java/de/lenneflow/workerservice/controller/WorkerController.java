@@ -16,6 +16,7 @@ import de.lenneflow.workerservice.util.ObjectMapper;
 import de.lenneflow.workerservice.util.Validator;
 import de.lenneflow.workerservice.util.Util;
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +48,7 @@ public class WorkerController {
         this.cloudCredentialRepository = cloudCredentialRepository;
     }
 
+    @Operation(summary = "Register an existing Cluster")
     @PostMapping("/cluster/register")
     public KubernetesCluster createLocalKubernetesCluster(@RequestBody UnmanagedClusterDTO clusterDTO) {
         validator.validate(clusterDTO);
@@ -64,6 +66,7 @@ public class WorkerController {
 
     }
 
+    @Operation(summary = "Create a new Cluster")
     @PostMapping("/cluster/create")
     public KubernetesCluster createCloudKubernetesCluster(@RequestBody ManagedClusterDTO clusterDTO) {
 
@@ -100,6 +103,7 @@ public class WorkerController {
         return saved;
     }
 
+    @Operation(summary = "Create new cloud Credential")
     @PostMapping("/cloud/credentials/create")
     public CloudCredential createCloudClusterCredential(@RequestBody CloudCredentialDTO cloudCredentialDTO) {
         CloudCredential cloudCredential = ObjectMapper.mapToCloudCredential(cloudCredentialDTO);
@@ -109,6 +113,7 @@ public class WorkerController {
         return cloudCredentialRepository.save(cloudCredential);
     }
 
+    @Operation(summary = "Create access Token")
     @PostMapping("/cluster/api-token/create")
     public AccessToken createLocalApiToken(@RequestBody AccessTokenDto accessTokenDto) {
         AccessToken accessToken = ObjectMapper.mapToAccessToken(accessTokenDto);
@@ -117,6 +122,7 @@ public class WorkerController {
         return accessTokenRepository.save(accessToken);
     }
 
+    @Operation(summary = "Update a node group")
     @PostMapping("/cluster/node-group/update")
     public KubernetesCluster updateNodeGroup(@RequestBody NodeGroupDTO nodeGroupDTO) {
         KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(nodeGroupDTO.getClusterUid());
@@ -143,12 +149,14 @@ public class WorkerController {
         throw new InternalServiceException("Could not find the Kubernetes Cluster to update");
     }
 
+    @Operation(summary = "Get the list of all Clusters")
     @GetMapping("/cluster/list")
     public List<KubernetesCluster> getAllClusters()
     {
         return kubernetesClusterRepository.findAll();
     }
 
+    @Operation(summary = "Update a Cluster")
     @PostMapping("/cluster/{uid}/update")
     public ResponseEntity<KubernetesCluster> updateWorker(@RequestBody UnmanagedClusterDTO unmanagedClusterDTO, @PathVariable String uid) {
         validator.validate(unmanagedClusterDTO);
@@ -167,6 +175,7 @@ public class WorkerController {
         return new ResponseEntity<>(savedKubernetesCluster, HttpStatus.OK);
     }
 
+    @Operation(summary = "Get a Cluster by UID")
     @GetMapping("/cluster/{uid}")
     public KubernetesCluster getWorker(@PathVariable String uid) {
         KubernetesCluster found = kubernetesClusterRepository.findByUid(uid);
@@ -180,6 +189,7 @@ public class WorkerController {
         return found;
     }
 
+    @Operation(summary = "Delete a Cluster")
     @DeleteMapping("/cluster/{uid}")
     public void deleteWorker(@PathVariable String uid) {
         KubernetesCluster foundKubernetesCluster = kubernetesClusterRepository.findByUid(uid);

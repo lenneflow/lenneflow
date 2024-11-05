@@ -15,18 +15,19 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Schema(name = "JsonSchema")
 public class JsonSchemaDTO {
 
-    @Schema(name = "Schema name", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
-    @Schema(name = "Description", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String description;
 
-    @Schema(name = "Schema", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String schema;
 
-    @Schema(name = "Schema version", examples = {"V4","V6","V7","V201909", "V202012"}, requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(enumAsRef = true, requiredMode = Schema.RequiredMode.REQUIRED)
     private JsonSchemaVersion schemaVersion;
 
 }

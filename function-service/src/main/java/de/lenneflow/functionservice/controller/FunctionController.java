@@ -56,9 +56,6 @@ public class FunctionController {
     }
 
     @Operation(summary = "Get a function by id", description = "Returns a function as per the id")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved")
-    })
     @GetMapping("/{uid}")
     public Function getFunctionById(@PathVariable("uid") @Parameter(name = "uid", description = "Function uid") String uid) {
         return functionRepository.findByUid(uid);
@@ -70,6 +67,7 @@ public class FunctionController {
         return functionRepository.findByName(name);
     }
 
+    @Operation(summary = "Get all functions")
     @GetMapping("/list")
     public List<Function> getAllFunctions() {
         return functionRepository.findAll();
@@ -133,7 +131,7 @@ public class FunctionController {
         deploymentController.deployFunctionImageToWorker(function);
     }
 
-    @Operation(summary = "Undeploy a function", description = "")
+    @Operation(summary = "Undeploy a function")
     @GetMapping("/{uid}/undeploy")
     public void unDeployFunction(@PathVariable("uid") String functionId) {
         Function function = functionRepository.findByUid(functionId);
@@ -142,9 +140,8 @@ public class FunctionController {
         functionRepository.save(function);
     }
 
-    @Operation(summary = "Checks the connection to a cluster", description = "")
+    @Operation(summary = "Checks the connection to a cluster")
     @GetMapping(value = "/cluster/{uid}/check-connection")
-    @ResponseStatus(value = HttpStatus.OK)
     public void checkConnection(@PathVariable String uid) {
         KubernetesCluster foundKubernetesCluster = workerServiceClient.getKubernetesClusterById(uid);
         if (foundKubernetesCluster == null) {
@@ -168,7 +165,7 @@ public class FunctionController {
         functionRepository.delete(function);
     }
 
-    @Operation(summary = "Creates a new json schema", description = "")
+    @Operation(summary = "Creates a new json schema")
     @PostMapping("/json-schema/create")
     public JsonSchema addJsonSchema(@RequestBody JsonSchemaDTO jsonSchemaDto) {
         JsonSchema jsonSchema = ObjectMapper.mapToJsonSchema(jsonSchemaDto);
@@ -179,13 +176,13 @@ public class FunctionController {
         return jsonSchemaRepository.save(jsonSchema);
     }
 
-    @Operation(summary = "Get all json schema", description = "")
+    @Operation(summary = "Get all json schema")
     @GetMapping("/json-schema/list")
     public List<JsonSchema> getJsonSchemaList() {
         return jsonSchemaRepository.findAll();
     }
 
-    @Operation(summary = "Get a json schema by UID", description = "")
+    @Operation(summary = "Get a json schema by UID")
     @GetMapping("/json-schema/{uid}")
     public JsonSchema getJsonSchema(@PathVariable String uid) {
         return jsonSchemaRepository.findByUid(uid);

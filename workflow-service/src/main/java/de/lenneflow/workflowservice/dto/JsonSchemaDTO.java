@@ -11,17 +11,18 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Schema(name = "JsonSchema")
 public class JsonSchemaDTO {
 
-    @Schema(name = "Schema Name", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
-    @Schema(name = "Description", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String description;
 
-    @Schema(name = "Schema", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String schema;
 
-    @Schema(name = "Schema Version", enumAsRef = true, requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(enumAsRef = true, requiredMode = Schema.RequiredMode.REQUIRED)
     private JsonSchemaVersion schemaVersion;
 }
