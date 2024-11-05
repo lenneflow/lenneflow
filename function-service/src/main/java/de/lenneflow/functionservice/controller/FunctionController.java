@@ -30,6 +30,7 @@ import java.util.UUID;
 
 /**
  * Central REST Controller for the function service
+ *
  * @author Idrissa Ganemtore
  */
 
@@ -59,12 +60,13 @@ public class FunctionController {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved")
     })
     @GetMapping("/{uid}")
-    public Function getFunctionById(@PathVariable @Parameter(name = "uid", description = "Function uid") String uid) {
+    public Function getFunctionById(@PathVariable("uid") @Parameter(name = "uid", description = "Function uid") String uid) {
         return functionRepository.findByUid(uid);
     }
 
+    @Operation(summary = "Get a function by name", description = "Returns a function as per the name")
     @GetMapping("/name/{function-name}")
-    public Function getFunctionByName(@PathVariable("function-name") String name) {
+    public Function getFunctionByName(@PathVariable("function-name")  @Parameter(name = "function-name", description = "Function name") String name) {
         return functionRepository.findByName(name);
     }
 
@@ -73,6 +75,7 @@ public class FunctionController {
         return functionRepository.findAll();
     }
 
+    @Operation(summary = "Create a new Function")
     @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
     public Function addFunction(@RequestBody FunctionDTO functionDTO) {
@@ -85,32 +88,33 @@ public class FunctionController {
         function.setCreated(LocalDateTime.now());
         function.setUpdated(LocalDateTime.now());
         Function savedFunction = functionRepository.save(function);
-        if(!function.isLazyDeployment()){
+        if (!function.isLazyDeployment()) {
             new Thread(() -> deploymentController.deployFunctionImageToWorker(savedFunction)).start();
         }
         return savedFunction;
     }
 
+    @Operation(summary = "Updates an existing function")
     @PostMapping("/{uid}/update")
-    public void updateFunction(@RequestBody  FunctionDTO functionDTO, @PathVariable String uid) {
+    public void updateFunction(@RequestBody FunctionDTO functionDTO, @PathVariable String uid) {
         validator.validate(functionDTO);
         Function foundFunction = functionRepository.findByUid(uid);
-        if(foundFunction == null) {
+        if (foundFunction == null) {
             logger.error("function with UID {} not found", uid);
             throw new ResourceNotFoundException("function with UID " + uid + " not found");
         }
         Function function = ObjectMapper.mapToFunction(functionDTO);
         function.setUid(foundFunction.getUid());
-        if(foundFunction.getDeploymentState() == DeploymentState.UNDEPLOYED){
+        if (foundFunction.getDeploymentState() == DeploymentState.UNDEPLOYED) {
             function.setUpdated(LocalDateTime.now());
             function.setDeploymentState(DeploymentState.UNDEPLOYED);
             functionRepository.save(function);
             return;
         }
-        if(foundFunction.getDeploymentState() == DeploymentState.DEPLOYING){
+        if (foundFunction.getDeploymentState() == DeploymentState.DEPLOYING) {
             throw new InternalServiceException("Function is currently deploying! No change is allowed!");
         }
-        if(isNewDeploymentNecessary(foundFunction, function)){
+        if (isNewDeploymentNecessary(foundFunction, function)) {
             deploymentController.undeployFunction(foundFunction);
             function.setUpdated(LocalDateTime.now());
             Function savedFunction = functionRepository.save(function);
@@ -122,13 +126,15 @@ public class FunctionController {
 
     }
 
-    @GetMapping( "/{uid}/deploy")
+    @Operation(summary = "Deploy a function", description = "Deploys a function that has already been created.")
+    @GetMapping("/{uid}/deploy")
     public void deployFunction(@PathVariable("uid") String functionId) {
         Function function = functionRepository.findByUid(functionId);
         deploymentController.deployFunctionImageToWorker(function);
     }
 
-    @GetMapping( "/{uid}/undeploy")
+    @Operation(summary = "Undeploy a function", description = "")
+    @GetMapping("/{uid}/undeploy")
     public void unDeployFunction(@PathVariable("uid") String functionId) {
         Function function = functionRepository.findByUid(functionId);
         deploymentController.undeployFunction(function);
@@ -136,30 +142,33 @@ public class FunctionController {
         functionRepository.save(function);
     }
 
+    @Operation(summary = "Checks the connection to a cluster", description = "")
     @GetMapping(value = "/cluster/{uid}/check-connection")
     @ResponseStatus(value = HttpStatus.OK)
     public void checkConnection(@PathVariable String uid) {
         KubernetesCluster foundKubernetesCluster = workerServiceClient.getKubernetesClusterById(uid);
-        if(foundKubernetesCluster == null) {
+        if (foundKubernetesCluster == null) {
             throw new ResourceNotFoundException("KUBERNETES_CLUSTER_NOT_FOUND");
         }
         deploymentController.checkConnectionToKubernetes(foundKubernetesCluster);
     }
 
 
+    @Operation(summary = "Deletes a function by id", description = "Undeploy and delete the specified function")
     @DeleteMapping("/{uid}")
     public void deleteFunction(@PathVariable String uid) {
         Function function = functionRepository.findByUid(uid);
         if (function == null) {
             logger.error("Function is null");
-           throw new ResourceNotFoundException("Function not found");
+            throw new ResourceNotFoundException("Function not found");
         }
-        if(function.getDeploymentState() == DeploymentState.DEPLOYED){
+        if (function.getDeploymentState() == DeploymentState.DEPLOYED) {
             deploymentController.undeployFunction(function);
         }
         functionRepository.delete(function);
     }
 
+    @Operation(summary = "Creates a new json schema", description = "")
     @PostMapping("/json-schema/create")
     public JsonSchema addJsonSchema(@RequestBody JsonSchemaDTO jsonSchemaDto) {
         JsonSchema jsonSchema = ObjectMapper.mapToJsonSchema(jsonSchemaDto);
@@ -170,11 +179,13 @@ public class FunctionController {
         return jsonSchemaRepository.save(jsonSchema);
     }
 
+    @Operation(summary = "Get all json schema", description = "")
     @GetMapping("/json-schema/list")
     public List<JsonSchema> getJsonSchemaList() {
         return jsonSchemaRepository.findAll();
     }
 
+    @Operation(summary = "Get a json schema by UID", description = "")
     @GetMapping("/json-schema/{uid}")
     public JsonSchema getJsonSchema(@PathVariable String uid) {
         return jsonSchemaRepository.findByUid(uid);
@@ -182,16 +193,16 @@ public class FunctionController {
 
 
     private boolean isNewDeploymentNecessary(Function oldFunction, Function newFunction) {
-        if(!oldFunction.getImageName().equals(newFunction.getImageName())){
+        if (!oldFunction.getImageName().equals(newFunction.getImageName())) {
             return true;
         }
-        if(oldFunction.getServicePort() != newFunction.getServicePort()){
+        if (oldFunction.getServicePort() != newFunction.getServicePort()) {
             return true;
         }
-        if(!oldFunction.getName().equals(newFunction.getName())){
+        if (!oldFunction.getName().equals(newFunction.getName())) {
             return true;
         }
-        if(!oldFunction.getResourcePath().equals(newFunction.getResourcePath())){
+        if (!oldFunction.getResourcePath().equals(newFunction.getResourcePath())) {
             return true;
         }
         return oldFunction.getAssignedHostPort() != newFunction.getAssignedHostPort();

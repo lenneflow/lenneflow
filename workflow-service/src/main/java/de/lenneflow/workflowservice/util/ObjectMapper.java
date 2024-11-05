@@ -16,17 +16,16 @@ public class ObjectMapper {
         Workflow workflow = new Workflow();
         workflow.setDescription(workflowDTO.getDescription());
         workflow.setName(workflowDTO.getName());
-        workflow.setRestartable(workflowDTO.isRestartable());
         workflow.setTimeOutInSeconds(workflowDTO.getTimeOutInSeconds());
         return workflow;
     }
 
     public static WorkflowStep mapToWorkflowStep(WorkflowStep workflowStep, SubWorkflowStep subWorkflowStep) {
         workflowStep.setName(subWorkflowStep.getName());
-        workflowStep.setWorkflowUid(subWorkflowStep.getWorkflowId());
-        workflowStep.setSubWorkflowId(subWorkflowStep.getSubWorkflowId());
+        workflowStep.setWorkflowUid(subWorkflowStep.getWorkflowUid());
+        workflowStep.setSubWorkflowId(subWorkflowStep.getSubWorkflowUid());
         workflowStep.setDescription(subWorkflowStep.getDescription());
-        workflowStep.setControlStructure(workflowStep.getControlStructure());
+        workflowStep.setControlStructure(ControlStructure.SUB_WORKFLOW);
         workflowStep.setExecutionOrder(subWorkflowStep.getExecutionOrder());
         workflowStep.setInputData(subWorkflowStep.getInputData());
         workflowStep.setRetryCount(subWorkflowStep.getRetryCount());
@@ -42,11 +41,11 @@ public class ObjectMapper {
 
     public static WorkflowStep mapToWorkflowStep(WorkflowStep workflowStep, WhileWorkflowStep whileWorkflowStep) {
         workflowStep.setName(whileWorkflowStep.getName());
-        workflowStep.setWorkflowUid(whileWorkflowStep.getWorkflowId());
+        workflowStep.setWorkflowUid(whileWorkflowStep.getWorkflowUid());
         workflowStep.setDescription(whileWorkflowStep.getDescription());
         workflowStep.setControlStructure(ControlStructure.DO_WHILE);
         workflowStep.setExecutionOrder(whileWorkflowStep.getExecutionOrder());
-        workflowStep.setFunctionId(whileWorkflowStep.getFunctionId());
+        workflowStep.setFunctionId(whileWorkflowStep.getFunctionUid());
         workflowStep.setStopCondition(whileWorkflowStep.getStopCondition());
         workflowStep.setInputData(whileWorkflowStep.getInputData());
         workflowStep.setRetryCount(whileWorkflowStep.getRetryCount());
@@ -63,7 +62,7 @@ public class ObjectMapper {
         workflowStep.setWorkflowUid(switchWorkflowStep.getWorkflowUid());
         workflowStep.setDescription(switchWorkflowStep.getDescription());
         workflowStep.setRetryCount(switchWorkflowStep.getRetryCount());
-        workflowStep.setControlStructure(switchWorkflowStep.getControlStructure());
+        workflowStep.setControlStructure(ControlStructure.SWITCH);
         workflowStep.setExecutionOrder(switchWorkflowStep.getExecutionOrder());
         workflowStep.setSwitchCase(switchWorkflowStep.getSwitchCase());
         workflowStep.setDecisionCases(switchWorkflowStep.getDecisionCases());
@@ -81,8 +80,9 @@ public class ObjectMapper {
         workflowStep.setWorkflowUid(simpleWorkflowStep.getWorkflowUid());
         workflowStep.setDescription(simpleWorkflowStep.getDescription());
         workflowStep.setExecutionOrder(simpleWorkflowStep.getExecutionOrder());
+        workflowStep.setControlStructure(ControlStructure.SIMPLE);
         workflowStep.setRetryCount(simpleWorkflowStep.getRetryCount());
-        workflowStep.setFunctionId(simpleWorkflowStep.getFunctionId());
+        workflowStep.setFunctionId(simpleWorkflowStep.getFunctionUid());
         workflowStep.setInputData(simpleWorkflowStep.getInputData());
         return workflowStep;
     }

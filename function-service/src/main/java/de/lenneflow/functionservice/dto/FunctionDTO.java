@@ -18,13 +18,13 @@ import lombok.Setter;
 @NoArgsConstructor
 public class FunctionDTO {
 
-    @Schema(name = "Product ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(name = "Function name", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
-    @Schema(name = "Description", example = "1", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @Schema(name = "Description", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String description;
 
-    @Schema(name = "The type of function", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(name = "The type of function", requiredMode = Schema.RequiredMode.REQUIRED)
     private String type;
 
     @Schema(name = "Package repository", example = "DOCKER_HUB", requiredMode = Schema.RequiredMode.REQUIRED)

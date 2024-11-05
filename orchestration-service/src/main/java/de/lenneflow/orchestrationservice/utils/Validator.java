@@ -26,7 +26,6 @@ public class Validator {
      * @param jsonSchema the json schema
      * @param version    the schema version
      * @param dataToValidate    the object to validate
-     * @return te result of the validation
      */
     public static void validateJsonData(String jsonSchema, JsonSchemaVersion version, Map<String, Object> dataToValidate) {
         try {

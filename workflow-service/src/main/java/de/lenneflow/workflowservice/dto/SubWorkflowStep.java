@@ -1,6 +1,6 @@
 package de.lenneflow.workflowservice.dto;
 
-import de.lenneflow.workflowservice.enums.ControlStructure;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,19 +15,25 @@ import java.util.Map;
 @NoArgsConstructor
 public class SubWorkflowStep {
 
+
+    @Schema(name = "Workflow Step Name", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
-    private int executionOrder;
+    @Schema(name = "Workflow UID", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String workflowUid;
 
-    private Integer retryCount = 0;
-
-    private String workflowId;
-
+    @Schema(name = "Description", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String description;
 
-    private ControlStructure controlStructure = ControlStructure.SUB_WORKFLOW;
+    @Schema(name = "Execution Order", requiredMode = Schema.RequiredMode.REQUIRED)
+    private int executionOrder;
 
-    private String subWorkflowId;
+    @Schema(name = "Count of Retries", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer retryCount = 0;
 
+    @Schema(name = "Sub Workflow UID", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String subWorkflowUid;
+
+    @Schema(name = "Input Data", requiredMode = Schema.RequiredMode.REQUIRED)
     private Map<String, Object> inputData = new LinkedHashMap<>();
 }

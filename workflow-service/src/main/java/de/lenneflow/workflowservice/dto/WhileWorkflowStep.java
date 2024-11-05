@@ -1,12 +1,11 @@
 package de.lenneflow.workflowservice.dto;
 
-import de.lenneflow.workflowservice.enums.ControlStructure;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -16,21 +15,29 @@ import java.util.Map;
 @NoArgsConstructor
 public class WhileWorkflowStep {
 
+
+    @Schema(name = "Workflow Step name", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
-    private String workflowId;
+    @Schema(name = "Workflow UID", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String workflowUid;
 
+    @Schema(name = "Description", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String description;
 
-    private ControlStructure controlStructure = ControlStructure.DO_WHILE;
-
+    @Schema(name = "Execution order", requiredMode = Schema.RequiredMode.REQUIRED)
     private int executionOrder;
 
-    private String functionId;
+    @Schema(name = "Count of retries", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer retryCount = 0;
 
+    @Schema(name = "Function UID", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String functionUid;
+
+    @Schema(name = "Stop condition", example = "[step2.output.randomValue] < 10", requiredMode = Schema.RequiredMode.REQUIRED)
     private String stopCondition;
 
+    @Schema(name = "Input data", requiredMode = Schema.RequiredMode.REQUIRED)
     private Map<String, Object> inputData = new LinkedHashMap<>();
 
-    private Integer retryCount;
 }

@@ -16,6 +16,8 @@ import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceReposito
 import de.lenneflow.orchestrationservice.helpercomponents.WorkflowRunner;
 import de.lenneflow.orchestrationservice.utils.ObjectMapper;
 import de.lenneflow.orchestrationservice.utils.Validator;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -52,8 +54,9 @@ public class OrchestrationController {
         this.globalInputDataRepository = globalInputDataRepository;
     }
 
+    @Operation(summary = "Starts a workflow by UID", description = "")
     @GetMapping("/workflow/{workflow-uid}/input-data/{input-data-uid}/start")
-    public WorkflowExecution startWorkflowGet(@PathVariable(name = "workflow-uid") String workflowId, @PathVariable("input-data-uid") String inputdataId) {
+    public WorkflowExecution startWorkflowGet(@PathVariable(name = "workflow-uid") @Parameter(name = "Workflow UID") String workflowId, @PathVariable("input-data-uid") @Parameter(name = "Input data UID") String inputdataId) {
         GlobalInputData globalInputData = globalInputDataRepository.findByUid(inputdataId);
         Workflow workflow = workflowServiceClient.getWorkflowById(workflowId);
         if (globalInputData == null) {
@@ -70,6 +73,7 @@ public class OrchestrationController {
         return workflowRunner.startWorkflow(workflowInstance, workflow);
     }
 
+    @Operation(summary = "Starts a workflow by UID", description = "")
     @GetMapping("/workflow/{workflow-uid}/start")
     public WorkflowExecution startWorkflowGet2(@PathVariable(name = "workflow-uid") String workflowId) {
         Workflow workflow = workflowServiceClient.getWorkflowById(workflowId);
@@ -81,6 +85,7 @@ public class OrchestrationController {
         return workflowRunner.startWorkflow(workflowInstance, workflow);
     }
 
+    @Operation(summary = "Starts a workflow by UID", description = "")
     @PostMapping("/workflow/{workflow-uid}/start")
     public WorkflowExecution startWorkflowPost(@PathVariable(name = "workflow-uid") String workflowId, @RequestBody Map<String, Object> inputData) {
         Workflow workflow = workflowServiceClient.getWorkflowById(workflowId);

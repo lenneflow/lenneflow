@@ -1,5 +1,6 @@
 package de.lenneflow.orchestrationservice.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,9 +20,12 @@ import java.util.Map;
 @NoArgsConstructor
 public class GlobalInputDataDto {
 
+    @Schema(name = "Input data name", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
+    @Schema(name = "Description", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String description;
 
+    @Schema(name = "Payload", requiredMode = Schema.RequiredMode.REQUIRED)
     private Map<String, Object> inputData = new LinkedHashMap<>();
 }
