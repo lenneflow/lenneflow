@@ -15,6 +15,10 @@ import de.lenneflow.functionservice.repository.FunctionRepository;
 import de.lenneflow.functionservice.repository.JsonSchemaRepository;
 import de.lenneflow.functionservice.util.ObjectMapper;
 import de.lenneflow.functionservice.util.Validator;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -50,8 +54,12 @@ public class FunctionController {
         this.jsonSchemaRepository = jsonSchemaRepository;
     }
 
+    @Operation(summary = "Get a function by id", description = "Returns a function as per the id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved")
+    })
     @GetMapping("/{uid}")
-    public Function getFunctionById(@PathVariable String uid) {
+    public Function getFunctionById(@PathVariable @Parameter(name = "uid", description = "Function uid") String uid) {
         return functionRepository.findByUid(uid);
     }
 
