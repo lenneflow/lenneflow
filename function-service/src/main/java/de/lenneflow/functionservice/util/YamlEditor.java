@@ -36,11 +36,15 @@ public class YamlEditor {
      * @return the {@link Deployment} resource
      */
     public static Deployment createKubernetesDeploymentResource(Function function, int replica, String serviceAccountName) {
+        Map<String, Quantity> reqMap = new HashMap<>();
+        reqMap.put("cpu", new QuantityBuilder().withAmount("500").withFormat("m").build());
+        reqMap.put("memory", new QuantityBuilder().withAmount("500").withFormat("Mi").build());
         return new DeploymentBuilder().withApiVersion("apps/v1").withKind("Deployment")
                 .withNewMetadata().withName(function.getName()).endMetadata().withNewSpec().withReplicas(replica).withNewSelector()
                 .withMatchLabels(Collections.singletonMap("app", function.getName())).endSelector().withNewTemplate().withNewMetadata().withLabels(Collections.singletonMap("app", function.getName())).endMetadata().withNewSpec().withServiceAccountName(serviceAccountName).withHostNetwork(false)
                 .withContainers().addNewContainer().withName(function.getName()).withImage(function.getImageName()).withPorts().addNewPort().withContainerPort(function.getServicePort())
-                .withHostPort(function.getAssignedHostPort()).endPort().endContainer().endSpec().endTemplate().endSpec().build();
+                .withHostPort(function.getAssignedHostPort()).endPort().withResources(new ResourceRequirementsBuilder().withRequests(reqMap).build())
+                .endContainer().endSpec().endTemplate().endSpec().build();
     }
 
 

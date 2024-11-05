@@ -2,6 +2,7 @@ package de.lenneflow.functionservice.controller;
 
 
 import de.lenneflow.functionservice.dto.FunctionDTO;
+import de.lenneflow.functionservice.dto.JsonSchemaDTO;
 import de.lenneflow.functionservice.enums.DeploymentState;
 import de.lenneflow.functionservice.exception.InternalServiceException;
 import de.lenneflow.functionservice.exception.ResourceNotFoundException;
@@ -152,7 +153,8 @@ public class FunctionController {
     }
 
     @PostMapping("/json-schema/create")
-    public JsonSchema addJsonSchema(@RequestBody JsonSchema jsonSchema) {
+    public JsonSchema addJsonSchema(@RequestBody JsonSchemaDTO jsonSchemaDto) {
+        JsonSchema jsonSchema = ObjectMapper.mapToJsonSchema(jsonSchemaDto);
         jsonSchema.setUid(UUID.randomUUID().toString());
         jsonSchema.setCreated(LocalDateTime.now());
         jsonSchema.setUpdated(LocalDateTime.now());

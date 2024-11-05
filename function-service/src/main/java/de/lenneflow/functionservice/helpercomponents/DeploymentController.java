@@ -91,6 +91,7 @@ public class DeploymentController {
         KubernetesClient client = getKubernetesClient(kubernetesCluster);
         client.services().inNamespace(NAMESPACE).withName(function.getName()).delete();
         client.apps().deployments().inNamespace(NAMESPACE).withName(function.getName()).delete();
+        client.autoscaling().v1().horizontalPodAutoscalers().inNamespace(NAMESPACE).withName(function.getName()).delete();
         removeIngressPath(kubernetesCluster, function);
 
     }

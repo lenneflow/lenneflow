@@ -1,7 +1,9 @@
 package de.lenneflow.functionservice.util;
 
 import de.lenneflow.functionservice.dto.FunctionDTO;
+import de.lenneflow.functionservice.dto.JsonSchemaDTO;
 import de.lenneflow.functionservice.model.Function;
+import de.lenneflow.functionservice.model.JsonSchema;
 
 /**
  * Object mapper helper class. The main purpose is to map data transfer objects to the entity objects.
@@ -29,5 +31,14 @@ public class ObjectMapper {
         function.setLazyDeployment(functionDTO.isLazyDeployment());
         function.setImageName(functionDTO.getImageName());
         return function;
+    }
+
+    public static JsonSchema mapToJsonSchema(JsonSchemaDTO jsonSchemaDTO) {
+        JsonSchema jsonSchema = new JsonSchema();
+        jsonSchema.setSchema(jsonSchemaDTO.getSchema());
+        jsonSchema.setDescription(jsonSchemaDTO.getDescription());
+        jsonSchema.setName(jsonSchemaDTO.getName());
+        jsonSchema.setSchemaVersion(jsonSchemaDTO.getSchemaVersion());
+        return jsonSchema;
     }
 }
