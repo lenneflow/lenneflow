@@ -20,12 +20,12 @@ import java.util.Map;
 @NoArgsConstructor
 public class GlobalInputDataDto {
 
-    @Schema(name = "Input data name", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
-    @Schema(name = "Description", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String description;
 
-    @Schema(name = "Payload", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Map<String, Object> inputData = new LinkedHashMap<>();
 }

@@ -10,6 +10,7 @@ import de.lenneflow.workflowservice.repository.WorkflowStepRepository;
 import de.lenneflow.workflowservice.util.ObjectMapper;
 import de.lenneflow.workflowservice.util.Validator;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -17,7 +18,8 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/workflow")
+@RequestMapping("/api/workflows")
+@Tag(name = "Workflows API")
 public class WorkflowController {
 
     final WorkflowRepository workflowRepository;

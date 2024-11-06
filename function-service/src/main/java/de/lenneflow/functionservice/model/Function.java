@@ -41,6 +41,10 @@ public class Function {
 
     private String resourcePath;
 
+    private String cpuRequest;
+
+    private String memoryRequest;
+
     private String imageName;
 
     private boolean lazyDeployment;

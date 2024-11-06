@@ -1,6 +1,8 @@
 package de.lenneflow.functionservice.util;
 
+import com.networknt.schema.*;
 import de.lenneflow.functionservice.dto.FunctionDTO;
+import de.lenneflow.functionservice.enums.JsonSchemaVersion;
 import de.lenneflow.functionservice.exception.InternalServiceException;
 import de.lenneflow.functionservice.exception.PayloadNotValidException;
 import de.lenneflow.functionservice.model.Function;
@@ -10,6 +12,8 @@ import de.lenneflow.functionservice.repository.JsonSchemaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import java.util.Set;
 
 /**
  * Validator class.
@@ -52,8 +56,35 @@ public class Validator {
      */
     public void validate(FunctionDTO functionDTO) {
         checkMandatoryFields(functionDTO);
+        checkResourceRequests(functionDTO);
         checkSchema(functionDTO);
         checkUniqueValues(functionDTO);
+    }
+
+    private void checkResourceRequests(FunctionDTO functionDTO) {
+        String cpuRequest = functionDTO.getCpuRequest();
+        String memoryRequest = functionDTO.getMemoryRequest();
+        if(cpuRequest != null && !cpuRequest.isEmpty()) {
+            if(cpuRequest.toLowerCase().endsWith("m")){
+                cpuRequest = cpuRequest.toLowerCase().replace("m", "").trim();
+            }
+            try {
+                Double.parseDouble(cpuRequest);
+            }catch (NumberFormatException e){
+                throw new PayloadNotValidException("The CPU request is not valid! It must be in the form (0.5), (1) or (250m) ");
+            }
+        }
+        if(memoryRequest != null && !memoryRequest.isEmpty()) {
+            if(!memoryRequest.toLowerCase().endsWith("mi")){
+                throw new PayloadNotValidException("The Memory request is not valid! It must be in the form (250Mi) ");
+            }
+            memoryRequest = memoryRequest.toLowerCase().replace("mi", "").trim();
+            try {
+                Integer.parseInt(memoryRequest);
+            }catch (NumberFormatException e){
+                throw new PayloadNotValidException("The Memory request is not valid! It must be in the form (250Mi) ");
+            }
+        }
     }
 
 
@@ -115,10 +146,46 @@ public class Validator {
 
     /**
      * validates the input schema specified in the function.
-     * @param schema the schema to validate
+     * @param jsonSchema the schema to validate
      */
-    public void validateJsonSchema(JsonSchema schema) {
-        //TODO Validate schema itself
+    public void validateJsonSchema(JsonSchema jsonSchema) {
+        try {
+            JsonSchemaVersion version = jsonSchema.getSchemaVersion();
+            SpecVersion.VersionFlag versionFlag = SpecVersion.VersionFlag.valueOf(version.toString());
+            JsonSchemaFactory jsonSchemaFactory = JsonSchemaFactory.getInstance(versionFlag);
+            SchemaValidatorsConfig.Builder builder = SchemaValidatorsConfig.builder();
+            SchemaValidatorsConfig config = builder.build();
+            com.networknt.schema.JsonSchema schema = jsonSchemaFactory.getSchema(SchemaLocation.of(getSchemaId(versionFlag)), config);
+            Set<ValidationMessage> assertions = schema.validate(jsonSchema.getSchema(), InputFormat.JSON, executionContext -> executionContext.getExecutionConfig().setFormatAssertionsEnabled(true));
+            if (!assertions.isEmpty()) {
+                StringBuilder message = new StringBuilder();
+                assertions.forEach(x -> message.append(x.getMessage()).append("\n"));
+                throw new PayloadNotValidException("The json schema " + jsonSchema.getName() + " is not valid!\n" + message);
+            }
+        } catch (Exception e) {
+            throw new PayloadNotValidException("Schema parse error " + e.getMessage());
+        }
 
+    }
+
+    private String getSchemaId(SpecVersion.VersionFlag versionFlag) {
+        switch (versionFlag) {
+            case V4 -> {
+                return SchemaId.V4;
+            }
+            case V6 -> {
+                return SchemaId.V6;
+            }
+            case V7 -> {
+                return SchemaId.V7;
+            }
+            case V201909 -> {
+                return SchemaId.V201909;
+            }
+            case V202012 -> {
+                return SchemaId.V202012;
+            }
+        }
+        throw new InternalServiceException("Schema version " + versionFlag + " is not known!");
     }
 }

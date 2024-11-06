@@ -17,8 +17,7 @@ import de.lenneflow.functionservice.util.ObjectMapper;
 import de.lenneflow.functionservice.util.Validator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -35,13 +34,13 @@ import java.util.UUID;
  */
 
 @RestController
-@RequestMapping("/api/function")
+@RequestMapping("/api/functions")
+@Tag(name = "Functions API")
 public class FunctionController {
 
     private static final Logger logger = LoggerFactory.getLogger(FunctionController.class);
 
-    final
-    FunctionRepository functionRepository;
+    final FunctionRepository functionRepository;
     final Validator validator;
     final DeploymentController deploymentController;
     final WorkerServiceClient workerServiceClient;
@@ -55,7 +54,7 @@ public class FunctionController {
         this.jsonSchemaRepository = jsonSchemaRepository;
     }
 
-    @Operation(summary = "Get a function by id", description = "Returns a function as per the id")
+    @Operation(summary = "Get a function by id")
     @GetMapping("/{uid}")
     public Function getFunctionById(@PathVariable("uid") @Parameter(name = "uid", description = "Function uid") String uid) {
         return functionRepository.findByUid(uid);
@@ -63,13 +62,14 @@ public class FunctionController {
 
     @Operation(summary = "Get a function by name", description = "Returns a function as per the name")
     @GetMapping("/name/{function-name}")
-    public Function getFunctionByName(@PathVariable("function-name")  @Parameter(name = "function-name", description = "Function name") String name) {
+    public Function getFunctionByName(@PathVariable("function-name") @Parameter(name = "function-name", description = "Function name") String name) {
         return functionRepository.findByName(name);
     }
 
     @Operation(summary = "Get all functions")
     @GetMapping("/list")
     public List<Function> getAllFunctions() {
+
         return functionRepository.findAll();
     }
 
@@ -79,6 +79,7 @@ public class FunctionController {
     public Function addFunction(@RequestBody FunctionDTO functionDTO) {
         validator.validate(functionDTO);
         Function function = ObjectMapper.mapToFunction(functionDTO);
+        checkAndAllocateResourcesRequest(function);
         function.setUid(UUID.randomUUID().toString());
         function.setInputSchema(jsonSchemaRepository.findByUid(functionDTO.getInputSchemaUid()));
         function.setOutputSchema(jsonSchemaRepository.findByUid(functionDTO.getOutputSchemaUid()));
@@ -102,6 +103,7 @@ public class FunctionController {
             throw new ResourceNotFoundException("function with UID " + uid + " not found");
         }
         Function function = ObjectMapper.mapToFunction(functionDTO);
+        checkAndAllocateResourcesRequest(function);
         function.setUid(foundFunction.getUid());
         if (foundFunction.getDeploymentState() == DeploymentState.UNDEPLOYED) {
             function.setUpdated(LocalDateTime.now());
@@ -189,6 +191,13 @@ public class FunctionController {
     }
 
 
+    /**
+     * The update of some fields in the function require a new deployment of the function
+     * Here is the check if a new deployment is necessary
+     * @param oldFunction the current function
+     * @param newFunction the new function
+     * @return true if necessary, false otherwise
+     */
     private boolean isNewDeploymentNecessary(Function oldFunction, Function newFunction) {
         if (!oldFunction.getImageName().equals(newFunction.getImageName())) {
             return true;
@@ -203,6 +212,19 @@ public class FunctionController {
             return true;
         }
         return oldFunction.getAssignedHostPort() != newFunction.getAssignedHostPort();
+    }
+
+    /**
+     * If the resources requests are not provided by the API User, default ones are provided here.
+     * @param function the function object
+     */
+    private void checkAndAllocateResourcesRequest(Function function) {
+        if (function.getCpuRequest() == null || function.getCpuRequest().isEmpty()) {
+            function.setCpuRequest("250m");
+        }
+        if (function.getMemoryRequest() == null || function.getMemoryRequest().isEmpty()) {
+            function.setMemoryRequest("128Mi");
+        }
     }
 
 }

@@ -22,7 +22,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web:latest.release'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-ribbon:latest.release'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:latest.release'
-    implementation 'org.springframework.cloud:spring-cloud-starter-kubernetes-fabric8-all:latest.release'
     implementation 'org.springframework.boot:spring-boot-starter-actuator:latest.release'
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:latest.release'
     implementation 'de.codecentric:spring-boot-admin-starter-client:latest.release'

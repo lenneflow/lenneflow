@@ -1,6 +1,5 @@
 package de.lenneflow.orchestrationservice.helpercomponents;
 
-import de.lenneflow.orchestrationservice.configuration.AppConfiguration;
 import de.lenneflow.orchestrationservice.dto.FunctionDto;
 import de.lenneflow.orchestrationservice.utils.Util;
 import org.springframework.amqp.core.AmqpAdmin;
@@ -32,7 +31,7 @@ public class QueueListener {
      *
      * @param serializedFunction the serialized function from the queue.
      */
-    @RabbitListener(queues = AppConfiguration.FUNCTIONQUEUE)
+    @RabbitListener(queues = QueueController.FUNCTION_QUEUE)
     public void functionListener(byte[] serializedFunction) {
         FunctionDto functionDto = Util.deserializeFunction(serializedFunction);
         new Thread(() -> workflowRunner.processFunctionDtoFromQueue(functionDto)).start();
@@ -45,7 +44,7 @@ public class QueueListener {
      *
      * @param serializedFunction the serialized function from the queue.
      */
-    @RabbitListener(queues = AppConfiguration.FUNCTIONRESULTQUEUE)
+    @RabbitListener(queues = QueueController.FUNCTION_RESULT_QUEUE)
     public void functionResultListener(byte[] serializedFunction) {
         FunctionDto resultFunctionDto = Util.deserializeFunction(serializedFunction);
         workflowRunner.processResultFromQueue(resultFunctionDto);

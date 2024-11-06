@@ -1,9 +1,7 @@
 package de.lenneflow.workerservice.util;
 
-import de.lenneflow.workerservice.dto.AccessTokenDto;
-import de.lenneflow.workerservice.dto.CloudCredentialDTO;
-import de.lenneflow.workerservice.dto.ManagedClusterDTO;
-import de.lenneflow.workerservice.dto.UnmanagedClusterDTO;
+import de.lenneflow.workerservice.dto.*;
+import de.lenneflow.workerservice.enums.CloudProvider;
 import de.lenneflow.workerservice.exception.InternalServiceException;
 import de.lenneflow.workerservice.model.AccessToken;
 import de.lenneflow.workerservice.model.CloudCredential;
@@ -24,7 +22,7 @@ public class ObjectMapper {
         kubernetesCluster.setRegion(clusterDTO.getRegion());
         kubernetesCluster.setDescription(clusterDTO.getDescription());
         kubernetesCluster.setKubernetesVersion(clusterDTO.getKubernetesVersion());
-        kubernetesCluster.setCloudProvider(clusterDTO.getCloudProvider());
+        kubernetesCluster.setCloudProvider(CloudProvider.valueOf(clusterDTO.getCloudProvider().name()));
         kubernetesCluster.setDesiredNodeCount(clusterDTO.getDesiredNodeCount());
         kubernetesCluster.setMinimumNodeCount(clusterDTO.getMinimumNodeCount());
         kubernetesCluster.setMaximumNodeCount(clusterDTO.getMaximumNodeCount());
@@ -45,10 +43,21 @@ public class ObjectMapper {
         kubernetesCluster.setSupportedFunctionTypes(clusterDTO.getSupportedFunctionTypes());
         kubernetesCluster.setApiServerEndpoint(clusterDTO.getApiServerEndpoint());
         kubernetesCluster.setCaCertificate(clusterDTO.getCaCertificate());
+        kubernetesCluster.setCloudProvider(CloudProvider.valueOf(clusterDTO.getCloudProvider().name()));
+        kubernetesCluster.setCloudCredentialUid(clusterDTO.getCloudCredentialUid());
+        kubernetesCluster.setManaged(false);
+        return kubernetesCluster;
+    }
+
+    public static KubernetesCluster mapToKubernetesCluster(LocalClusterDTO clusterDTO) {
+        KubernetesCluster kubernetesCluster = new KubernetesCluster();
+        kubernetesCluster.setClusterName(clusterDTO.getClusterName());
+        kubernetesCluster.setDescription(clusterDTO.getDescription());
+        kubernetesCluster.setSupportedFunctionTypes(clusterDTO.getSupportedFunctionTypes());
+        kubernetesCluster.setApiServerEndpoint(clusterDTO.getApiServerEndpoint());
+        kubernetesCluster.setCaCertificate(clusterDTO.getCaCertificate());
         kubernetesCluster.setKubernetesAccessTokenUid(clusterDTO.getKubernetesAccessTokenUid());
         kubernetesCluster.setHostUrl(clusterDTO.getHostUrl().toLowerCase().startsWith("http")?clusterDTO.getHostUrl(): "http://"+clusterDTO.getHostUrl().toLowerCase());
-        kubernetesCluster.setCloudProvider(clusterDTO.getCloudProvider());
-        kubernetesCluster.setCloudCredentialUid(clusterDTO.getCloudCredentialUid());
         kubernetesCluster.setManaged(false);
         return kubernetesCluster;
     }

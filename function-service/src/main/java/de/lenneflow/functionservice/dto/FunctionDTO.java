@@ -28,7 +28,7 @@ public class FunctionDTO {
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String type;
 
-    @Schema(example = "DOCKER_HUB", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(enumAsRef = true, requiredMode = Schema.RequiredMode.REQUIRED)
     private PackageRepository packageRepository;
 
     @Schema(example = "/api/function/process", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -42,6 +42,12 @@ public class FunctionDTO {
 
     @Schema(example = "lenneflow\\dummy-function-random", requiredMode = Schema.RequiredMode.REQUIRED)
     private String imageName;
+
+    @Schema(examples = {"250m", "0.5"}, requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private String cpuRequest;
+
+    @Schema(examples = {"300Mi"}, requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private String memoryRequest;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String inputSchemaUid;

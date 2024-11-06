@@ -21,6 +21,8 @@ public class DecisionCase implements Serializable {
 
     private String subWorkflowId;
 
+    private boolean isSubWorkflow;
+
     private Map<String, Object> inputData = new LinkedHashMap<>();
 
     private Integer retryCount;

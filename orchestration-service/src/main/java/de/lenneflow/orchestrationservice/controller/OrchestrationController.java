@@ -18,6 +18,7 @@ import de.lenneflow.orchestrationservice.utils.ObjectMapper;
 import de.lenneflow.orchestrationservice.utils.Validator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +33,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/control")
+@Tag(name = "Workflow Run API")
 public class OrchestrationController {
 
     final WorkflowExecutionRepository workflowExecutionRepository;

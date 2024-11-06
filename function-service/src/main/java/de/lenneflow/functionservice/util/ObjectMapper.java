@@ -25,6 +25,8 @@ public class ObjectMapper {
         function.setName(functionDTO.getName());
         function.setDescription(functionDTO.getDescription());
         function.setType(functionDTO.getType());
+        function.setCpuRequest(functionDTO.getCpuRequest());
+        function.setMemoryRequest(functionDTO.getMemoryRequest());
         function.setPackageRepository(functionDTO.getPackageRepository());
         function.setResourcePath(functionDTO.getResourcePath());
         function.setServicePort(functionDTO.getServicePort());
@@ -33,6 +35,11 @@ public class ObjectMapper {
         return function;
     }
 
+    /**
+     * Maps a json schema dto to a json schema
+     * @param jsonSchemaDTO the dto to map
+     * @return the json schema object
+     */
     public static JsonSchema mapToJsonSchema(JsonSchemaDTO jsonSchemaDTO) {
         JsonSchema jsonSchema = new JsonSchema();
         jsonSchema.setSchema(jsonSchemaDTO.getSchema());

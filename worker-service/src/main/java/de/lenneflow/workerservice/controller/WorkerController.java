@@ -1,6 +1,7 @@
 package de.lenneflow.workerservice.controller;
 
 import de.lenneflow.workerservice.dto.*;
+import de.lenneflow.workerservice.enums.CloudProvider;
 import de.lenneflow.workerservice.enums.ClusterStatus;
 import de.lenneflow.workerservice.exception.InternalServiceException;
 import de.lenneflow.workerservice.exception.PayloadNotValidException;
@@ -17,6 +18,7 @@ import de.lenneflow.workerservice.util.Validator;
 import de.lenneflow.workerservice.util.Util;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -27,12 +29,14 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/worker")
+@RequestMapping("/api/workers")
+@Tag(name = "Workers API")
 public class WorkerController {
 
     private static final String KUBERNETES_CLUSTER_NOT_FOUND = "KubernetesCluster not found";
     public static final String SERVICE_ACCOUNT_NAME = "lenneflow-sa";
     public static final String NAMESPACE = "lenneflow";
+    public static final String INGRESS_NAME_SUFFIX = "-ingress";
 
     final Validator validator;
     final CloudClusterController cloudClusterController;
@@ -48,27 +52,43 @@ public class WorkerController {
         this.cloudCredentialRepository = cloudCredentialRepository;
     }
 
-    @Operation(summary = "Register an existing Cluster")
-    @PostMapping("/cluster/register")
-    public KubernetesCluster createLocalKubernetesCluster(@RequestBody UnmanagedClusterDTO clusterDTO) {
+
+    @Operation(summary = "Register an existing local Cluster")
+    @PostMapping("/cluster/local/register")
+    public KubernetesCluster registerLocalKubernetesCluster(@RequestBody LocalClusterDTO clusterDTO) {
         validator.validate(clusterDTO);
         KubernetesCluster kubernetesCluster = ObjectMapper.mapToKubernetesCluster(clusterDTO);
         kubernetesCluster.setUid(UUID.randomUUID().toString());
+        kubernetesCluster.setCloudProvider(CloudProvider.LOCAL);
+        kubernetesCluster.setIngressServiceName(kubernetesCluster.getClusterName().toLowerCase() + INGRESS_NAME_SUFFIX);
         kubernetesCluster.setStatus(ClusterStatus.REGISTRED);
-        kubernetesCluster.setIngressServiceName(kubernetesCluster.getClusterName().toLowerCase() + "-ingress");
         kubernetesCluster.setServiceUser(SERVICE_ACCOUNT_NAME);
         kubernetesCluster.setCreated(LocalDateTime.now());
         kubernetesCluster.setUpdated(LocalDateTime.now());
-
         validator.validate(kubernetesCluster, false);
-
         return kubernetesClusterRepository.save(kubernetesCluster);
 
     }
 
-    @Operation(summary = "Create a new Cluster")
-    @PostMapping("/cluster/create")
-    public KubernetesCluster createCloudKubernetesCluster(@RequestBody ManagedClusterDTO clusterDTO) {
+    @Operation(summary = "Register an existing cloud Cluster")
+    @PostMapping("/cluster/cloud/register")
+    public KubernetesCluster registerUnmanagedKubernetesCluster(@RequestBody UnmanagedClusterDTO clusterDTO) {
+        validator.validate(clusterDTO);
+        KubernetesCluster kubernetesCluster = ObjectMapper.mapToKubernetesCluster(clusterDTO);
+        kubernetesCluster.setUid(UUID.randomUUID().toString());
+        kubernetesCluster.setStatus(ClusterStatus.REGISTRED);
+        kubernetesCluster.setIngressServiceName(kubernetesCluster.getClusterName().toLowerCase() + INGRESS_NAME_SUFFIX);
+        kubernetesCluster.setServiceUser(SERVICE_ACCOUNT_NAME);
+        kubernetesCluster.setCreated(LocalDateTime.now());
+        kubernetesCluster.setUpdated(LocalDateTime.now());
+        validator.validate(kubernetesCluster, false);
+        return kubernetesClusterRepository.save(kubernetesCluster);
+
+    }
+
+    @Operation(summary = "Create a new cloud Cluster")
+    @PostMapping("/cluster/cloud/create")
+    public KubernetesCluster createManagedKubernetesCluster(@RequestBody ManagedClusterDTO clusterDTO) {
 
         validator.validate(clusterDTO);
         CloudCredential cloudCredential = cloudCredentialRepository.findByUid(clusterDTO.getCloudCredentialUid());
@@ -81,7 +101,7 @@ public class WorkerController {
         KubernetesCluster kubernetesCluster = ObjectMapper.mapToKubernetesCluster(clusterDTO);
         kubernetesCluster.setUid(UUID.randomUUID().toString());
         kubernetesCluster.setStatus(ClusterStatus.NEW);
-        kubernetesCluster.setIngressServiceName(kubernetesCluster.getClusterName().toLowerCase() + "-ingress");
+        kubernetesCluster.setIngressServiceName(kubernetesCluster.getClusterName().toLowerCase() + INGRESS_NAME_SUFFIX);
         kubernetesCluster.setServiceUser(SERVICE_ACCOUNT_NAME);
         kubernetesCluster.setCreated(LocalDateTime.now());
         kubernetesCluster.setUpdated(LocalDateTime.now());
@@ -95,7 +115,7 @@ public class WorkerController {
         }
 
         //Get current kubernetes object with status from k8s api.
-        KubernetesCluster kubernetesClusterFromApi = cloudClusterController.getCluster(clusterDTO.getClusterName(), clusterDTO.getCloudProvider(), clusterDTO.getRegion());
+        KubernetesCluster kubernetesClusterFromApi = cloudClusterController.getCluster(clusterDTO.getClusterName(), kubernetesCluster.getCloudProvider(), clusterDTO.getRegion());
         KubernetesCluster saved = updateKubernetesClusterWithDataFromApi(kubernetesCluster, kubernetesClusterFromApi);
 
         new Thread(() -> waitForCompleteCreation(saved, 25)).start();

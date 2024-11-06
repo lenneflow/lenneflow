@@ -1,6 +1,5 @@
 package de.lenneflow.workerservice.dto;
 
-import de.lenneflow.workerservice.enums.CloudProvider;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,14 +13,11 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(name = "UnmanagedCluster")
-public class UnmanagedClusterDTO {
+@Schema(name = "LocalCluster")
+public class LocalClusterDTO {
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String clusterName;
-
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-    private String region;
 
     @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String description;
@@ -35,10 +31,9 @@ public class UnmanagedClusterDTO {
     @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String caCertificate;
 
-    @Schema(enumAsRef = true, requiredMode = Schema.RequiredMode.REQUIRED)
-    private CloudProviderDto cloudProvider;
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private String kubernetesAccessTokenUid;
 
-    @Schema(description = "Required by Cloud Cluster", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private String cloudCredentialUid;
-
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    private String hostUrl;
 }

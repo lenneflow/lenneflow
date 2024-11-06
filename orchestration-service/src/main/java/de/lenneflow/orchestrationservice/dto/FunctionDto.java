@@ -30,6 +30,10 @@ public class FunctionDto {
 
     private String serviceUrl;
 
+    private String cpuRequest;
+
+    private String memoryRequest;
+
     private String callBackUrl;
 
     private String failureReason;

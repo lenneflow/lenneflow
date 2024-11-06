@@ -31,7 +31,7 @@ public class ManagedClusterDTO {
     private String kubernetesVersion;
 
     @Schema(enumAsRef = true, requiredMode = Schema.RequiredMode.REQUIRED)
-    private CloudProvider cloudProvider;
+    private CloudProviderDto cloudProvider;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private int desiredNodeCount;

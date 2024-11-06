@@ -19,15 +19,15 @@ import java.util.List;
 @FeignClient(name = "function-service")
 public interface FunctionServiceClient {
 
-    @GetMapping("/api/function/{uid}")
+    @GetMapping("/api/functions/{uid}")
     Function getFunctionByUid(@PathVariable String uid);
 
-    @GetMapping("/api/function/ping")
+    @GetMapping("/api/functions/ping")
     String getFunctionHome();
 
-    @GetMapping("/api/function/list")
+    @GetMapping("/api/functions/list")
     List<Function> getAllFunctions();
 
-    @GetMapping("/api/function/{uid}/deploy")
+    @GetMapping("/api/functions/{uid}/deploy")
     void deployFunction(@PathVariable("uid") String functionId);
 }

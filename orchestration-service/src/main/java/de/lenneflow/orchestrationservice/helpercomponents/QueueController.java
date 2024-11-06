@@ -1,12 +1,9 @@
 package de.lenneflow.orchestrationservice.helpercomponents;
 
-import de.lenneflow.orchestrationservice.configuration.AppConfiguration;
 import de.lenneflow.orchestrationservice.dto.FunctionDto;
+import de.lenneflow.orchestrationservice.dto.RunStateDto;
 import de.lenneflow.orchestrationservice.utils.Util;
-import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
@@ -20,6 +17,12 @@ import org.springframework.stereotype.Component;
 @EnableRabbit
 public class QueueController {
 
+    public static final String FUNCTION_RESULT_QUEUE = "functionResultQueue";
+    public static final String FUNCTION_QUEUE = "functionQueue";
+    public static final String RUN_STATE_QUEUE = "runStateQueue";
+    public static final String RUN_STATE_EXCHANGE = "runStateExchange";
+    public static final String RUN_STATE_ROUTING = "runStateRouting";
+
     final AmqpAdmin admin;
     final RabbitTemplate rabbitTemplate;
 
@@ -29,6 +32,11 @@ public class QueueController {
         this.rabbitTemplate = rabbitTemplate;
     }
 
+    public void publishRunStateChange(RunStateDto runStateDto) {
+        createFanoutExchangeQueue(RUN_STATE_QUEUE, RUN_STATE_EXCHANGE, RUN_STATE_ROUTING);
+        rabbitTemplate.convertAndSend(RUN_STATE_QUEUE, RUN_STATE_ROUTING, runStateDto);
+    }
+
     /**
      * Adds a function object to the function queue.
      *
@@ -36,10 +44,10 @@ public class QueueController {
      */
     public void addFunctionDtoToQueue(FunctionDto functionDto) {
         byte[] serializedFunctionDto = Util.serializeFunctionDto(functionDto);
-        String queueName = AppConfiguration.FUNCTIONQUEUE;
+        String queueName = FUNCTION_QUEUE;
         String exchange = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";
-        createQueueAndBinding(queueName, exchange, routingKey);
+        createTopicExchangeQueue(queueName, exchange, routingKey);
         //TODO add queue to listener
         rabbitTemplate.convertAndSend(exchange, routingKey, serializedFunctionDto);
     }
@@ -51,10 +59,10 @@ public class QueueController {
      */
     public void addFunctionDtoToResultQueue(FunctionDto functionDto) {
         byte[] serializedFunctionDto = Util.serializeFunctionDto(functionDto);
-        String queueName = AppConfiguration.FUNCTIONRESULTQUEUE;
+        String queueName = FUNCTION_RESULT_QUEUE;
         String exchange = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";
-        createQueueAndBinding(queueName, exchange, routingKey);
+        createTopicExchangeQueue(queueName, exchange, routingKey);
         //TODO add queue to listener
         rabbitTemplate.convertAndSend(exchange, routingKey, serializedFunctionDto);
     }
@@ -67,10 +75,25 @@ public class QueueController {
      * @param exchangeName the exchange name
      * @param routingKey   the routing key
      */
-    private void createQueueAndBinding(String queueName, String exchangeName, String routingKey) {
+    private void createTopicExchangeQueue(String queueName, String exchangeName, String routingKey) {
         Queue queue = new Queue(queueName, true, false, false);
         admin.declareQueue(queue);
         TopicExchange exchange = new TopicExchange(exchangeName, true, false);
+        admin.declareExchange(exchange);
+        Binding binding = new Binding(queueName, Binding.DestinationType.QUEUE, exchangeName, routingKey, null);
+        admin.declareBinding(binding);
+    }
+
+    /**
+     * Create a rabbitmq queue and the corresponding binding.
+     *
+     * @param queueName    the name of the queue
+     * @param exchangeName the exchange name
+     */
+    private void createFanoutExchangeQueue(String queueName, String exchangeName, String routingKey) {
+        Queue queue = new Queue(queueName, true, false, false);
+        admin.declareQueue(queue);
+        FanoutExchange exchange = new FanoutExchange(exchangeName, true, false);
         admin.declareExchange(exchange);
         Binding binding = new Binding(queueName, Binding.DestinationType.QUEUE, exchangeName, routingKey, null);
         admin.declareBinding(binding);

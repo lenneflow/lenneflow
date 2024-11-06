@@ -17,21 +17,21 @@ import java.util.List;
 @FeignClient(name = "workflow-service")
 public interface WorkflowServiceClient {
 
-    @GetMapping("/api/workflow/{uid}")
+    @GetMapping("/api/workflows/{uid}")
     Workflow getWorkflowById(@PathVariable("uid") String uid);
 
-    @GetMapping("/api/workflow/name/{name}")
+    @GetMapping("/api/workflows/name/{name}")
     Workflow getWorkflowByName(@PathVariable("name") String name);
 
-    @GetMapping("/api/workflow/step/{uid}")
+    @GetMapping("/api/workflows/steps/{uid}")
     WorkflowStep getWorkflowStepById(@PathVariable("uid") String uid);
 
-    @GetMapping("/api/workflow/step/name/{step-name}/workflow-uid/{workflow-uid}")
+    @GetMapping("/api/workflows/steps/name/{step-name}/workflow-uid/{workflow-uid}")
     WorkflowStep getWorkflowStepByNameAndWorkflowId(@PathVariable("step-name") String stepName, @PathVariable("workflow-uid") String workflowId);
 
-    @GetMapping("/api/workflow/step/workflow-uid/{workflow-uid}")
+    @GetMapping("/api/workflows/steps/workflow-uid/{workflow-uid}")
     List<WorkflowStep> getStepListByWorkflowId(@PathVariable("workflow-uid") String workflowUid);
 
-    @GetMapping("/api/workflow/step/workflow-name/{workflow-name}")
+    @GetMapping("/api/workflows/steps/workflow-name/{workflow-name}")
     List<WorkflowStep> getStepListByWorkflowName(@PathVariable("workflow-name") String workflowName);
 }

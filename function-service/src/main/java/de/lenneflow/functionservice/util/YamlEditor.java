@@ -15,10 +15,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBuilder;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  *Class that creates YAML deployment and services files to be use by kubernetes.
@@ -36,9 +33,7 @@ public class YamlEditor {
      * @return the {@link Deployment} resource
      */
     public static Deployment createKubernetesDeploymentResource(Function function, int replica, String serviceAccountName) {
-        Map<String, Quantity> reqMap = new HashMap<>();
-        reqMap.put("cpu", new QuantityBuilder().withAmount("500").withFormat("m").build());
-        reqMap.put("memory", new QuantityBuilder().withAmount("500").withFormat("Mi").build());
+        Map<String, Quantity> reqMap = createResourcesRequestMap(function);
         return new DeploymentBuilder().withApiVersion("apps/v1").withKind("Deployment")
                 .withNewMetadata().withName(function.getName()).endMetadata().withNewSpec().withReplicas(replica).withNewSelector()
                 .withMatchLabels(Collections.singletonMap("app", function.getName())).endSelector().withNewTemplate().withNewMetadata().withLabels(Collections.singletonMap("app", function.getName())).endMetadata().withNewSpec().withServiceAccountName(serviceAccountName).withHostNetwork(false)
@@ -46,7 +41,6 @@ public class YamlEditor {
                 .withHostPort(function.getAssignedHostPort()).endPort().withResources(new ResourceRequirementsBuilder().withRequests(reqMap).build())
                 .endContainer().endSpec().endTemplate().endSpec().build();
     }
-
 
     /**
      * Creates a service resource
@@ -79,7 +73,7 @@ public class YamlEditor {
      */
     public static ClusterRole createKubernetesClusterRoleResource(String serviceAccountName, String namespace) {
         return new ClusterRoleBuilder().withKind("ClusterRole").withApiVersion("rbac.authorization.k8s.io/v1").withNewMetadata().withName(serviceAccountName).withNamespace(namespace)
-                .endMetadata().withRules().addNewRule().withApiGroups(Arrays.asList("")).withResources(Arrays.asList("configmaps", "pods", "services", "endpoints", "secrets"))
+                .endMetadata().withRules().addNewRule().withApiGroups(List.of("")).withResources(Arrays.asList("configmaps", "pods", "services", "endpoints", "secrets"))
                 .withVerbs(Arrays.asList("get", "list", "watch")).endRule().build();
     }
 
@@ -124,6 +118,27 @@ public class YamlEditor {
                 .withPathType("Prefix").withNewBackend().withNewService().withName(function.getName()).withNewPort().withNumber(function.getAssignedHostPort()).endPort().endService().endBackend().build());
         return ingress;
     }
+
+
+    /**
+     * Create the resources request map for the deployment.
+     * This is necessary for the Horizontal Pod Autoscaler
+     * @param function the function to deploy
+     * @return the request map
+     */
+    private static Map<String, Quantity> createResourcesRequestMap(Function function) {
+        Map<String, Quantity> reqMap = new HashMap<>();
+        if(function.getCpuRequest().toLowerCase().endsWith("m")){
+            String amount = function.getCpuRequest().toLowerCase().replace("m", "").trim();
+            reqMap.put("cpu", new QuantityBuilder().withAmount(amount).withFormat("m").build());
+        }else {
+            reqMap.put("cpu", new QuantityBuilder().withAmount(function.getCpuRequest().trim()).build());
+        }
+        String memory = function.getMemoryRequest().toLowerCase().replace("mi", "").trim();
+        reqMap.put("memory", new QuantityBuilder().withAmount(memory).withFormat("Mi").build());
+        return reqMap;
+    }
+
 
 
 }

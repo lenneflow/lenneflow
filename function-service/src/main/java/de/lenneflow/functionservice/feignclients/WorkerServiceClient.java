@@ -19,19 +19,19 @@ import java.util.List;
 @FeignClient(name = "worker-service")
 public interface WorkerServiceClient {
 
-    @GetMapping("/api/worker/cluster/{uid}")
+    @GetMapping("/api/workers/cluster/{uid}")
     KubernetesCluster getKubernetesClusterById(@PathVariable String uid);
 
-    @GetMapping("/api/worker/cluster/list")
+    @GetMapping("/api/workers/cluster/list")
     List<KubernetesCluster> getKubernetesClusterList();
 
-    @PostMapping("/api/worker/cluster/{uid}/update-used-ports")
+    @PostMapping("/api/workers/cluster/{uid}/update-used-ports")
     KubernetesCluster updateUsedPorts(@PathVariable("uid") String clusterUid, @RequestBody List<Integer> usedPorts);
 
-    @GetMapping("/api/worker/cluster/{uid}/connection-token")
+    @GetMapping("/api/workers/cluster/{uid}/connection-token")
     AccessToken getK8sConnectionToken(@PathVariable("uid") String clusterUid);
 
-    @GetMapping("/api/worker/ping")
+    @GetMapping("/api/workers/ping")
     String ping();
 
 }

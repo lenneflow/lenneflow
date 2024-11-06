@@ -1,5 +1,6 @@
 package de.lenneflow.orchestrationservice.configuration;
 
+import de.lenneflow.orchestrationservice.helpercomponents.QueueController;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -26,9 +27,6 @@ import java.util.concurrent.Executor;
 @Configuration
 public class AppConfiguration {
 
-    public static final String FUNCTIONRESULTQUEUE = "functionResultQueue";
-    public static final String FUNCTIONQUEUE = "functionQueue";
-
 
     @Value("${rabbit.address}")  private String address;
 
@@ -45,18 +43,14 @@ public class AppConfiguration {
 
     @Bean
     public Queue functionResultQueue() {
-        return new Queue(FUNCTIONRESULTQUEUE, true);
+        return new Queue(QueueController.FUNCTION_RESULT_QUEUE, true);
     }
 
     @Bean
     public Queue functionQueue() {
-        return new Queue(FUNCTIONQUEUE, true);
+        return new Queue(QueueController.FUNCTION_QUEUE, true);
     }
 
-//    @Bean
-//    public RestTemplate restTemplate(RestTemplateBuilder builder) {
-//        return builder.setReadTimeout(Duration.ofMinutes(10)).build();
-//    }
 
     @Bean
     public RestTemplate getRestTemplate() throws NoSuchAlgorithmException, KeyManagementException {

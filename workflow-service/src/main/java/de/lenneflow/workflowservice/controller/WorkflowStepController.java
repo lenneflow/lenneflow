@@ -12,6 +12,7 @@ import de.lenneflow.workflowservice.repository.WorkflowStepRepository;
 import de.lenneflow.workflowservice.util.ObjectMapper;
 import de.lenneflow.workflowservice.util.Validator;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -19,7 +20,8 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/workflow/step")
+@RequestMapping("/api/workflows/steps")
+@Tag(name = "Workflow Steps API")
 public class WorkflowStepController {
 
     final WorkflowStepRepository workflowStepRepository;

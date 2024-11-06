@@ -72,6 +72,8 @@ public class Util {
         functionDto.setName(function.getName());
         functionDto.setExecutionId(function.getExecutionId());
         functionDto.setType(functionDto.getType());
+        functionDto.setCpuRequest(function.getCpuRequest());
+        functionDto.setMemoryRequest(function.getMemoryRequest());
         functionDto.setInputData(function.getInputData());
         functionDto.setOutputData(function.getOutputData());
         functionDto.setRunStatus(function.getRunStatus());

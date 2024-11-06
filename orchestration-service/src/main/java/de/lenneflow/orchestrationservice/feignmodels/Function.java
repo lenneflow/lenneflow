@@ -44,6 +44,10 @@ public class Function implements Serializable {
 
     private String imageName;
 
+    private String cpuRequest;
+
+    private String memoryRequest;
+
     private boolean lazyDeployment;
 
     private int servicePort;

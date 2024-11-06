@@ -1,5 +1,6 @@
 package de.lenneflow.workerservice.util;
 
+import de.lenneflow.workerservice.dto.LocalClusterDTO;
 import de.lenneflow.workerservice.dto.ManagedClusterDTO;
 import de.lenneflow.workerservice.dto.NodeGroupDTO;
 import de.lenneflow.workerservice.dto.UnmanagedClusterDTO;
@@ -116,7 +117,7 @@ public class Validator {
     public void validate(UnmanagedClusterDTO unmanagedClusterDTO) {
 
         if (unmanagedClusterDTO.getClusterName() == null || unmanagedClusterDTO.getClusterName().isEmpty()) {
-            throw new PayloadNotValidException("KubernetesCluster Name is required");
+            throw new PayloadNotValidException("Cluster Name is required");
         }
         if (unmanagedClusterDTO.getSupportedFunctionTypes() == null || unmanagedClusterDTO.getSupportedFunctionTypes().isEmpty()) {
             throw new PayloadNotValidException("SupportedFunctionTypes is required");
@@ -127,29 +128,42 @@ public class Validator {
         if (unmanagedClusterDTO.getCloudProvider() == null || unmanagedClusterDTO.getCloudProvider().toString().isEmpty()) {
             throw new PayloadNotValidException("CloudProvider is required");
         }
-        if (unmanagedClusterDTO.getCloudProvider() == CloudProvider.LOCAL) {
-            if (unmanagedClusterDTO.getHostUrl() == null || unmanagedClusterDTO.getHostUrl().isEmpty()) {
-                throw new PayloadNotValidException("HostName is required");
-            }
-            if (unmanagedClusterDTO.getKubernetesAccessTokenUid() == null || unmanagedClusterDTO.getKubernetesAccessTokenUid().isEmpty()) {
-                throw new PayloadNotValidException("KubernetesAccessTokenUid is required");
-            }
-            AccessToken token = accessTokenRepository.findByUid(unmanagedClusterDTO.getKubernetesAccessTokenUid());
-            if (token == null) {
-                throw new PayloadNotValidException("The access token UID is not correct. Please enter a valid access token UID");
-            }
-        } else {
-            if (unmanagedClusterDTO.getRegion() == null || unmanagedClusterDTO.getRegion().isEmpty()) {
-                throw new PayloadNotValidException("Region is required");
-            }
-            if (unmanagedClusterDTO.getCloudCredentialUid() == null || unmanagedClusterDTO.getCloudCredentialUid().isEmpty()) {
-                throw new PayloadNotValidException("CloudCredentialUid is required");
-            }
+        if (unmanagedClusterDTO.getRegion() == null || unmanagedClusterDTO.getRegion().isEmpty()) {
+            throw new PayloadNotValidException("Region is required");
+        }
+        if (unmanagedClusterDTO.getCloudCredentialUid() == null || unmanagedClusterDTO.getCloudCredentialUid().isEmpty()) {
+            throw new PayloadNotValidException("CloudCredentialUid is required");
+        }
 
-            CloudCredential foundCredential = cloudCredentialRepository.findByUid(unmanagedClusterDTO.getCloudCredentialUid());
-            if (foundCredential == null) {
-                throw new PayloadNotValidException("The cloud credential UID is not correct. Please enter a valid cloud credential UID");
-            }
+        CloudCredential foundCredential = cloudCredentialRepository.findByUid(unmanagedClusterDTO.getCloudCredentialUid());
+        if (foundCredential == null) {
+            throw new PayloadNotValidException("The cloud credential UID is not correct. Please enter a valid cloud credential UID");
+        }
+
+    }
+
+    public void validate(LocalClusterDTO localClusterDTO) {
+
+        if (localClusterDTO.getClusterName() == null || localClusterDTO.getClusterName().isEmpty()) {
+            throw new PayloadNotValidException("KubernetesCluster Name is required");
+        }
+        if (localClusterDTO.getSupportedFunctionTypes() == null || localClusterDTO.getSupportedFunctionTypes().isEmpty()) {
+            throw new PayloadNotValidException("SupportedFunctionTypes is required");
+        }
+        if (localClusterDTO.getApiServerEndpoint() == null || localClusterDTO.getApiServerEndpoint().isEmpty()) {
+            throw new PayloadNotValidException("ApiServerEndpoint is required");
+        }
+        if (localClusterDTO.getHostUrl() == null || localClusterDTO.getHostUrl().isEmpty()) {
+            throw new PayloadNotValidException("HostName is required");
+        }
+        if (localClusterDTO.getKubernetesAccessTokenUid() == null || localClusterDTO.getKubernetesAccessTokenUid().isEmpty()) {
+            throw new PayloadNotValidException("KubernetesAccessTokenUid is required");
+        }
+        AccessToken token = accessTokenRepository.findByUid(localClusterDTO.getKubernetesAccessTokenUid());
+        if (token == null) {
+            throw new PayloadNotValidException("The access token UID is not correct. Please enter a valid access token UID");
         }
     }
-}
+
+
+    }

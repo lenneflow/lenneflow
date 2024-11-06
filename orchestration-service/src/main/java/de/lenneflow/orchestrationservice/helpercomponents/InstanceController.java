@@ -1,6 +1,7 @@
 package de.lenneflow.orchestrationservice.helpercomponents;
 
 import de.lenneflow.orchestrationservice.dto.FunctionDto;
+import de.lenneflow.orchestrationservice.dto.RunStateDto;
 import de.lenneflow.orchestrationservice.enums.RunOrderLabel;
 import de.lenneflow.orchestrationservice.enums.RunStatus;
 import de.lenneflow.orchestrationservice.exception.InternalServiceException;
@@ -137,9 +138,20 @@ public class InstanceController {
      * @param execution        the workflow execution
      * @param runStatus        the status
      */
-    public void updateWorkflowInstanceAndExecutionStatus(WorkflowInstance workflowInstance, WorkflowExecution execution, RunStatus runStatus) {
-        updateWorkflowInstanceStatus(workflowInstance, runStatus);
-        updateWorkflowExecutionStatus(execution, runStatus);
+    public void updateWorkflowInstanceAndExecutionStatus(WorkflowInstance workflowInstance, WorkflowExecution execution, RunStatus runStatus, boolean isTerminated) {
+        //Updates
+        workflowInstance.setRunStatus(runStatus);
+        workflowInstanceRepository.save(workflowInstance);
+        execution.setRunStatus(runStatus);
+        workflowExecutionRepository.save(execution);
+
+        //Publish change to fanout exchange
+        RunStateDto runStateDto = new RunStateDto();
+        runStateDto.setStatus(runStatus);
+        runStateDto.setWorkflowInstanceUid(workflowInstance.getUid());
+        runStateDto.setWorkflowRunUid(execution.getRunId());
+        runStateDto.setTerminated(isTerminated);
+        queueController.publishRunStateChange(runStateDto);
     }
 
     /**
@@ -214,29 +226,6 @@ public class InstanceController {
             workflowInstanceRepository.delete(instance);
         }
         workflowExecutionRepository.deleteAll(executionsToDelete);
-    }
-
-
-    /**
-     * Updated the workflow instance status
-     *
-     * @param workflowInstance the workflow instance to update.
-     * @param runStatus        the run status
-     */
-    public void updateWorkflowInstanceStatus(WorkflowInstance workflowInstance, RunStatus runStatus) {
-        workflowInstance.setRunStatus(runStatus);
-        workflowInstanceRepository.save(workflowInstance);
-    }
-
-    /**
-     * Updated the workflow execution status
-     *
-     * @param execution the workflow execution to update.
-     * @param runStatus The status to set.
-     */
-    public void updateWorkflowExecutionStatus(WorkflowExecution execution, RunStatus runStatus) {
-        execution.setRunStatus(runStatus);
-        workflowExecutionRepository.save(execution);
     }
 
     /**
