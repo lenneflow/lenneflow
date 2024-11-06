@@ -58,11 +58,12 @@ public class InstanceController {
      * @param inputData  the specific input parameters.
      * @return the created workflow instance.
      */
-    public WorkflowInstance createWorkflowInstance(Workflow workflow, Map<String, Object> inputData) {
+    public WorkflowInstance createWorkflowInstance(Workflow workflow, Map<String, Object> inputData, String parentInstanceUid) {
 
         //create an instance for the workflow
         WorkflowInstance workflowInstance = ObjectMapper.mapToWorkflowInstance(workflow);
         workflowInstance.setUid(UUID.randomUUID().toString());
+        workflowInstance.setParentInstanceUid(parentInstanceUid);
         workflowInstance.setRunStatus(RunStatus.NEW);
         workflowInstance.setInputData(inputData);
         workflowInstance.setCreated(LocalDateTime.now());

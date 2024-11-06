@@ -30,6 +30,8 @@ public class WorkflowInstance {
 
     private String workflowUid;
 
+    private String parentInstanceUid = null;
+
     private String name;
 
     private RunStatus runStatus;
