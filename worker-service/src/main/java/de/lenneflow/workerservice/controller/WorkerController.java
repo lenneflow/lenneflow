@@ -147,7 +147,7 @@ public class WorkerController {
     public KubernetesCluster updateNodeGroup(@RequestBody NodeGroupDTO nodeGroupDTO) {
         KubernetesCluster kubernetesCluster = kubernetesClusterRepository.findByUid(nodeGroupDTO.getClusterUid());
         if(kubernetesCluster != null){
-            checkIfClusterIsManaged(kubernetesCluster, true);
+            validator.validateThatManaged(kubernetesCluster);
 
             //set hidden fields
             nodeGroupDTO.setDesiredNodeCount(kubernetesCluster.getDesiredNodeCount());
@@ -184,7 +184,7 @@ public class WorkerController {
         if(foundCluster == null) {
             throw new ResourceNotFoundException(KUBERNETES_CLUSTER_NOT_FOUND);
         }
-        checkIfClusterIsManaged(foundCluster, false);
+        validator.validateThatUnmanaged(foundCluster);
         KubernetesCluster cluster =  ObjectMapper.mapToKubernetesCluster(unmanagedClusterDTO);
         cluster.setUid(foundCluster.getUid());
         cluster.setStatus(foundCluster.getStatus());
@@ -295,15 +295,6 @@ public class WorkerController {
         kubernetesCluster.setDesiredNodeCount(kubernetesClusterFromApi.getDesiredNodeCount());
         kubernetesCluster.setUpdated(LocalDateTime.now());
         return kubernetesClusterRepository.save(kubernetesCluster);
-    }
-
-    private void checkIfClusterIsManaged(KubernetesCluster kubernetesCluster, boolean expectedToBeManaged) {
-        if(expectedToBeManaged && !kubernetesCluster.isManaged()) {
-            throw new PayloadNotValidException("The Kubernetes Cluster is not managed by Lenneflow. This change is only possible for managed clusters");
-        }
-        if(!expectedToBeManaged && kubernetesCluster.isManaged()) {
-            throw new PayloadNotValidException("The Kubernetes Cluster is managed by Lenneflow. This change is not available for managed clusters");
-        }
     }
 
 }

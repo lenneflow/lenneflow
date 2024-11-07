@@ -304,6 +304,17 @@ public class WorkflowRunner {
         if (failureReason != null && !failureReason.isEmpty()) {
             instanceController.setFailureReason(workflowInstance, execution, failureReason);
         }
+        //If Sub workflow, parent should be notified
+        if(workflowInstance.getParentInstanceUid() != null && !workflowInstance.getParentInstanceUid().isEmpty()){
+            WorkflowInstance parentInstance = workflowInstanceRepository.findByUid(workflowInstance.getParentInstanceUid());
+            if(parentInstance != null){
+                FunctionDto functionDto = new FunctionDto();
+                functionDto.setWorkflowInstanceId(workflowInstance.getParentInstanceUid());
+                functionDto.setStepInstanceId(workflowInstance.getParentStepInstanceUid());
+                functionDto.setExecutionId();
+            }
+        }
+
         instanceController.deleteLastWorkflowInstances(30, 30);
     }
 
@@ -325,9 +336,10 @@ public class WorkflowRunner {
 
 
 
-    private void runStepSubWorkflow(Workflow workflow, WorkflowStepInstance step) {
-        //TODO
-        // start sub workflow with the workflow global input data, listen for finish and get back to parent workflow
+    private void runStepSubWorkflow(Workflow subWorkflow, WorkflowStepInstance stepInstance) {
+        //create an instance for the workflow
+        WorkflowInstance subWorkflowInstance = instanceController.createWorkflowInstance(subWorkflow, stepInstance.getInputData(), stepInstance.getWorkflowUid());
+        startWorkflow(subWorkflowInstance, subWorkflow);
     }
 
 

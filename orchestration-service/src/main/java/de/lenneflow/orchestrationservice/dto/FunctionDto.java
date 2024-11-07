@@ -20,11 +20,7 @@ import java.util.Map;
 @NoArgsConstructor
 public class FunctionDto {
 
-    private String executionId;
-
-    private String stepInstanceId;
-
-    private String workflowInstanceId;
+    private FunctionIdentifier functionIdentifier;
 
     private RunStatus runStatus;
 

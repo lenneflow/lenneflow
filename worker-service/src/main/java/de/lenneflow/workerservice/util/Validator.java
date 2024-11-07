@@ -48,16 +48,16 @@ public class Validator {
         if (nodeGroupDTO.getMinimumNodeCount() < 1) {
             throw new PayloadNotValidException("MinimumNodeCount is required");
         }
-        if(nodeGroupDTO.getDesiredNodeCount() < nodeGroupDTO.getMinimumNodeCount()) {
+        if (nodeGroupDTO.getDesiredNodeCount() < nodeGroupDTO.getMinimumNodeCount()) {
             throw new PayloadNotValidException("MinimumNodeCount must be less than the DesiredNodeCount " + nodeGroupDTO.getDesiredNodeCount());
         }
         if (nodeGroupDTO.getMaximumNodeCount() < 1) {
             throw new PayloadNotValidException("MaximumNodeCount is required");
         }
-        if(nodeGroupDTO.getDesiredNodeCount() > nodeGroupDTO.getMaximumNodeCount()) {
+        if (nodeGroupDTO.getDesiredNodeCount() > nodeGroupDTO.getMaximumNodeCount()) {
             throw new PayloadNotValidException("MaximumNodeCount must be greater than than the DesiredNodeCount " + nodeGroupDTO.getDesiredNodeCount());
         }
-        if(nodeGroupDTO.getClusterUid() == null || nodeGroupDTO.getClusterUid().isEmpty()) {
+        if (nodeGroupDTO.getClusterUid() == null || nodeGroupDTO.getClusterUid().isEmpty()) {
             throw new PayloadNotValidException("ClusterUid is required");
         }
         KubernetesCluster cluster = kubernetesClusterRepository.findByUid(nodeGroupDTO.getClusterUid());
@@ -86,13 +86,13 @@ public class Validator {
         if (managedClusterDTO.getMinimumNodeCount() < 1) {
             throw new PayloadNotValidException("MinimumNodeCount is required");
         }
-        if(managedClusterDTO.getDesiredNodeCount() < managedClusterDTO.getMinimumNodeCount()) {
+        if (managedClusterDTO.getDesiredNodeCount() < managedClusterDTO.getMinimumNodeCount()) {
             throw new PayloadNotValidException("DesiredNodeCount must not be less than minimumNodeCount");
         }
         if (managedClusterDTO.getMaximumNodeCount() < 1) {
             throw new PayloadNotValidException("MaximumNodeCount is required");
         }
-        if(managedClusterDTO.getDesiredNodeCount() > managedClusterDTO.getMaximumNodeCount()) {
+        if (managedClusterDTO.getDesiredNodeCount() > managedClusterDTO.getMaximumNodeCount()) {
             throw new PayloadNotValidException("DesiredNodeCount must not be greater than MaximumNodeCount");
         }
         if (managedClusterDTO.getInstanceType() == null || managedClusterDTO.getInstanceType().isEmpty()) {
@@ -165,5 +165,16 @@ public class Validator {
         }
     }
 
-
+    public void validateThatManaged(KubernetesCluster kubernetesCluster) {
+        if(!kubernetesCluster.isManaged()) {
+            throw new PayloadNotValidException("The Kubernetes Cluster is not managed by Lenneflow. This change is only possible for managed clusters");
+        }
     }
+    public void validateThatUnmanaged(KubernetesCluster kubernetesCluster) {
+        if(kubernetesCluster.isManaged()) {
+            throw new PayloadNotValidException("The Kubernetes Cluster is managed by Lenneflow. This change is not available for managed clusters");
+        }
+    }
+
+
+}

@@ -33,7 +33,7 @@ public class QueueController {
     }
 
     public void publishRunStateChange(RunStateDto runStateDto) {
-        createFanoutExchangeQueue(RUN_STATE_QUEUE, RUN_STATE_EXCHANGE, RUN_STATE_ROUTING);
+        createFanoutExchangeQueue();
         rabbitTemplate.convertAndSend(RUN_STATE_QUEUE, RUN_STATE_ROUTING, runStateDto);
     }
 
@@ -86,16 +86,13 @@ public class QueueController {
 
     /**
      * Create a rabbitmq queue and the corresponding binding.
-     *
-     * @param queueName    the name of the queue
-     * @param exchangeName the exchange name
      */
-    private void createFanoutExchangeQueue(String queueName, String exchangeName, String routingKey) {
-        Queue queue = new Queue(queueName, true, false, false);
+    private void createFanoutExchangeQueue() {
+        Queue queue = new Queue(QueueController.RUN_STATE_QUEUE, true, false, false);
         admin.declareQueue(queue);
-        FanoutExchange exchange = new FanoutExchange(exchangeName, true, false);
+        FanoutExchange exchange = new FanoutExchange(QueueController.RUN_STATE_EXCHANGE, true, false);
         admin.declareExchange(exchange);
-        Binding binding = new Binding(queueName, Binding.DestinationType.QUEUE, exchangeName, routingKey, null);
+        Binding binding = new Binding(QueueController.RUN_STATE_QUEUE, Binding.DestinationType.QUEUE, QueueController.RUN_STATE_EXCHANGE, QueueController.RUN_STATE_ROUTING, null);
         admin.declareBinding(binding);
     }
 }
