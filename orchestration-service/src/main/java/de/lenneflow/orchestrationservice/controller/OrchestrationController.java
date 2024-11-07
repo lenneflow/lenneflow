@@ -7,10 +7,9 @@ import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
 import de.lenneflow.orchestrationservice.helpercomponents.InstanceController;
 import de.lenneflow.orchestrationservice.model.GlobalInputData;
-import de.lenneflow.orchestrationservice.model.WorkflowExecution;
+import de.lenneflow.orchestrationservice.dto.WorkflowExecution;
 import de.lenneflow.orchestrationservice.model.WorkflowInstance;
 import de.lenneflow.orchestrationservice.repository.GlobalInputDataRepository;
-import de.lenneflow.orchestrationservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
 import de.lenneflow.orchestrationservice.helpercomponents.WorkflowRunner;
@@ -22,6 +21,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -36,7 +36,6 @@ import java.util.UUID;
 @Tag(name = "Workflow Run API")
 public class OrchestrationController {
 
-    final WorkflowExecutionRepository workflowExecutionRepository;
     final WorkflowServiceClient workflowServiceClient;
     final FunctionServiceClient functionServiceClient;
     final WorkflowInstanceRepository workflowInstanceRepository;
@@ -45,8 +44,7 @@ public class OrchestrationController {
     final InstanceController instanceController;
     final GlobalInputDataRepository globalInputDataRepository;
 
-    public OrchestrationController(WorkflowExecutionRepository workflowExecutionRepository, WorkflowServiceClient workflowServiceClient, FunctionServiceClient functionServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowRunner workflowRunner, InstanceController instanceController, GlobalInputDataRepository globalInputDataRepository) {
-        this.workflowExecutionRepository = workflowExecutionRepository;
+    public OrchestrationController(WorkflowServiceClient workflowServiceClient, FunctionServiceClient functionServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowRunner workflowRunner, InstanceController instanceController, GlobalInputDataRepository globalInputDataRepository) {
         this.workflowServiceClient = workflowServiceClient;
         this.functionServiceClient = functionServiceClient;
         this.workflowInstanceRepository = workflowInstanceRepository;
@@ -70,9 +68,9 @@ public class OrchestrationController {
         Validator.validateJsonData(workflow.getInputDataSchema().getSchema(), workflow.getInputDataSchema().getSchemaVersion(), globalInputData.getInputData());
 
         //create an instance for the workflow
-        WorkflowInstance workflowInstance = instanceController.createWorkflowInstance(workflow, globalInputData.getInputData(), null);
+        WorkflowInstance workflowInstance = instanceController.generateWorkflowInstance(workflow, globalInputData.getInputData(), null);
 
-        return workflowRunner.startWorkflow(workflowInstance, workflow);
+        return workflowRunner.startWorkflow(workflowInstance);
     }
 
     @Operation(summary = "Starts a workflow by UID", description = "")
@@ -83,8 +81,8 @@ public class OrchestrationController {
             throw new PayloadNotValidException("Could not find workflow with id " + workflowId);
         }
         //create an instance for the workflow
-        WorkflowInstance workflowInstance = instanceController.createWorkflowInstance(workflow, null, null);
-        return workflowRunner.startWorkflow(workflowInstance, workflow);
+        WorkflowInstance workflowInstance = instanceController.generateWorkflowInstance(workflow, null, null);
+        return workflowRunner.startWorkflow(workflowInstance);
     }
 
     @Operation(summary = "Starts a workflow by UID", description = "")
@@ -97,9 +95,9 @@ public class OrchestrationController {
         Validator.validateJsonData(workflow.getInputDataSchema().getSchema(), workflow.getInputDataSchema().getSchemaVersion(), inputData);
 
         //create an instance for the workflow
-        WorkflowInstance workflowInstance = instanceController.createWorkflowInstance(workflow, inputData, null);
+        WorkflowInstance workflowInstance = instanceController.generateWorkflowInstance(workflow, inputData, null);
 
-        return workflowRunner.startWorkflow(workflowInstance, workflow);
+        return workflowRunner.startWorkflow(workflowInstance);
     }
 
     @GetMapping("/workflow/run/{uid}/stop")
@@ -125,7 +123,7 @@ public class OrchestrationController {
 
     @GetMapping("/workflow/run/list")
     public List<WorkflowExecution> executionList() {
-        return workflowExecutionRepository.findAll();
+        return getWorkflowExecutionList();
     }
 
     @PostMapping("/workflow/input-data/create")
@@ -155,6 +153,15 @@ public class OrchestrationController {
             throw new PayloadNotValidException("Input data with id " + inputDataUid + " not found");
         }
         return found;
+    }
+
+    private List<WorkflowExecution> getWorkflowExecutionList(){
+        List<WorkflowExecution> runList = new ArrayList<>();
+        List<WorkflowInstance> instances = workflowInstanceRepository.findAll();
+        for (WorkflowInstance instance : instances) {
+            runList.add(new WorkflowExecution(instance));
+        }
+        return runList;
     }
 
 }

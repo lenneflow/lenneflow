@@ -1,21 +1,11 @@
 package de.lenneflow.orchestrationservice.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
-import de.lenneflow.orchestrationservice.dto.FunctionDto;
-import de.lenneflow.orchestrationservice.enums.JsonSchemaVersion;
-import de.lenneflow.orchestrationservice.exception.InternalServiceException;
-import de.lenneflow.orchestrationservice.feignmodels.Function;
+import de.lenneflow.orchestrationservice.dto.QueueElement;
+import de.lenneflow.orchestrationservice.dto.ResultQueueElement;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Set;
 
 /**
  * Utility class
@@ -31,30 +21,47 @@ public class Util {
      * Deserializes a byte array and returns a function dto object.
      *
      * @param serializedFunctionDto the byte array
-     * @return the {@link FunctionDto} object
+     * @return the {@link QueueElement} object
      */
-    public static FunctionDto deserializeFunction(byte[] serializedFunctionDto) {
+    public static QueueElement deserializeQueueElement(byte[] serializedFunctionDto) {
         ObjectMapper mapper = new ObjectMapper();
-        FunctionDto functionDto = null;
+        QueueElement queueElement = null;
         try {
-            functionDto = mapper.readValue(serializedFunctionDto, FunctionDto.class);
+            queueElement = mapper.readValue(serializedFunctionDto, QueueElement.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return functionDto;
+        return queueElement;
+    }
+
+    /**
+     * Deserializes a byte array and returns a function dto object.
+     *
+     * @param serialized the byte array
+     * @return the {@link QueueElement} object
+     */
+    public static ResultQueueElement deserializeResultQueueElement(byte[] serialized) {
+        ObjectMapper mapper = new ObjectMapper();
+        ResultQueueElement queueElement = null;
+        try {
+            queueElement = mapper.readValue(serialized, ResultQueueElement.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return queueElement;
     }
 
     /**
      * Serializes a function dto object to a byte array.
      *
-     * @param functionDto the object to serialize
+     * @param queueElement the object to serialize
      * @return the byte array
      */
-    public static byte[] serializeFunctionDto(FunctionDto functionDto) {
+    public static byte[] serialize(QueueElement queueElement) {
         ObjectMapper mapper = new ObjectMapper();
         byte[] serializedFunction = null;
         try {
-            serializedFunction = mapper.writeValueAsBytes(functionDto);
+            serializedFunction = mapper.writeValueAsBytes(queueElement);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -62,25 +69,20 @@ public class Util {
     }
 
     /**
-     * Maps a function to a function dto object
+     * Serializes a function dto object to a byte array.
      *
-     * @param function the function to map
-     * @return the {@link FunctionDto} object
+     * @param queueElement the object to serialize
+     * @return the byte array
      */
-    public static FunctionDto mapFunctionToDto(Function function) {
-        FunctionDto functionDto = new FunctionDto();
-        functionDto.setName(function.getName());
-        functionDto.setExecutionId(function.getExecutionId());
-        functionDto.setType(functionDto.getType());
-        functionDto.setCpuRequest(function.getCpuRequest());
-        functionDto.setMemoryRequest(function.getMemoryRequest());
-        functionDto.setInputData(function.getInputData());
-        functionDto.setOutputData(function.getOutputData());
-        functionDto.setRunStatus(function.getRunStatus());
-        functionDto.setServiceUrl(function.getServiceUrl());
-        functionDto.setStepInstanceId(function.getStepInstanceId());
-        functionDto.setWorkflowInstanceId(function.getWorkflowInstanceId());
-        return functionDto;
+    public static byte[] serialize(ResultQueueElement queueElement) {
+        ObjectMapper mapper = new ObjectMapper();
+        byte[] serializedFunction = null;
+        try {
+            serializedFunction = mapper.writeValueAsBytes(queueElement);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return serializedFunction;
     }
 
 

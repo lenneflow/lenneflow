@@ -1,7 +1,8 @@
 package de.lenneflow.orchestrationservice.helpercomponents;
 
-import de.lenneflow.orchestrationservice.dto.FunctionDto;
-import de.lenneflow.orchestrationservice.dto.RunStateDto;
+import de.lenneflow.orchestrationservice.dto.QueueElement;
+import de.lenneflow.orchestrationservice.dto.ResultQueueElement;
+import de.lenneflow.orchestrationservice.dto.RunNotification;
 import de.lenneflow.orchestrationservice.utils.Util;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
@@ -32,18 +33,18 @@ public class QueueController {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public void publishRunStateChange(RunStateDto runStateDto) {
+    public void publishRunStateChange(RunNotification runNotification) {
         createFanoutExchangeQueue();
-        rabbitTemplate.convertAndSend(RUN_STATE_QUEUE, RUN_STATE_ROUTING, runStateDto);
+        rabbitTemplate.convertAndSend(RUN_STATE_QUEUE, RUN_STATE_ROUTING, runNotification);
     }
 
     /**
      * Adds a function object to the function queue.
      *
-     * @param functionDto the function object
+     * @param queueElement the function object
      */
-    public void addFunctionDtoToQueue(FunctionDto functionDto) {
-        byte[] serializedFunctionDto = Util.serializeFunctionDto(functionDto);
+    public void addFunctionDtoToQueue(QueueElement queueElement) {
+        byte[] serializedFunctionDto = Util.serialize(queueElement);
         String queueName = FUNCTION_QUEUE;
         String exchange = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";
@@ -55,10 +56,10 @@ public class QueueController {
     /**
      * Adds a function object to the function results queue.
      *
-     * @param functionDto the function object
+     * @param resultQueueElement the function object
      */
-    public void addFunctionDtoToResultQueue(FunctionDto functionDto) {
-        byte[] serializedFunctionDto = Util.serializeFunctionDto(functionDto);
+    public void addElementToResultQueue(ResultQueueElement resultQueueElement) {
+        byte[] serializedFunctionDto = Util.serialize(resultQueueElement);
         String queueName = FUNCTION_RESULT_QUEUE;
         String exchange = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";

@@ -1,7 +1,7 @@
 package de.lenneflow.callbackservice.component;
 
 import de.lenneflow.callbackservice.config.AppConfiguration;
-import de.lenneflow.callbackservice.dto.FunctionDTO;
+import de.lenneflow.callbackservice.dto.ResultQueueElement;
 import de.lenneflow.callbackservice.util.Util;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
@@ -25,13 +25,12 @@ public class QueueController {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public void addFunctionDtoToResultQueue(FunctionDTO functionDto)  {
+    public void addFunctionDtoToResultQueue(ResultQueueElement functionDto)  {
         byte[] serializedFunctionDto = Util.serializeFunctionDto(functionDto);
         String queueName = AppConfiguration.RESULTSQUEUENAME;
         String exchange  = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";
         createQueueAndBinding(queueName, exchange, routingKey);
-        //TODO add queue to listener
         rabbitTemplate.convertAndSend(exchange, routingKey, serializedFunctionDto);
     }
 

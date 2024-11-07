@@ -22,14 +22,6 @@ public class Function implements Serializable {
 
     private String uid;
 
-    private String executionId;
-
-    private String stepInstanceId;
-
-    private String workflowInstanceId;
-
-    private RunStatus runStatus;
-
     private String name;
 
     private String description;
@@ -56,15 +48,11 @@ public class Function implements Serializable {
 
     private String serviceUrl;
 
-    private LocalDateTime created;
-
-    private LocalDateTime updated;
-
     private JsonSchema inputSchema;
 
     private JsonSchema outputSchema;
 
-    private Map<String, Object> inputData = new HashMap<>();
+    //private Map<String, Object> inputData = new HashMap<>();
 
-    private Map<String, Object> outputData = new HashMap<>();
+    //private Map<String, Object> outputData = new HashMap<>();
 }

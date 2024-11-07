@@ -10,13 +10,13 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class RunStateDto {
+public class RunNotification {
+
+    private boolean isStepUpdate;
 
     private String workflowInstanceUid;
 
-    private String workflowRunUid;
+    private String workflowStepInstanceUid;
 
     private RunStatus status;
-
-    private boolean isTerminated;
 }

@@ -1,7 +1,8 @@
 package de.lenneflow.orchestrationservice.helpercomponents;
 
-import de.lenneflow.orchestrationservice.dto.FunctionDto;
+import de.lenneflow.orchestrationservice.dto.QueueElement;
 import de.lenneflow.orchestrationservice.dto.FunctionPayload;
+import de.lenneflow.orchestrationservice.dto.ResultQueueElement;
 import de.lenneflow.orchestrationservice.enums.ControlStructure;
 import de.lenneflow.orchestrationservice.enums.DeploymentState;
 import de.lenneflow.orchestrationservice.enums.RunOrderLabel;
@@ -12,13 +13,13 @@ import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.orchestrationservice.feignmodels.DecisionCase;
 import de.lenneflow.orchestrationservice.feignmodels.Function;
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
-import de.lenneflow.orchestrationservice.model.WorkflowExecution;
+import de.lenneflow.orchestrationservice.dto.WorkflowExecution;
 import de.lenneflow.orchestrationservice.model.WorkflowInstance;
 import de.lenneflow.orchestrationservice.model.WorkflowStepInstance;
-import de.lenneflow.orchestrationservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
 import de.lenneflow.orchestrationservice.utils.ExpressionEvaluator;
+import de.lenneflow.orchestrationservice.utils.ObjectMapper;
 import de.lenneflow.orchestrationservice.utils.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +52,6 @@ public class WorkflowRunner {
 
     final FunctionServiceClient functionServiceClient;
     final WorkflowServiceClient workflowServiceClient;
-    final WorkflowExecutionRepository workflowExecutionRepository;
     final WorkflowInstanceRepository workflowInstanceRepository;
     final WorkflowStepInstanceRepository workflowStepInstanceRepository;
     final QueueController queueController;
@@ -59,10 +59,9 @@ public class WorkflowRunner {
     final ExpressionEvaluator expressionEvaluator;
     final RestTemplate restTemplate;
 
-    WorkflowRunner(FunctionServiceClient functionServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowExecutionRepository workflowExecutionRepository, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController, InstanceController instanceController, ExpressionEvaluator expressionEvaluator, RestTemplate restTemplate) {
+    WorkflowRunner(FunctionServiceClient functionServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController, InstanceController instanceController, ExpressionEvaluator expressionEvaluator, RestTemplate restTemplate) {
         this.functionServiceClient = functionServiceClient;
         this.workflowServiceClient = workflowServiceClient;
-        this.workflowExecutionRepository = workflowExecutionRepository;
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.workflowStepInstanceRepository = workflowStepInstanceRepository;
         this.queueController = queueController;
@@ -76,175 +75,161 @@ public class WorkflowRunner {
      * associated to the step and run the workflow step.
      *
      * @param workflowInstance      The workflow instance.
-     * @param workflow      The workflow.
      * @return a workflow execution object.
      */
-    public WorkflowExecution startWorkflow(WorkflowInstance workflowInstance, Workflow workflow) {
+    public WorkflowExecution startWorkflow(WorkflowInstance workflowInstance) {
 
         workflowInstance.setStartTime(LocalDateTime.now());
-        WorkflowExecution execution = createWorkflowExecution(workflow, workflowInstance);
 
-        instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.RUNNING, false);
         WorkflowStepInstance firstStepInstance = instanceController.getStartStep(workflowInstance);
+        if(firstStepInstance == null){
+            throw new InternalServiceException("Could not find start step");
+        }
+        if(firstStepInstance.getControlStructure() == ControlStructure.SUB_WORKFLOW) {
+            runStep(firstStepInstance, null);
+            return new WorkflowExecution(workflowInstance);
+        }
         Function function = functionServiceClient.getFunctionByUid(firstStepInstance.getFunctionId());
-        FunctionDto functionDto = Util.mapFunctionToDto(function);
-        functionDto.setStepInstanceId(firstStepInstance.getUid());
-        functionDto.setExecutionId(execution.getRunId());
-        functionDto.setWorkflowInstanceId(workflowInstance.getUid());
+        QueueElement queueElement = generateRunQueueElement(workflowInstance, firstStepInstance, function);
 
         List<Function> undeployedFunctions = getUndeployedFunctions(workflowInstance);
         if(undeployedFunctions.isEmpty()){
-            instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.RUNNING, false);
-            runStepFunction(functionDto, firstStepInstance);
+            instanceController.updateRunStatus(workflowInstance, RunStatus.RUNNING);
+            runStep(firstStepInstance, queueElement);
         }else{
-            instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.DEPLOYING_FUNCTIONS, false);
-            new Thread(() -> waitUntilFullDeploymentAndRunStep(undeployedFunctions, workflowInstance, execution,functionDto, firstStepInstance, 10)).start();
+            instanceController.updateRunStatus(workflowInstance, RunStatus.DEPLOYING_FUNCTIONS);
+            new Thread(() -> deployFunctionsFirstAndRunStep(undeployedFunctions, workflowInstance, queueElement, firstStepInstance)).start();
         }
-        return workflowExecutionRepository.findByRunId(execution.getRunId());
+        return new WorkflowExecution(workflowInstance);
     }
 
     /**
      * Method that stops the workflow execution by updating the workflow instance and the workflow execution instance.
      *
-     * @param workflowExecutionId The workflow execution ID.
+     * @param workflowInstanceId The workflow instance ID.
      * @return a workflow execution object with the current status.
      */
-    public WorkflowExecution stopWorkflow(String workflowExecutionId) {
-        WorkflowExecution execution = workflowExecutionRepository.findByRunId(workflowExecutionId);
-        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId());
-        instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.STOPPED, false);
-        return workflowExecutionRepository.findByRunId(execution.getRunId());
+    public WorkflowExecution stopWorkflow(String workflowInstanceId) {
+        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(workflowInstanceId);
+        instanceController.updateRunStatus(workflowInstance, RunStatus.STOPPED);
+        return new WorkflowExecution(workflowInstance);
     }
 
     /**
      * Method that pauses the workflow execution by updating the workflow instance and the workflow execution instance.
      *
-     * @param workflowExecutionId The workflow execution ID.
+     * @param workflowInstanceId The workflow execution ID.
      * @return a workflow execution object with the current status.
      */
-    public WorkflowExecution pauseWorkflow(String workflowExecutionId) {
-        WorkflowExecution execution = workflowExecutionRepository.findByRunId(workflowExecutionId);
-        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId());
-        instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.PAUSED, false);
-        return workflowExecutionRepository.findByRunId(execution.getRunId());
+    public WorkflowExecution pauseWorkflow(String workflowInstanceId) {
+        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(workflowInstanceId);
+        instanceController.updateRunStatus(workflowInstance, RunStatus.PAUSED);
+        return new WorkflowExecution(workflowInstance);
     }
 
     /**
      * Method that resumes the workflow execution by updating the workflow instance and the workflow execution instance
      * and then running the next step of the workflow.
      *
-     * @param workflowExecutionId The workflow execution ID.
+     * @param workflowInstanceId The workflow execution ID.
      * @return a workflow execution object with the current status.
      */
-    public WorkflowExecution resumeWorkflow(String workflowExecutionId) {
-        WorkflowExecution execution = workflowExecutionRepository.findByRunId(workflowExecutionId);
-        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId());
-        instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.RUNNING, false);
-        return workflowExecutionRepository.findByRunId(execution.getRunId());
+    public WorkflowExecution resumeWorkflow(String workflowInstanceId) {
+        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(workflowInstanceId);
+        instanceController.updateRunStatus(workflowInstance, RunStatus.RUNNING);
+        return new WorkflowExecution(workflowInstance);
     }
 
     /**
      * If called, this method will return the current state of the workflow execution.
      *
-     * @param workflowExecutionId The workflow execution ID
+     * @param workflowInstanceId The workflow execution ID
      * @return a workflow execution object with the current status.
      */
-    public WorkflowExecution getCurrentExecutionState(String workflowExecutionId) {
-        return workflowExecutionRepository.findByRunId(workflowExecutionId);
-    }
-
-
-
-    /**
-     * This method creates a workflow execution instance.
-     *
-     * @param workflow         The workflow object.
-     * @param workflowInstance The workflow instance object.
-     * @return a workflow execution object
-     */
-    private WorkflowExecution createWorkflowExecution(Workflow workflow, WorkflowInstance workflowInstance) {
-        WorkflowExecution workflowExecution = new WorkflowExecution(workflow, workflowInstance);
-        return workflowExecutionRepository.save(workflowExecution);
-    }
-
-
-    /**
-     * Process a function object that is in the result queue
-     *
-     * @param resultFunctionDto function object
-     */
-    public void processResultFromQueue(FunctionDto resultFunctionDto) {
-        logger.info("Start processing function {} with the state {} from the results queue.", resultFunctionDto.getName(), resultFunctionDto.getRunStatus());
-        WorkflowExecution execution = workflowExecutionRepository.findByRunId(resultFunctionDto.getExecutionId());
-        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(resultFunctionDto.getWorkflowInstanceId());
-        WorkflowStepInstance workflowStepInstance = workflowStepInstanceRepository.findByUid(resultFunctionDto.getStepInstanceId());
-
-        instanceController.updateWorkflowStepInstance(workflowStepInstance, resultFunctionDto);
-
-        if (workflowStepInstance.getRunOrderLabel() == RunOrderLabel.LAST) {
-            terminateWorkflowRun(execution, workflowInstance, workflowStepInstance.getRunStatus(), "");
-            return;
-        }
-        switch (resultFunctionDto.getRunStatus()) {
-            case COMPLETED, SKIPPED:
-                processStepCompletedOrSkipped(execution, workflowInstance, workflowStepInstance);
-                break;
-            case FAILED, TIMED_OUT:
-                processStepFailedOrTimedOut(execution, workflowInstance, workflowStepInstance);
-                break;
-            case CANCELED, FAILED_WITH_TERMINAL_ERROR:
-                processStepCancelledOrFailedWithTerminalError(execution, workflowInstance, workflowStepInstance);
-                break;
-            default:
-                logger.error("The state {} is unknown.", resultFunctionDto.getRunStatus());
-                throw new IllegalStateException("Unexpected value: " + resultFunctionDto.getRunStatus());
-        }
+    public WorkflowExecution getCurrentExecutionState(String workflowInstanceId) {
+        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(workflowInstanceId);
+        return new WorkflowExecution(workflowInstance);
     }
 
     /**
      * Process a function object to send and add it to the send queue.
      *
-     * @param functionDto the function dto object
+     * @param queueElement the function dto object
      */
-    public void processFunctionDtoFromQueue(FunctionDto functionDto) {
-        logger.info("Start processing function {} from send queue.", functionDto.getName());
-        Map<String, Object> inputData = functionDto.getInputData();
-        String serviceUrl = functionDto.getServiceUrl();
-        String callBackUrl = callBackRoot + "/" + functionDto.getExecutionId() + "/" + functionDto.getStepInstanceId() + "/" + functionDto.getWorkflowInstanceId();
+    public void processFunctionDtoFromQueue(QueueElement queueElement) {
+        logger.info("Start processing function {} from send queue.", queueElement.getFunctionName());
+        Map<String, Object> inputData = queueElement.getInputData();
+        String serviceUrl = queueElement.getServiceUrl();
+        String callBackUrl = callBackRoot + "/" + queueElement.getStepInstanceId() + "/" + queueElement.getWorkflowInstanceId();
 
         FunctionPayload functionPayload = new FunctionPayload();
         functionPayload.setInputData(inputData);
         functionPayload.setCallBackUrl(callBackUrl);
         functionPayload.setFailureReason("");
 
-        logger.info("Send function {} with a post request to the url {}", functionDto.getName(), serviceUrl);
+        logger.info("Send function {} with a post request to the url {}", queueElement.getFunctionName(), serviceUrl);
         ResponseEntity<Void> response = restTemplate.exchange(serviceUrl, HttpMethod.POST, new HttpEntity<>(functionPayload), Void.class);
         if (response.getStatusCode().value() != 200) {
             logger.error("send request to the url {} failed.", serviceUrl);
-            functionDto.setRunStatus(RunStatus.CANCELED);
-            functionDto.setFailureReason("Could not send request to the cluster!");
+            ResultQueueElement resultQueueElement = new ResultQueueElement();
+            resultQueueElement.setWorkflowInstanceId(queueElement.getWorkflowInstanceId());
+            resultQueueElement.setStepInstanceId(queueElement.getStepInstanceId());
+            resultQueueElement.setRunStatus(RunStatus.CANCELED);
+            resultQueueElement.setFailureReason("Could not send request to the cluster!");
             //in case of send failure, the dto is added directly to the result queue with the run status cancelled.
-            queueController.addFunctionDtoToResultQueue(functionDto);
+            queueController.addElementToResultQueue(resultQueueElement);
         }
     }
 
-    private void processStepCompletedOrSkipped(WorkflowExecution execution, WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance) {
+    /**
+     * Process a function object that is in the result queue
+     *
+     * @param resultQueueElement function object
+     */
+    public void processResultFromQueue(ResultQueueElement resultQueueElement) {
+        logger.info("Start processing Queue element with the state {} from the results queue.", resultQueueElement.getRunStatus());
+        WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(resultQueueElement.getWorkflowInstanceId());
+        WorkflowStepInstance workflowStepInstance = workflowStepInstanceRepository.findByUid(resultQueueElement.getStepInstanceId());
+
+        instanceController.mapResultToStepInstance(workflowStepInstance, resultQueueElement);
+
+        //Proceed next steps
+        if (workflowStepInstance.getRunOrderLabel() == RunOrderLabel.LAST) {
+            terminateWorkflowRun(workflowInstance, workflowStepInstance.getRunStatus(), "");
+            return;
+        }
+        switch (resultQueueElement.getRunStatus()) {
+            case COMPLETED, SKIPPED:
+                processStepCompletedOrSkipped(workflowInstance, workflowStepInstance);
+                break;
+            case FAILED, TIMED_OUT:
+                processStepFailedOrTimedOut(workflowInstance, workflowStepInstance);
+                break;
+            case CANCELED, FAILED_WITH_TERMINAL_ERROR:
+                processStepCancelledOrFailedWithTerminalError(workflowInstance, workflowStepInstance);
+                break;
+            default:
+                logger.error("The state {} is unknown.", resultQueueElement.getRunStatus());
+                throw new IllegalStateException("Unexpected value: " + resultQueueElement.getRunStatus());
+        }
+    }
+
+    private void processStepCompletedOrSkipped(WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance) {
         WorkflowStepInstance nextStepInstance = instanceController.getNextWorkflowStepInstance(workflowStepInstance);
         if (nextStepInstance != null) {
-            Object object = getFunctionToExecute(nextStepInstance);
+            Object object = getElementToExecute(nextStepInstance);
             if (object != null) {
                 if(object instanceof Function function){
-                    function.setStepInstanceId(nextStepInstance.getUid());
-                    function.setExecutionId(execution.getRunId());
-                    function.setWorkflowInstanceId(workflowInstance.getUid());
-                    runStepFunction(Util.mapFunctionToDto(function), nextStepInstance);
+                    QueueElement queueElement = generateRunQueueElement(workflowInstance, workflowStepInstance, function);
+                    runStep(nextStepInstance, queueElement);
+
                 }
-                if(object instanceof Workflow workflow){
-                    runStepSubWorkflow(workflow, workflowStepInstance);
+                if(object instanceof Workflow){
+                    runStep(workflowStepInstance, null);
                 }
 
             } else {
-                terminateWorkflowRun(execution, workflowInstance, RunStatus.FAILED, FUNCTION_OR_SUB_WORKFLOW_NOT_FOUND);
+                terminateWorkflowRun(workflowInstance, RunStatus.FAILED, FUNCTION_OR_SUB_WORKFLOW_NOT_FOUND);
             }
         }
     }
@@ -252,69 +237,69 @@ public class WorkflowRunner {
     /**
      * Method that processes failed execution steps or steps that run in time out.
      *
-     * @param execution            The workflow execution object
      * @param workflowInstance     The workflow instance object
      * @param workflowStepInstance The workflow step instance object
      */
-    private void processStepFailedOrTimedOut(WorkflowExecution execution, WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance) {
+    private void processStepFailedOrTimedOut(WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance) {
         if (workflowStepInstance.getRetryCount() > 0) {
             workflowStepInstance.setRetryCount(workflowStepInstance.getRetryCount() - 1);
             workflowStepInstanceRepository.save(workflowStepInstance);
-            Object object = getFunctionToExecute(workflowStepInstance);
+            Object object = getElementToExecute(workflowStepInstance);
             if (object != null) {
                 if(object instanceof Function function){
-                    runStepFunction(Util.mapFunctionToDto(function), workflowStepInstance);
+                    QueueElement queueElement = generateRunQueueElement(workflowInstance, workflowStepInstance, function);
+                    runStep(workflowStepInstance, queueElement);
                 }
-                else if(object instanceof Workflow workflow){
-                    runStepSubWorkflow(workflow, workflowStepInstance);
+                else if(object instanceof Workflow){
+                    runStep(workflowStepInstance, null);
                 }
                 else{
-                    terminateWorkflowRun(execution, workflowInstance, RunStatus.FAILED, FUNCTION_OR_SUB_WORKFLOW_NOT_FOUND);
+                    terminateWorkflowRun(workflowInstance, RunStatus.FAILED, FUNCTION_OR_SUB_WORKFLOW_NOT_FOUND);
                 }
 
             } else {
-                terminateWorkflowRun(execution, workflowInstance, RunStatus.FAILED, FUNCTION_OR_SUB_WORKFLOW_NOT_FOUND);
+                terminateWorkflowRun( workflowInstance, RunStatus.FAILED, FUNCTION_OR_SUB_WORKFLOW_NOT_FOUND);
             }
         }
-        terminateWorkflowRun(execution, workflowInstance, workflowStepInstance.getRunStatus(), workflowStepInstance.getFailureReason());
+        terminateWorkflowRun(workflowInstance, workflowStepInstance.getRunStatus(), workflowStepInstance.getFailureReason());
     }
 
     /**
      * Method that processes cancelled execution steps or steps that failed with terminal error.
      *
-     * @param execution            The workflow execution object
      * @param workflowInstance     The workflow instance object
      * @param workflowStepInstance The workflow step instance object
      */
-    private void processStepCancelledOrFailedWithTerminalError(WorkflowExecution execution, WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance) {
-        terminateWorkflowRun(execution, workflowInstance, workflowStepInstance.getRunStatus(), workflowStepInstance.getFailureReason());
+    private void processStepCancelledOrFailedWithTerminalError(WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance) {
+        terminateWorkflowRun( workflowInstance, workflowStepInstance.getRunStatus(), workflowStepInstance.getFailureReason());
     }
 
 
     /**
-     * Method that terminates a workflow run. It will go throw all steps status and update the workflow instance status.
+     * Method that terminates a workflow run.
      *
-     * @param execution        The workflow execution
      * @param workflowInstance the running workflow instance
      * @param status           the status to set
      */
-    private void terminateWorkflowRun(WorkflowExecution execution, WorkflowInstance workflowInstance, RunStatus status, String failureReason) {
-        instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, status, true);
-        instanceController.setWorkflowRunEndTime(workflowInstance, execution);
+    private void terminateWorkflowRun(WorkflowInstance workflowInstance, RunStatus status, String failureReason) {
+        instanceController.updateRunStatus(workflowInstance, status);
+        instanceController.setWorkflowRunEndTime(workflowInstance);
         if (failureReason != null && !failureReason.isEmpty()) {
-            instanceController.setFailureReason(workflowInstance, execution, failureReason);
+            instanceController.setFailureReason(workflowInstance, failureReason);
         }
-        //If Sub workflow, parent should be notified
+        //If it is a Sub workflow, the parent instance must continue
         if(workflowInstance.getParentInstanceUid() != null && !workflowInstance.getParentInstanceUid().isEmpty()){
             WorkflowInstance parentInstance = workflowInstanceRepository.findByUid(workflowInstance.getParentInstanceUid());
             if(parentInstance != null){
-                FunctionDto functionDto = new FunctionDto();
-                functionDto.setWorkflowInstanceId(workflowInstance.getParentInstanceUid());
-                functionDto.setStepInstanceId(workflowInstance.getParentStepInstanceUid());
-                functionDto.setExecutionId();
+                ResultQueueElement resultQueueElement = new ResultQueueElement();
+                resultQueueElement.setWorkflowInstanceId(workflowInstance.getParentInstanceUid());
+                resultQueueElement.setStepInstanceId(workflowInstance.getParentStepInstanceUid());
+                resultQueueElement.setRunStatus(status);
+                resultQueueElement.setFailureReason(failureReason);
+                resultQueueElement.setOutputData(workflowInstance.getOutputData());
+                queueController.addElementToResultQueue(resultQueueElement);
             }
         }
-
         instanceController.deleteLastWorkflowInstances(30, 30);
     }
 
@@ -322,26 +307,23 @@ public class WorkflowRunner {
     /**
      * Runs a workflow step by adding it to the queue.
      *
-     * @param functionDto function to process.
-     * @param step        workflow step to run
+     * @param workflowStepInstance            workflow step to run
+     * @param queueElement function to process.
      */
-    private void runStepFunction(FunctionDto functionDto, WorkflowStepInstance step) {
-        Map<String, Object> inputData = step.getInputData();
+    private void runStep(WorkflowStepInstance workflowStepInstance, QueueElement queueElement) {
+        if(workflowStepInstance.getControlStructure() == ControlStructure.SUB_WORKFLOW){
+            Workflow subWorkflow = workflowServiceClient.getWorkflowById(workflowStepInstance.getSubWorkflowId());
+            WorkflowInstance subWorkflowInstance = instanceController.generateWorkflowInstance(subWorkflow, workflowStepInstance.getInputData(), workflowStepInstance.getWorkflowUid());
+            startWorkflow(subWorkflowInstance);
+            return;
+        }
+        Map<String, Object> inputData = workflowStepInstance.getInputData();
         //set values to the input data
-        expressionEvaluator.normalizeInputData(step.getInputData(), step.getWorkflowInstanceUid());
-        functionDto.setInputData(inputData);
-        queueController.addFunctionDtoToQueue(functionDto);
-        instanceController.updateWorkflowStepInstanceStatus(step, RunStatus.RUNNING);
+        expressionEvaluator.normalizeInputData(workflowStepInstance.getInputData(), workflowStepInstance.getWorkflowInstanceUid());
+        queueElement.setInputData(inputData);
+        queueController.addFunctionDtoToQueue(queueElement);
+        instanceController.updateRunStatus(workflowStepInstance, RunStatus.RUNNING);
     }
-
-
-
-    private void runStepSubWorkflow(Workflow subWorkflow, WorkflowStepInstance stepInstance) {
-        //create an instance for the workflow
-        WorkflowInstance subWorkflowInstance = instanceController.createWorkflowInstance(subWorkflow, stepInstance.getInputData(), stepInstance.getWorkflowUid());
-        startWorkflow(subWorkflowInstance, subWorkflow);
-    }
-
 
     private List<Function> getUndeployedFunctions(WorkflowInstance workflowInstance) {
         List<Function> undeployedFunctions = new ArrayList<>();
@@ -371,27 +353,27 @@ public class WorkflowRunner {
      *
      * @param workflowInstance the workflow instance to run
      */
-    private void waitUntilFullDeploymentAndRunStep(List<Function> undeployedFunctions, WorkflowInstance workflowInstance, WorkflowExecution execution, FunctionDto functionDto, WorkflowStepInstance stepInstance, int minutesToWait) {
+    private void deployFunctionsFirstAndRunStep(List<Function> undeployedFunctions, WorkflowInstance workflowInstance, QueueElement queueElement, WorkflowStepInstance stepInstance) {
         List<WorkflowStepInstance> steps = workflowStepInstanceRepository.findByWorkflowInstanceUid(workflowInstance.getUid());
         for (Function function : undeployedFunctions) {
             if (function != null && function.isLazyDeployment()  && function.getDeploymentState() == DeploymentState.UNDEPLOYED) {
                 functionServiceClient.deployFunction(function.getUid());
             }else if(function != null && !function.isLazyDeployment() && function.getDeploymentState() == DeploymentState.UNDEPLOYED) {
                 String reason = "Function " + function.getName() + " is undeployed but the lazy deployment flag is not set!";
-                terminateWorkflowRun(execution, workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason);
+                terminateWorkflowRun(workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason);
                 throw new InternalServiceException(reason);
             }
         }
         while (true) {
             LocalDateTime start = LocalDateTime.now();
             if (allFunctionsDeployed(steps)) {
-                instanceController.updateWorkflowInstanceAndExecutionStatus(workflowInstance, execution, RunStatus.RUNNING, false);
-                runStepFunction(functionDto, stepInstance);
+                instanceController.updateRunStatus(workflowInstance, RunStatus.RUNNING);
+                runStep(stepInstance, queueElement);
                 break;
             }
-            if (start.plusMinutes(minutesToWait).isBefore(LocalDateTime.now())) {
+            if (start.plusMinutes(10).isBefore(LocalDateTime.now())) {
                 String reason = "All functions could not be deployed in time. Workflow run will be cancelled!";
-                terminateWorkflowRun(execution, workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason);
+                terminateWorkflowRun(workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason);
                 throw new InternalServiceException(reason);
             }
             Util.pause(5000);
@@ -420,32 +402,31 @@ public class WorkflowRunner {
      * @param stepInstance the workflow step instance
      * @return the function to run
      */
-    private Object getFunctionToExecute(WorkflowStepInstance stepInstance) {
+    private Object getElementToExecute(WorkflowStepInstance stepInstance) {
         if (Objects.requireNonNull(stepInstance.getControlStructure()) == ControlStructure.SWITCH) {
             String switchCase = expressionEvaluator.evaluateStringExpression(stepInstance.getWorkflowInstanceUid(), stepInstance.getSwitchCase());
             DecisionCase decisionCase = getDecisionCaseByName(stepInstance.getDecisionCases(), switchCase);
             if (decisionCase != null) {
-                return getObjectToReturn(stepInstance, decisionCase);
+                return getFunctionOrSubworkflow(stepInstance, decisionCase);
             }
             if ((decisionCase = getDecisionCaseByName(stepInstance.getDecisionCases(), "default")) != null) {
-                return getObjectToReturn(stepInstance, decisionCase);
+                return getFunctionOrSubworkflow(stepInstance, decisionCase);
             }
             return null;
         }
         if (Objects.requireNonNull(stepInstance.getControlStructure()) == ControlStructure.SUB_WORKFLOW) {
-            return workflowServiceClient.getWorkflowById(stepInstance.getWorkflowUid());
+            return workflowServiceClient.getWorkflowById(stepInstance.getSubWorkflowId());
         }
         return functionServiceClient.getFunctionByUid(stepInstance.getFunctionId());
     }
 
 
-    private Object getObjectToReturn(WorkflowStepInstance stepInstance, DecisionCase decisionCase) {
+    private Object getFunctionOrSubworkflow(WorkflowStepInstance stepInstance, DecisionCase decisionCase) {
         Function func =  functionServiceClient.getFunctionByUid(decisionCase.getFunctionId());
         stepInstance.setSelectedCaseName(decisionCase.getName());
         if(decisionCase.isSubWorkflow()){
-            return workflowServiceClient.getWorkflowById(stepInstance.getWorkflowUid());
+            return workflowServiceClient.getWorkflowById(stepInstance.getSubWorkflowId());
         }
-        func.setInputData(decisionCase.getInputData());
         stepInstance.setInputData(decisionCase.getInputData());
         workflowStepInstanceRepository.save(stepInstance);
         return func;
@@ -466,6 +447,16 @@ public class WorkflowRunner {
             }
         }
         return null;
+    }
+
+    private QueueElement generateRunQueueElement(WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance, Function function) {
+        QueueElement queueElement = ObjectMapper.mapFunctionQueueElement(function);
+        queueElement.setStepInstanceId(workflowStepInstance.getUid());
+        queueElement.setWorkflowInstanceId(workflowInstance.getUid());
+        queueElement.setInputData(workflowStepInstance.getInputData());
+        queueElement.setOutputData(workflowStepInstance.getOutputData());
+        queueElement.setRunStatus(workflowStepInstance.getRunStatus());
+        return queueElement;
     }
 
 

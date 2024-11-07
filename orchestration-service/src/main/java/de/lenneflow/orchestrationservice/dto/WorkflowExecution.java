@@ -1,20 +1,17 @@
-package de.lenneflow.orchestrationservice.model;
+package de.lenneflow.orchestrationservice.dto;
 
 import de.lenneflow.orchestrationservice.enums.RunStatus;
-import de.lenneflow.orchestrationservice.feignmodels.Workflow;
+import de.lenneflow.orchestrationservice.model.WorkflowInstance;
+import de.lenneflow.orchestrationservice.model.WorkflowStepInstance;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * DB entity for Workflow execution
@@ -25,13 +22,10 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Document
 public class WorkflowExecution {
 
-    @Id
-    private String runId;
-
-    private String workflowInstanceId;
+    //the run UID is the workflow Instance UID
+    private String runUid;
 
     private String workflowName;
 
@@ -39,7 +33,6 @@ public class WorkflowExecution {
 
     private RunStatus runStatus;
 
-    @DocumentReference
     private List<WorkflowStepInstance> runSteps;
 
     private int workflowVersion;
@@ -50,16 +43,18 @@ public class WorkflowExecution {
 
     private String failureReason;
 
-    private Map<String, Object> runOutput = new HashMap<>();
+    private Map<String, Object> outputData = new HashMap<>();
 
-    public WorkflowExecution(Workflow workflow, WorkflowInstance workflowInstance) {
-        this.runId = UUID.randomUUID().toString();
-        this.workflowInstanceId = workflowInstance.getUid();
-        this.workflowName = workflow.getName();
-        this.workflowDescription = workflow.getDescription();
+    public WorkflowExecution(WorkflowInstance workflowInstance) {
+        this.runUid = workflowInstance.getUid();
+        this.workflowName = workflowInstance.getName();
+        this.workflowDescription = workflowInstance.getDescription();
         this.runStatus = workflowInstance.getRunStatus();
         this.runSteps = workflowInstance.getStepInstances();
         this.startTime = workflowInstance.getStartTime();
+        this.endTime = workflowInstance.getEndTime();
+        this.failureReason = workflowInstance.getFailureReason();
+        this.outputData = workflowInstance.getOutputData();
     }
 
 }

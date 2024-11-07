@@ -18,25 +18,17 @@ import java.util.Map;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class FunctionDto {
+public class ResultQueueElement {
 
-    private FunctionIdentifier functionIdentifier;
+    private String stepInstanceId;
+
+    private String workflowInstanceId;
 
     private RunStatus runStatus;
 
-    private String serviceUrl;
-
-    private String cpuRequest;
-
-    private String memoryRequest;
-
-    private String callBackUrl;
-
     private String failureReason;
 
-    private String name;
-
-    private String type;
+    private String callBackUrl;
 
     private Map<String, Object> inputData = new HashMap<>();
 

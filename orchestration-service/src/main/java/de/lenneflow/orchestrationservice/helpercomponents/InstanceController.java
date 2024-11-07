@@ -1,7 +1,7 @@
 package de.lenneflow.orchestrationservice.helpercomponents;
 
-import de.lenneflow.orchestrationservice.dto.FunctionDto;
-import de.lenneflow.orchestrationservice.dto.RunStateDto;
+import de.lenneflow.orchestrationservice.dto.ResultQueueElement;
+import de.lenneflow.orchestrationservice.dto.RunNotification;
 import de.lenneflow.orchestrationservice.enums.RunOrderLabel;
 import de.lenneflow.orchestrationservice.enums.RunStatus;
 import de.lenneflow.orchestrationservice.exception.InternalServiceException;
@@ -9,10 +9,8 @@ import de.lenneflow.orchestrationservice.feignclients.FunctionServiceClient;
 import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
 import de.lenneflow.orchestrationservice.feignmodels.WorkflowStep;
-import de.lenneflow.orchestrationservice.model.WorkflowExecution;
 import de.lenneflow.orchestrationservice.model.WorkflowInstance;
 import de.lenneflow.orchestrationservice.model.WorkflowStepInstance;
-import de.lenneflow.orchestrationservice.repository.WorkflowExecutionRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
 import de.lenneflow.orchestrationservice.utils.ExpressionEvaluator;
@@ -34,16 +32,14 @@ public class InstanceController {
 
     final FunctionServiceClient functionServiceClient;
     final WorkflowServiceClient workflowServiceClient;
-    final WorkflowExecutionRepository workflowExecutionRepository;
     final WorkflowInstanceRepository workflowInstanceRepository;
     final WorkflowStepInstanceRepository workflowStepInstanceRepository;
     final QueueController queueController;
     final ExpressionEvaluator expressionEvaluator;
 
-    public InstanceController(FunctionServiceClient functionServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowExecutionRepository workflowExecutionRepository, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController, ExpressionEvaluator expressionEvaluator) {
+    public InstanceController(FunctionServiceClient functionServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController, ExpressionEvaluator expressionEvaluator) {
         this.functionServiceClient = functionServiceClient;
         this.workflowServiceClient = workflowServiceClient;
-        this.workflowExecutionRepository = workflowExecutionRepository;
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.workflowStepInstanceRepository = workflowStepInstanceRepository;
         this.queueController = queueController;
@@ -58,7 +54,7 @@ public class InstanceController {
      * @param inputData  the specific input parameters.
      * @return the created workflow instance.
      */
-    public WorkflowInstance createWorkflowInstance(Workflow workflow, Map<String, Object> inputData, String parentInstanceUid) {
+    public WorkflowInstance generateWorkflowInstance(Workflow workflow, Map<String, Object> inputData, String parentInstanceUid) {
 
         //create an instance for the workflow
         WorkflowInstance workflowInstance = ObjectMapper.mapToWorkflowInstance(workflow);
@@ -71,7 +67,7 @@ public class InstanceController {
         workflowInstanceRepository.save(workflowInstance);
 
         //create workflow step instances for the workflow
-        List<WorkflowStepInstance> stepInstances = createWorkflowStepInstances(workflow, workflowInstance);
+        List<WorkflowStepInstance> stepInstances = generateWorkflowStepInstances(workflow, workflowInstance);
         workflowInstance.setStepInstances(stepInstances);
         workflowInstanceRepository.save(workflowInstance);
 
@@ -84,7 +80,7 @@ public class InstanceController {
      * @param workflowInstance the workflow instance
      * @return the workflow step instances list.
      */
-    public List<WorkflowStepInstance> createWorkflowStepInstances(Workflow workflow, WorkflowInstance workflowInstance) {
+    public List<WorkflowStepInstance> generateWorkflowStepInstances(Workflow workflow, WorkflowInstance workflowInstance) {
         List<WorkflowStepInstance> workflowStepInstances = new ArrayList<>();
         List<WorkflowStepInstance> result = new ArrayList<>();
         List<WorkflowStep> steps = workflowServiceClient.getStepListByWorkflowId(workflowInstance.getWorkflowUid());
@@ -118,68 +114,76 @@ public class InstanceController {
      * Updates the workflow step instance status and output data.
      *
      * @param workflowStepInstance the workflow step instance to update.
-     * @param functionDto          the executed functionDto belonging to the workflow instance.
+     * @param resultQueueElement          the executed queueElement belonging to the workflow instance.
      */
-    public void updateWorkflowStepInstance(WorkflowStepInstance workflowStepInstance, FunctionDto functionDto) {
-        workflowStepInstance.setRunStatus(functionDto.getRunStatus());
-        workflowStepInstanceRepository.save(workflowStepInstance);
-        Map<String, Object> output = functionDto.getOutputData();
+    public void mapResultToStepInstance(WorkflowStepInstance workflowStepInstance, ResultQueueElement resultQueueElement) {
+        workflowStepInstance.setRunStatus(resultQueueElement.getRunStatus());
+        Map<String, Object> output = resultQueueElement.getOutputData();
         workflowStepInstance.setOutputData(output);
         workflowStepInstance.setRunCount(workflowStepInstance.getRunCount() + 1);
-        if (functionDto.getFailureReason() != null && !functionDto.getFailureReason().isEmpty()) {
-            workflowStepInstance.setFailureReason(functionDto.getFailureReason());
+        if (resultQueueElement.getFailureReason() != null && !resultQueueElement.getFailureReason().isEmpty()) {
+            workflowStepInstance.setFailureReason(resultQueueElement.getFailureReason());
         }
         workflowStepInstanceRepository.save(workflowStepInstance);
     }
 
     /**
-     * Updates the status of workflow instance and workflow execution
-     *
+     * Updates the status of workflow instance and notify
      * @param workflowInstance the workflow instance
-     * @param execution        the workflow execution
      * @param runStatus        the status
      */
-    public void updateWorkflowInstanceAndExecutionStatus(WorkflowInstance workflowInstance, WorkflowExecution execution, RunStatus runStatus, boolean isTerminated) {
+    public void updateRunStatus(WorkflowInstance workflowInstance, RunStatus runStatus) {
         //Updates
         workflowInstance.setRunStatus(runStatus);
         workflowInstanceRepository.save(workflowInstance);
-        execution.setRunStatus(runStatus);
-        workflowExecutionRepository.save(execution);
 
         //Publish change to fanout exchange
-        RunStateDto runStateDto = new RunStateDto();
-        runStateDto.setStatus(runStatus);
-        runStateDto.setWorkflowInstanceUid(workflowInstance.getUid());
-        runStateDto.setWorkflowRunUid(execution.getRunId());
-        runStateDto.setTerminated(isTerminated);
-        queueController.publishRunStateChange(runStateDto);
+        RunNotification runNotification = new RunNotification();
+        runNotification.setStatus(runStatus);
+        runNotification.setStepUpdate(false);
+        runNotification.setWorkflowInstanceUid(workflowInstance.getUid());
+        queueController.publishRunStateChange(runNotification);
+    }
+
+
+    /**
+     * Updated the workflow step instance status and notify
+     *
+     * @param stepInstance the workflow step instance to update.
+     * @param runStatus    The status to set.
+     */
+    public void updateRunStatus(WorkflowStepInstance stepInstance, RunStatus runStatus) {
+        stepInstance.setRunStatus(runStatus);
+        workflowStepInstanceRepository.save(stepInstance);
+
+        //Publish change to fanout exchange
+        RunNotification runNotification = new RunNotification();
+        runNotification.setStatus(runStatus);
+        runNotification.setStepUpdate(true);
+        runNotification.setWorkflowInstanceUid(stepInstance.getWorkflowInstanceUid());
+        runNotification.setWorkflowStepInstanceUid(stepInstance.getUid());
+        queueController.publishRunStateChange(runNotification);
     }
 
     /**
      * Sets the finished time of a workflow run.
      *
      * @param workflowInstance the workflow instance
-     * @param execution        the workflow execution
      */
-    public void setWorkflowRunEndTime(WorkflowInstance workflowInstance, WorkflowExecution execution) {
+    public void setWorkflowRunEndTime(WorkflowInstance workflowInstance) {
         workflowInstance.setEndTime(LocalDateTime.now());
         workflowInstanceRepository.save(workflowInstance);
-        execution.setEndTime(LocalDateTime.now());
-        workflowExecutionRepository.save(execution);
     }
 
     /**
      * Sets the failure reason to the workflow and to the workflow execution
      *
      * @param workflowInstance the workflow instance
-     * @param execution        the workflow execution
      * @param failureReason    the failure reason
      */
-    public void setFailureReason(WorkflowInstance workflowInstance, WorkflowExecution execution, String failureReason) {
+    public void setFailureReason(WorkflowInstance workflowInstance, String failureReason) {
         workflowInstance.setFailureReason(failureReason);
         workflowInstanceRepository.save(workflowInstance);
-        execution.setFailureReason(failureReason);
-        workflowExecutionRepository.save(execution);
     }
 
 
@@ -191,12 +195,11 @@ public class InstanceController {
      */
     public void deleteLastWorkflowInstances(int keepDaysCount, int maxInstancesCount) {
         LocalDateTime now = LocalDateTime.now();
-        List<WorkflowExecution> executionsToDelete = new ArrayList<>();
         List<WorkflowInstance> instancesToDelete = new ArrayList<>();
-        List<WorkflowExecution> instances = workflowExecutionRepository.findAll();
+        List<WorkflowInstance> instances = workflowInstanceRepository.findAll();
 
         //Sort from oldest to newest
-        List<WorkflowExecution> sortedExecutions = new ArrayList<>(instances.stream().sorted((o1, o2) -> {
+        List<WorkflowInstance> sortedInstances = new ArrayList<>(instances.stream().sorted((o1, o2) -> {
             if (o1.getStartTime().isBefore(o2.getStartTime())) {
                 return -1;
             }
@@ -207,14 +210,12 @@ public class InstanceController {
         }).toList());
 
         //iterate over the sorted executions and add the oldest to the list to remove
-        for (WorkflowExecution execution : sortedExecutions) {
-            if (execution.getStartTime().plusDays(keepDaysCount).isBefore(now)) {
-                executionsToDelete.add(execution);
-                instancesToDelete.add(workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId()));
+        for (WorkflowInstance instance : sortedInstances) {
+            if (instance.getStartTime().plusDays(keepDaysCount).isBefore(now)) {
+                instancesToDelete.add(instance);
             } else {
-                if (sortedExecutions.size() - executionsToDelete.size() >= maxInstancesCount) {
-                    executionsToDelete.add(execution);
-                    instancesToDelete.add(workflowInstanceRepository.findByUid(execution.getWorkflowInstanceId()));
+                if (sortedInstances.size() - instancesToDelete.size() >= maxInstancesCount) {
+                    instancesToDelete.add(instance);
                 } else {
                     break;
                 }
@@ -226,18 +227,7 @@ public class InstanceController {
             workflowStepInstanceRepository.deleteAll(stepInstances);
             workflowInstanceRepository.delete(instance);
         }
-        workflowExecutionRepository.deleteAll(executionsToDelete);
-    }
-
-    /**
-     * Updated the workflow step instance status
-     *
-     * @param stepInstance the workflow step instance to update.
-     * @param runStatus    The status to set.
-     */
-    public void updateWorkflowStepInstanceStatus(WorkflowStepInstance stepInstance, RunStatus runStatus) {
-        stepInstance.setRunStatus(runStatus);
-        workflowStepInstanceRepository.save(stepInstance);
+        workflowInstanceRepository.deleteAll(instancesToDelete);
     }
 
     /**

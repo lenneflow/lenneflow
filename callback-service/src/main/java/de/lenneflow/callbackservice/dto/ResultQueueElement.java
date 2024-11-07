@@ -13,9 +13,7 @@ import java.util.Map;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class FunctionDTO {
-
-    private String executionId;
+public class ResultQueueElement {
 
     private String stepInstanceId;
 
