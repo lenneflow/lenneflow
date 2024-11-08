@@ -19,10 +19,10 @@ public class DecisionCase {
     private String name;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-    private String functionId;
+    private String functionUid;
 
     @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private String subWorkflowId;
+    private String subWorkflowUid;
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private Map<String, Object> inputData = new LinkedHashMap<>();

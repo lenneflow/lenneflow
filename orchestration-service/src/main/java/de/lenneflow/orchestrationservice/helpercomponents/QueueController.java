@@ -34,8 +34,9 @@ public class QueueController {
     }
 
     public void publishRunStateChange(RunNotification runNotification) {
-        createFanoutExchangeQueue();
-        rabbitTemplate.convertAndSend(RUN_STATE_QUEUE, RUN_STATE_ROUTING, runNotification);
+        FanoutExchange exchange = new FanoutExchange(QueueController.RUN_STATE_EXCHANGE, false, true);
+        admin.declareExchange(exchange);
+        rabbitTemplate.convertAndSend(RUN_STATE_EXCHANGE, RUN_STATE_ROUTING, Util.serialize(runNotification));
     }
 
     /**
@@ -49,7 +50,6 @@ public class QueueController {
         String exchange = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";
         createTopicExchangeQueue(queueName, exchange, routingKey);
-        //TODO add queue to listener
         rabbitTemplate.convertAndSend(exchange, routingKey, serializedFunctionDto);
     }
 
@@ -64,7 +64,6 @@ public class QueueController {
         String exchange = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";
         createTopicExchangeQueue(queueName, exchange, routingKey);
-        //TODO add queue to listener
         rabbitTemplate.convertAndSend(exchange, routingKey, serializedFunctionDto);
     }
 
@@ -89,9 +88,9 @@ public class QueueController {
      * Create a rabbitmq queue and the corresponding binding.
      */
     private void createFanoutExchangeQueue() {
-        Queue queue = new Queue(QueueController.RUN_STATE_QUEUE, true, false, false);
+        Queue queue = new Queue(QueueController.RUN_STATE_QUEUE, true, false, true);
         admin.declareQueue(queue);
-        FanoutExchange exchange = new FanoutExchange(QueueController.RUN_STATE_EXCHANGE, true, false);
+        FanoutExchange exchange = new FanoutExchange(QueueController.RUN_STATE_EXCHANGE, false, true);
         admin.declareExchange(exchange);
         Binding binding = new Binding(QueueController.RUN_STATE_QUEUE, Binding.DestinationType.QUEUE, QueueController.RUN_STATE_EXCHANGE, QueueController.RUN_STATE_ROUTING, null);
         admin.declareBinding(binding);

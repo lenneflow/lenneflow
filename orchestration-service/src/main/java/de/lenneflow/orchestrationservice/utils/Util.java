@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.lenneflow.orchestrationservice.dto.QueueElement;
 import de.lenneflow.orchestrationservice.dto.ResultQueueElement;
+import de.lenneflow.orchestrationservice.dto.RunNotification;
 
 import java.io.IOException;
 
@@ -49,6 +50,23 @@ public class Util {
             throw new RuntimeException(e);
         }
         return queueElement;
+    }
+
+    /**
+     * Serializes a function dto object to a byte array.
+     *
+     * @param notification the object to serialize
+     * @return the byte array
+     */
+    public static byte[] serialize(RunNotification notification) {
+        ObjectMapper mapper = new ObjectMapper();
+        byte[] serializedFunction = null;
+        try {
+            serializedFunction = mapper.writeValueAsBytes(notification);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return serializedFunction;
     }
 
     /**

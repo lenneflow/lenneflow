@@ -15,6 +15,8 @@ import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
 import de.lenneflow.orchestrationservice.utils.ExpressionEvaluator;
 import de.lenneflow.orchestrationservice.utils.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 
 import java.time.LocalDateTime;
@@ -29,6 +31,8 @@ import java.util.*;
  */
 @Controller
 public class InstanceController {
+
+    private static final Logger logger = LoggerFactory.getLogger(InstanceController.class);
 
     final FunctionServiceClient functionServiceClient;
     final WorkflowServiceClient workflowServiceClient;
@@ -170,9 +174,39 @@ public class InstanceController {
      *
      * @param workflowInstance the workflow instance
      */
-    public void setWorkflowRunEndTime(WorkflowInstance workflowInstance) {
+    public void setEndTime(WorkflowInstance workflowInstance) {
         workflowInstance.setEndTime(LocalDateTime.now());
         workflowInstanceRepository.save(workflowInstance);
+    }
+
+    /**
+     * Sets the start time of a workflow run.
+     *
+     * @param workflowInstance the workflow instance
+     */
+    public void setStartTime(WorkflowInstance workflowInstance) {
+        workflowInstance.setStartTime(LocalDateTime.now());
+        workflowInstanceRepository.save(workflowInstance);
+    }
+
+    /**
+     * Sets the finished time of a step instance run.
+     *
+     * @param workflowStepInstance the workflow instance
+     */
+    public void setEndTime(WorkflowStepInstance workflowStepInstance) {
+        workflowStepInstance.setEndTime(LocalDateTime.now());
+        workflowStepInstanceRepository.save(workflowStepInstance);
+    }
+
+    /**
+     * Sets the start time of a step instance run.
+     *
+     * @param workflowStepInstance the workflow instance
+     */
+    public void setStartTime(WorkflowStepInstance workflowStepInstance) {
+        workflowStepInstance.setStartTime(LocalDateTime.now());
+        workflowStepInstanceRepository.save(workflowStepInstance);
     }
 
     /**
@@ -194,40 +228,45 @@ public class InstanceController {
      * @param maxInstancesCount the max number of runs to keep.
      */
     public void deleteLastWorkflowInstances(int keepDaysCount, int maxInstancesCount) {
-        LocalDateTime now = LocalDateTime.now();
-        List<WorkflowInstance> instancesToDelete = new ArrayList<>();
-        List<WorkflowInstance> instances = workflowInstanceRepository.findAll();
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            List<WorkflowInstance> instancesToDelete = new ArrayList<>();
+            List<WorkflowInstance> instances = workflowInstanceRepository.findAll();
 
-        //Sort from oldest to newest
-        List<WorkflowInstance> sortedInstances = new ArrayList<>(instances.stream().sorted((o1, o2) -> {
-            if (o1.getStartTime().isBefore(o2.getStartTime())) {
-                return -1;
-            }
-            if (o1.getStartTime().isAfter(o2.getStartTime())) {
-                return 1;
-            }
-            return 0;
-        }).toList());
+            //Sort from oldest to newest
+            List<WorkflowInstance> sortedInstances = new ArrayList<>(instances.stream().sorted((o1, o2) -> {
+                if (o1.getStartTime().isBefore(o2.getStartTime())) {
+                    return -1;
+                }
+                if (o1.getStartTime().isAfter(o2.getStartTime())) {
+                    return 1;
+                }
+                return 0;
+            }).toList());
 
-        //iterate over the sorted executions and add the oldest to the list to remove
-        for (WorkflowInstance instance : sortedInstances) {
-            if (instance.getStartTime().plusDays(keepDaysCount).isBefore(now)) {
-                instancesToDelete.add(instance);
-            } else {
-                if (sortedInstances.size() - instancesToDelete.size() >= maxInstancesCount) {
+            //iterate over the sorted executions and add the oldest to the list to remove
+            for (WorkflowInstance instance : sortedInstances) {
+                if (instance.getStartTime().plusDays(keepDaysCount).isBefore(now)) {
                     instancesToDelete.add(instance);
                 } else {
-                    break;
+                    if (sortedInstances.size() - instancesToDelete.size() >= maxInstancesCount) {
+                        instancesToDelete.add(instance);
+                    } else {
+                        break;
+                    }
                 }
             }
+            //Delete objects from database
+            for (WorkflowInstance instance : instancesToDelete) {
+                List<WorkflowStepInstance> stepInstances = workflowStepInstanceRepository.findByWorkflowInstanceUid(instance.getUid());
+                workflowStepInstanceRepository.deleteAll(stepInstances);
+                workflowInstanceRepository.delete(instance);
+            }
+            workflowInstanceRepository.deleteAll(instancesToDelete);
+        } catch (Exception e) {
+            logger.error("Could not delete old workflow runs!\n{}" ,e.getMessage());
         }
-        //Delete objects from database
-        for (WorkflowInstance instance : instancesToDelete) {
-            List<WorkflowStepInstance> stepInstances = workflowStepInstanceRepository.findByWorkflowInstanceUid(instance.getUid());
-            workflowStepInstanceRepository.deleteAll(stepInstances);
-            workflowInstanceRepository.delete(instance);
-        }
-        workflowInstanceRepository.deleteAll(instancesToDelete);
+
     }
 
     /**

@@ -17,9 +17,9 @@ public class DecisionCase implements Serializable {
 
     private String name;
 
-    private String functionId;
+    private String functionUid;
 
-    private String subWorkflowId;
+    private String subWorkflowUid;
 
     private boolean isSubWorkflow;
 

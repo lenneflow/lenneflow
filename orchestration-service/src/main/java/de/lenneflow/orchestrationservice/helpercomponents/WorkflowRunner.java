@@ -79,7 +79,7 @@ public class WorkflowRunner {
      */
     public WorkflowExecution startWorkflow(WorkflowInstance workflowInstance) {
 
-        workflowInstance.setStartTime(LocalDateTime.now());
+        instanceController.setStartTime(workflowInstance);
 
         WorkflowStepInstance firstStepInstance = instanceController.getStartStep(workflowInstance);
         if(firstStepInstance == null){
@@ -191,13 +191,17 @@ public class WorkflowRunner {
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(resultQueueElement.getWorkflowInstanceId());
         WorkflowStepInstance workflowStepInstance = workflowStepInstanceRepository.findByUid(resultQueueElement.getStepInstanceId());
 
+        instanceController.setEndTime(workflowStepInstance);
         instanceController.mapResultToStepInstance(workflowStepInstance, resultQueueElement);
 
         //Proceed next steps
-        if (workflowStepInstance.getRunOrderLabel() == RunOrderLabel.LAST) {
-            terminateWorkflowRun(workflowInstance, workflowStepInstance.getRunStatus(), "");
-            return;
+
+        //Check if this is the last step and if the next instance is null because if could be a while step
+        if (workflowStepInstance.getRunOrderLabel() == RunOrderLabel.LAST && instanceController.getNextWorkflowStepInstance(workflowStepInstance) == null){
+                terminateWorkflowRun(workflowInstance, workflowStepInstance.getRunStatus(), "");
+                return;
         }
+
         switch (resultQueueElement.getRunStatus()) {
             case COMPLETED, SKIPPED:
                 processStepCompletedOrSkipped(workflowInstance, workflowStepInstance);
@@ -220,7 +224,7 @@ public class WorkflowRunner {
             Object object = getElementToExecute(nextStepInstance);
             if (object != null) {
                 if(object instanceof Function function){
-                    QueueElement queueElement = generateRunQueueElement(workflowInstance, workflowStepInstance, function);
+                    QueueElement queueElement = generateRunQueueElement(workflowInstance, nextStepInstance, function);
                     runStep(nextStepInstance, queueElement);
 
                 }
@@ -283,7 +287,7 @@ public class WorkflowRunner {
      */
     private void terminateWorkflowRun(WorkflowInstance workflowInstance, RunStatus status, String failureReason) {
         instanceController.updateRunStatus(workflowInstance, status);
-        instanceController.setWorkflowRunEndTime(workflowInstance);
+        instanceController.setEndTime(workflowInstance);
         if (failureReason != null && !failureReason.isEmpty()) {
             instanceController.setFailureReason(workflowInstance, failureReason);
         }
@@ -311,18 +315,22 @@ public class WorkflowRunner {
      * @param queueElement function to process.
      */
     private void runStep(WorkflowStepInstance workflowStepInstance, QueueElement queueElement) {
+        instanceController.setStartTime(workflowStepInstance);
         if(workflowStepInstance.getControlStructure() == ControlStructure.SUB_WORKFLOW){
             Workflow subWorkflow = workflowServiceClient.getWorkflowById(workflowStepInstance.getSubWorkflowId());
             WorkflowInstance subWorkflowInstance = instanceController.generateWorkflowInstance(subWorkflow, workflowStepInstance.getInputData(), workflowStepInstance.getWorkflowUid());
             startWorkflow(subWorkflowInstance);
             return;
         }
-        Map<String, Object> inputData = workflowStepInstance.getInputData();
-        //set values to the input data
-        expressionEvaluator.normalizeInputData(workflowStepInstance.getInputData(), workflowStepInstance.getWorkflowInstanceUid());
-        queueElement.setInputData(inputData);
-        queueController.addFunctionDtoToQueue(queueElement);
-        instanceController.updateRunStatus(workflowStepInstance, RunStatus.RUNNING);
+        if(queueElement != null){
+            Map<String, Object> inputData = workflowStepInstance.getInputData();
+            //set values to the input data
+            expressionEvaluator.normalizeInputData(workflowStepInstance.getInputData(), workflowStepInstance.getWorkflowInstanceUid());
+            queueElement.setInputData(inputData);
+            queueController.addFunctionDtoToQueue(queueElement);
+            instanceController.updateRunStatus(workflowStepInstance, RunStatus.RUNNING);
+        }
+
     }
 
     private List<Function> getUndeployedFunctions(WorkflowInstance workflowInstance) {
@@ -331,7 +339,7 @@ public class WorkflowRunner {
         for (WorkflowStepInstance step : steps) {
             if(step.getControlStructure() == ControlStructure.SWITCH){
                 for(DecisionCase decisionCase : step.getDecisionCases()){
-                    Function dcFunction = functionServiceClient.getFunctionByUid(decisionCase.getFunctionId());
+                    Function dcFunction = functionServiceClient.getFunctionByUid(decisionCase.getFunctionUid());
                     if(dcFunction != null && dcFunction.getDeploymentState() != DeploymentState.DEPLOYED){
                         undeployedFunctions.add(dcFunction);
                     }
@@ -422,7 +430,7 @@ public class WorkflowRunner {
 
 
     private Object getFunctionOrSubworkflow(WorkflowStepInstance stepInstance, DecisionCase decisionCase) {
-        Function func =  functionServiceClient.getFunctionByUid(decisionCase.getFunctionId());
+        Function func =  functionServiceClient.getFunctionByUid(decisionCase.getFunctionUid());
         stepInstance.setSelectedCaseName(decisionCase.getName());
         if(decisionCase.isSubWorkflow()){
             return workflowServiceClient.getWorkflowById(stepInstance.getSubWorkflowId());
