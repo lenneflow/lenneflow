@@ -280,7 +280,7 @@ public class InstanceController {
             case SIMPLE, SUB_WORKFLOW, SWITCH:
                 return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
             case DO_WHILE:
-                if (expressionEvaluator.evaluateBooleanExpression(stepInstance.getWorkflowInstanceUid(), stepInstance.getStopCondition()))
+                if (expressionEvaluator.evaluateDoWhileCondition(stepInstance.getWorkflowInstanceUid(), stepInstance.getStopCondition(), stepInstance.getRunCount()))
                     return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
                 else
                     return stepInstance;

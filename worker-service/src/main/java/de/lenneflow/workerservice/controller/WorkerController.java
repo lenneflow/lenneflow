@@ -4,7 +4,6 @@ import de.lenneflow.workerservice.dto.*;
 import de.lenneflow.workerservice.enums.CloudProvider;
 import de.lenneflow.workerservice.enums.ClusterStatus;
 import de.lenneflow.workerservice.exception.InternalServiceException;
-import de.lenneflow.workerservice.exception.PayloadNotValidException;
 import de.lenneflow.workerservice.exception.ResourceNotFoundException;
 import de.lenneflow.workerservice.component.CloudClusterController;
 import de.lenneflow.workerservice.model.AccessToken;
@@ -141,6 +140,20 @@ public class WorkerController {
         accessToken.setUpdated(LocalDateTime.now());
         return accessTokenRepository.save(accessToken);
     }
+
+    @Operation(summary = "Get access Token")
+    @GetMapping("/cluster/api-token/{uid}")
+    public AccessToken getLocalApiToken(@PathVariable String uid) {
+        return accessTokenRepository.findByUid(uid);
+    }
+
+    @Operation(summary = "Get access Token list")
+    @GetMapping("/cluster/api-token/list")
+    public List<AccessToken> getLocalApiTokenList() {
+        return accessTokenRepository.findAll();
+    }
+
+
 
     @Operation(summary = "Update a node group")
     @PostMapping("/cluster/node-group/update")

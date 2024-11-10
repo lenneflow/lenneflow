@@ -75,7 +75,6 @@ public class FunctionController {
 
     @Operation(summary = "Create a new Function")
     @PostMapping("/create")
-    @ResponseStatus(HttpStatus.CREATED)
     public Function addFunction(@RequestBody FunctionDTO functionDTO) {
         validator.validate(functionDTO);
         Function function = ObjectMapper.mapToFunction(functionDTO);
@@ -181,6 +180,7 @@ public class FunctionController {
     @Operation(summary = "Get all json schema")
     @GetMapping("/json-schema/list")
     public List<JsonSchema> getJsonSchemaList() {
+
         return jsonSchemaRepository.findAll();
     }
 
@@ -188,6 +188,13 @@ public class FunctionController {
     @GetMapping("/json-schema/{uid}")
     public JsonSchema getJsonSchema(@PathVariable String uid) {
         return jsonSchemaRepository.findByUid(uid);
+    }
+
+    @Operation(summary = "Get a json schema by UID")
+    @DeleteMapping("/json-schema/{uid}")
+    public void deleteJsonSchema(@PathVariable String uid) {
+        JsonSchema found = jsonSchemaRepository.findByUid(uid);
+        jsonSchemaRepository.delete(found);
     }
 
 

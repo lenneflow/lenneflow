@@ -144,18 +144,20 @@ public class DeploymentController {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+            try {
+                KubernetesClient client = getKubernetesClient(kubernetesCluster);
+                String deploymentName = function.getName();
 
-            KubernetesClient client = getKubernetesClient(kubernetesCluster);
-            String deploymentName = function.getName();
-
-            client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).waitUntilCondition(
-                    d -> (d.getStatus().getReadyReplicas() != null && d.getStatus().getReadyReplicas() > 0), 5, MINUTES);
-            if(client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).get().getStatus().getReadyReplicas() > 0){
-                updateFunctionDeploymentState(function, DeploymentState.DEPLOYED);
-                client.resource(createHorizontalPodsAutoscaler(deploymentName, 1, 25)).inNamespace(NAMESPACE).create();
-                return;
+                client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).waitUntilCondition(
+                        d -> (d.getStatus().getReadyReplicas() != null && d.getStatus().getReadyReplicas() > 0), 5, MINUTES);
+                if(client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).get().getStatus().getReadyReplicas() > 0){
+                    updateFunctionDeploymentState(function, DeploymentState.DEPLOYED);
+                    client.resource(createHorizontalPodsAutoscaler(deploymentName, 1, 25)).inNamespace(NAMESPACE).create();
+                }
+            }catch (Exception e){
+                logger.error(e.getMessage());
+                updateFunctionDeploymentState(function, DeploymentState.FAILED);
             }
-            updateFunctionDeploymentState(function, DeploymentState.FAILED);
     }
 
     private HorizontalPodAutoscaler createHorizontalPodsAutoscaler(String deploymentName, int minPods, int maxPods) {

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import de.lenneflow.orchestrationservice.exception.InternalServiceException;
-import de.lenneflow.orchestrationservice.feignmodels.Workflow;
 import de.lenneflow.orchestrationservice.model.WorkflowInstance;
 import de.lenneflow.orchestrationservice.model.WorkflowStepInstance;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
@@ -143,8 +142,8 @@ public class ExpressionEvaluator {
      * @param expression          the expression to evaluate
      * @return the boolean value
      */
-    public boolean evaluateBooleanExpression(String workflowInstanceUid, String expression) {
-        EvaluationValue result = evaluateExpression(workflowInstanceUid, expression);
+    public boolean evaluateDoWhileCondition(String workflowInstanceUid, String expression, int currentRunCount) {
+        EvaluationValue result = evaluateExpression(workflowInstanceUid, expression, currentRunCount);
         return result.getBooleanValue();
     }
 
@@ -156,7 +155,7 @@ public class ExpressionEvaluator {
      * @return the string value
      */
     public String evaluateStringExpression(String workflowInstanceUid, String expression) {
-        EvaluationValue result = evaluateExpression(workflowInstanceUid, expression);
+        EvaluationValue result = evaluateExpression(workflowInstanceUid, expression, 0);
         return result.getStringValue();
 
     }
@@ -169,7 +168,7 @@ public class ExpressionEvaluator {
      * @return the double value
      */
     public double evaluateDoubleExpression(String workflowInstanceUid, String expression) {
-        EvaluationValue result = evaluateExpression(workflowInstanceUid, expression);
+        EvaluationValue result = evaluateExpression(workflowInstanceUid, expression, 0);
         return result.getNumberValue().doubleValue();
 
     }
@@ -181,10 +180,14 @@ public class ExpressionEvaluator {
      * @param expression          the expression to evaluate
      * @return the {@link EvaluationValue}
      */
-    private EvaluationValue evaluateExpression(String workflowInstanceUid, String expression) {
+    private EvaluationValue evaluateExpression(String workflowInstanceUid, String expression, int currentRunCount) {
         String[] subStrings = StringUtils.substringsBetween(expression, "[", "]");
         for (String s : subStrings) {
-            expression = expression.replace(s, readDataFromPath(workflowInstanceUid, s).toString());
+            if(s.equalsIgnoreCase("runCount")){
+                expression = expression.replace("["+s+"]", currentRunCount+"");
+            }else{
+                expression = expression.replace(s, readDataFromPath(workflowInstanceUid, s).toString());
+            }
         }
         expression = expression.replace("[", "").replace("]", "");
         Expression exp = new Expression(expression);
