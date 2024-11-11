@@ -25,6 +25,7 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    implementation 'org.springframework.cloud:spring-cloud-starter-kubernetes-config:1.1.10.RELEASE'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-ribbon:latest.release'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:latest.release'
     implementation 'de.codecentric:spring-boot-admin-starter-client:latest.release'
