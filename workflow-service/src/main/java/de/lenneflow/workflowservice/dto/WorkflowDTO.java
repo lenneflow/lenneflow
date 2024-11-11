@@ -19,9 +19,6 @@ public class WorkflowDTO {
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String description;
 
-    @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private long timeOutInSeconds;
-
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String inputDataSchemaUid;
 

@@ -24,14 +24,10 @@ public class Util {
      * @param serializedFunctionDto the byte array
      * @return the {@link QueueElement} object
      */
-    public static QueueElement deserializeQueueElement(byte[] serializedFunctionDto) {
+    public static QueueElement deserializeQueueElement(byte[] serializedFunctionDto) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         QueueElement queueElement = null;
-        try {
-            queueElement = mapper.readValue(serializedFunctionDto, QueueElement.class);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        queueElement = mapper.readValue(serializedFunctionDto, QueueElement.class);
         return queueElement;
     }
 
@@ -41,14 +37,10 @@ public class Util {
      * @param serialized the byte array
      * @return the {@link QueueElement} object
      */
-    public static ResultQueueElement deserializeResultQueueElement(byte[] serialized) {
+    public static ResultQueueElement deserializeResultQueueElement(byte[] serialized) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         ResultQueueElement queueElement = null;
-        try {
-            queueElement = mapper.readValue(serialized, ResultQueueElement.class);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        queueElement = mapper.readValue(serialized, ResultQueueElement.class);
         return queueElement;
     }
 
@@ -58,14 +50,10 @@ public class Util {
      * @param notification the object to serialize
      * @return the byte array
      */
-    public static byte[] serialize(RunNotification notification) {
+    public static byte[] serialize(RunNotification notification) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         byte[] serializedFunction = null;
-        try {
-            serializedFunction = mapper.writeValueAsBytes(notification);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        serializedFunction = mapper.writeValueAsBytes(notification);
         return serializedFunction;
     }
 
@@ -75,14 +63,10 @@ public class Util {
      * @param queueElement the object to serialize
      * @return the byte array
      */
-    public static byte[] serialize(QueueElement queueElement) {
+    public static byte[] serialize(QueueElement queueElement) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         byte[] serializedFunction = null;
-        try {
-            serializedFunction = mapper.writeValueAsBytes(queueElement);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        serializedFunction = mapper.writeValueAsBytes(queueElement);
         return serializedFunction;
     }
 
@@ -92,14 +76,10 @@ public class Util {
      * @param queueElement the object to serialize
      * @return the byte array
      */
-    public static byte[] serialize(ResultQueueElement queueElement) {
+    public static byte[] serialize(ResultQueueElement queueElement) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         byte[] serializedFunction = null;
-        try {
-            serializedFunction = mapper.writeValueAsBytes(queueElement);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        serializedFunction = mapper.writeValueAsBytes(queueElement);
         return serializedFunction;
     }
 

@@ -32,9 +32,9 @@ public class WorkflowStep {
 
     private int executionOrder;
 
-    private String functionId;
+    private String functionUid;
 
-    private String subWorkflowId;
+    private String subWorkflowUid;
 
     private List<DecisionCase> decisionCases = new ArrayList<>();
 

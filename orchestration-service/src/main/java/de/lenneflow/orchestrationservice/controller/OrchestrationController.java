@@ -68,7 +68,7 @@ public class OrchestrationController {
         Validator.validateJsonData(workflow.getInputDataSchema().getSchema(), workflow.getInputDataSchema().getSchemaVersion(), globalInputData.getInputData());
 
         //create an instance for the workflow
-        WorkflowInstance workflowInstance = instanceController.generateWorkflowInstance(workflow, globalInputData.getInputData(), null);
+        WorkflowInstance workflowInstance = instanceController.generateWorkflowInstance(workflow, globalInputData.getInputData(), null, null);
 
         return workflowRunner.startWorkflow(workflowInstance);
     }
@@ -81,7 +81,7 @@ public class OrchestrationController {
             throw new PayloadNotValidException("Could not find workflow with id " + workflowId);
         }
         //create an instance for the workflow
-        WorkflowInstance workflowInstance = instanceController.generateWorkflowInstance(workflow, null, null);
+        WorkflowInstance workflowInstance = instanceController.generateWorkflowInstance(workflow, null, null, null);
         return workflowRunner.startWorkflow(workflowInstance);
     }
 
@@ -95,7 +95,7 @@ public class OrchestrationController {
         Validator.validateJsonData(workflow.getInputDataSchema().getSchema(), workflow.getInputDataSchema().getSchemaVersion(), inputData);
 
         //create an instance for the workflow
-        WorkflowInstance workflowInstance = instanceController.generateWorkflowInstance(workflow, inputData, null);
+        WorkflowInstance workflowInstance = instanceController.generateWorkflowInstance(workflow, inputData, null, null);
 
         return workflowRunner.startWorkflow(workflowInstance);
     }

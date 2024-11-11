@@ -1,10 +1,7 @@
 package de.lenneflow.workflowservice.util;
 
 import com.ezylang.evalex.Expression;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.networknt.schema.*;
-import com.networknt.schema.format.IriFormat;
 import de.lenneflow.workflowservice.dto.WorkflowDTO;
 import de.lenneflow.workflowservice.enums.JsonSchemaVersion;
 import de.lenneflow.workflowservice.exception.InternalServiceException;
@@ -104,7 +101,7 @@ public class Validator {
 
         switch (workflowStep.getControlStructure()) {
             case SIMPLE:
-                if (workflowStep.getFunctionId() == null || workflowStep.getFunctionId().isEmpty()) {
+                if (workflowStep.getFunctionUid() == null || workflowStep.getFunctionUid().isEmpty()) {
                     logger.info("Simple Workflow step {} has no function ID", workflowStep.getName());
                     throw new PayloadNotValidException("The field functionId is mandatory for this payload!");
                 }
@@ -120,7 +117,7 @@ public class Validator {
                 }
                 break;
             case DO_WHILE:
-                if (workflowStep.getFunctionId() == null || workflowStep.getFunctionId().isEmpty()) {
+                if (workflowStep.getFunctionUid() == null || workflowStep.getFunctionUid().isEmpty()) {
                     logger.info("Workflow step {} has no function ID", workflowStep.getName());
                     throw new PayloadNotValidException("The field functionId is mandatory for this payload!");
                 }
@@ -130,7 +127,7 @@ public class Validator {
                 }
                 break;
             case SUB_WORKFLOW:
-                if (workflowStep.getSubWorkflowId() == null || workflowStep.getSubWorkflowId().isEmpty()) {
+                if (workflowStep.getSubWorkflowUid() == null || workflowStep.getSubWorkflowUid().isEmpty()) {
                     logger.info("Workflow step {} has no sub-workflow ID", workflowStep.getName());
                     throw new PayloadNotValidException("The field subWorkflowId is mandatory for this payload!");
                 }

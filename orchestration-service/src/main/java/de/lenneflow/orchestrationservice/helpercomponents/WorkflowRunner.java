@@ -46,7 +46,7 @@ public class WorkflowRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkflowRunner.class);
 
-    private static final String FUNCTION_OR_SUB_WORKFLOW_NOT_FOUND = "Could not find function or sub workflow to execute";
+    private static final String FUNCTION_OR_SUB_WORKFLOW_NOT_FOUND = "Could not extract or find function or sub workflow to execute";
 
     @Value("${qms.api.root.link}")  private String callBackRoot;
 
@@ -89,7 +89,7 @@ public class WorkflowRunner {
             runStep(firstStepInstance, null);
             return new WorkflowExecution(workflowInstance);
         }
-        Function function = functionServiceClient.getFunctionByUid(firstStepInstance.getFunctionId());
+        Function function = functionServiceClient.getFunctionByUid(firstStepInstance.getFunctionUid());
         QueueElement queueElement = generateRunQueueElement(workflowInstance, firstStepInstance, function);
 
         List<Function> undeployedFunctions = getUndeployedFunctions(workflowInstance);
@@ -196,9 +196,9 @@ public class WorkflowRunner {
 
         //Proceed next steps
 
-        //Check if this is the last step and if the next instance is null because if could be a while step
+        //Check if this is the last step and if the next instance is null because it could be a while step
         if (workflowStepInstance.getRunOrderLabel() == RunOrderLabel.LAST && instanceController.getNextWorkflowStepInstance(workflowStepInstance) == null){
-                terminateWorkflowRun(workflowInstance, workflowStepInstance.getRunStatus(), "");
+                terminateWorkflowRun(workflowInstance, workflowStepInstance.getRunStatus(), "", workflowStepInstance.getOutputData());
                 return;
         }
 
@@ -229,11 +229,11 @@ public class WorkflowRunner {
 
                 }
                 if(object instanceof Workflow){
-                    runStep(workflowStepInstance, null);
+                    runStep(nextStepInstance, null);
                 }
 
             } else {
-                terminateWorkflowRun(workflowInstance, RunStatus.FAILED, FUNCTION_OR_SUB_WORKFLOW_NOT_FOUND);
+                terminateWorkflowRun(workflowInstance, RunStatus.FAILED, FUNCTION_OR_SUB_WORKFLOW_NOT_FOUND, workflowStepInstance.getOutputData());
             }
         }
     }
@@ -258,14 +258,14 @@ public class WorkflowRunner {
                     runStep(workflowStepInstance, null);
                 }
                 else{
-                    terminateWorkflowRun(workflowInstance, RunStatus.FAILED, FUNCTION_OR_SUB_WORKFLOW_NOT_FOUND);
+                    terminateWorkflowRun(workflowInstance, RunStatus.FAILED, FUNCTION_OR_SUB_WORKFLOW_NOT_FOUND, workflowStepInstance.getOutputData());
                 }
 
             } else {
-                terminateWorkflowRun( workflowInstance, RunStatus.FAILED, FUNCTION_OR_SUB_WORKFLOW_NOT_FOUND);
+                terminateWorkflowRun( workflowInstance, RunStatus.FAILED, FUNCTION_OR_SUB_WORKFLOW_NOT_FOUND, workflowStepInstance.getOutputData());
             }
         }
-        terminateWorkflowRun(workflowInstance, workflowStepInstance.getRunStatus(), workflowStepInstance.getFailureReason());
+        terminateWorkflowRun(workflowInstance, workflowStepInstance.getRunStatus(), workflowStepInstance.getFailureReason(), workflowStepInstance.getOutputData());
     }
 
     /**
@@ -275,7 +275,7 @@ public class WorkflowRunner {
      * @param workflowStepInstance The workflow step instance object
      */
     private void processStepCancelledOrFailedWithTerminalError(WorkflowInstance workflowInstance, WorkflowStepInstance workflowStepInstance) {
-        terminateWorkflowRun( workflowInstance, workflowStepInstance.getRunStatus(), workflowStepInstance.getFailureReason());
+        terminateWorkflowRun( workflowInstance, workflowStepInstance.getRunStatus(), workflowStepInstance.getFailureReason(), workflowStepInstance.getOutputData());
     }
 
 
@@ -285,8 +285,9 @@ public class WorkflowRunner {
      * @param workflowInstance the running workflow instance
      * @param status           the status to set
      */
-    private void terminateWorkflowRun(WorkflowInstance workflowInstance, RunStatus status, String failureReason) {
+    private void terminateWorkflowRun(WorkflowInstance workflowInstance, RunStatus status, String failureReason, Map<String, Object> outputData) {
         instanceController.updateRunStatus(workflowInstance, status);
+        instanceController.updateOutputData(workflowInstance, outputData);
         instanceController.setEndTime(workflowInstance);
         if (failureReason != null && !failureReason.isEmpty()) {
             instanceController.setFailureReason(workflowInstance, failureReason);
@@ -304,7 +305,7 @@ public class WorkflowRunner {
                 queueController.addElementToResultQueue(resultQueueElement);
             }
         }
-        instanceController.deleteLastWorkflowInstances(30, 30);
+        instanceController.deleteLastWorkflowInstances(100, 100);
     }
 
 
@@ -317,8 +318,10 @@ public class WorkflowRunner {
     private void runStep(WorkflowStepInstance workflowStepInstance, QueueElement queueElement) {
         instanceController.setStartTime(workflowStepInstance);
         if(workflowStepInstance.getControlStructure() == ControlStructure.SUB_WORKFLOW){
-            Workflow subWorkflow = workflowServiceClient.getWorkflowById(workflowStepInstance.getSubWorkflowId());
-            WorkflowInstance subWorkflowInstance = instanceController.generateWorkflowInstance(subWorkflow, workflowStepInstance.getInputData(), workflowStepInstance.getWorkflowUid());
+            Workflow subWorkflow = workflowServiceClient.getWorkflowById(workflowStepInstance.getSubWorkflowUid());
+            logger.info("Start running su workflow with the name {}", subWorkflow.getName());
+            WorkflowInstance subWorkflowInstance = instanceController.generateWorkflowInstance(subWorkflow, workflowStepInstance.getInputData(), workflowStepInstance.getWorkflowInstanceUid(), workflowStepInstance.getUid());
+            instanceController.updateRunStatus(workflowStepInstance, RunStatus.RUNNING);
             startWorkflow(subWorkflowInstance);
             return;
         }
@@ -337,18 +340,21 @@ public class WorkflowRunner {
         List<Function> undeployedFunctions = new ArrayList<>();
         List<WorkflowStepInstance> steps = workflowStepInstanceRepository.findByWorkflowInstanceUid(workflowInstance.getUid());
         for (WorkflowStepInstance step : steps) {
+            if(step.getControlStructure() == ControlStructure.SUB_WORKFLOW){
+                continue;
+            }
             if(step.getControlStructure() == ControlStructure.SWITCH){
                 for(DecisionCase decisionCase : step.getDecisionCases()){
                     Function dcFunction = functionServiceClient.getFunctionByUid(decisionCase.getFunctionUid());
-                    if(dcFunction != null && dcFunction.getDeploymentState() != DeploymentState.DEPLOYED){
-                        undeployedFunctions.add(dcFunction);
-                    }
+                    if(dcFunction != null && dcFunction.getDeploymentState() != DeploymentState.DEPLOYED && !contained(undeployedFunctions, dcFunction))
+                            undeployedFunctions.add(dcFunction);
+
                 }
             }else{
-                Function stepFunction = functionServiceClient.getFunctionByUid(step.getFunctionId());
-                if(stepFunction != null && stepFunction.getDeploymentState() != DeploymentState.DEPLOYED){
-                    undeployedFunctions.add(stepFunction);
-                }
+                Function stepFunction = functionServiceClient.getFunctionByUid(step.getFunctionUid());
+                if(stepFunction != null && stepFunction.getDeploymentState() != DeploymentState.DEPLOYED && !contained(undeployedFunctions, stepFunction))
+                        undeployedFunctions.add(stepFunction);
+
             }
         }
 
@@ -368,7 +374,7 @@ public class WorkflowRunner {
                 functionServiceClient.deployFunction(function.getUid());
             }else if(function != null && !function.isLazyDeployment() && function.getDeploymentState() == DeploymentState.UNDEPLOYED) {
                 String reason = "Function " + function.getName() + " is undeployed but the lazy deployment flag is not set!";
-                terminateWorkflowRun(workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason);
+                terminateWorkflowRun(workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason, null);
                 throw new InternalServiceException(reason);
             }
         }
@@ -381,7 +387,7 @@ public class WorkflowRunner {
             }
             if (start.plusMinutes(10).isBefore(LocalDateTime.now())) {
                 String reason = "All functions could not be deployed in time. Workflow run will be cancelled!";
-                terminateWorkflowRun(workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason);
+                terminateWorkflowRun(workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason, null);
                 throw new InternalServiceException(reason);
             }
             Util.pause(5000);
@@ -395,14 +401,13 @@ public class WorkflowRunner {
      */
     private boolean allFunctionsDeployed(List<WorkflowStepInstance> steps){
         for (WorkflowStepInstance step : steps) {
-            Function function = functionServiceClient.getFunctionByUid(step.getFunctionId());
+            Function function = functionServiceClient.getFunctionByUid(step.getFunctionUid());
             if (function != null && function.getDeploymentState() == DeploymentState.DEPLOYING) {
                 return false;
             }
         }
         return true;
     }
-
 
     /**
      * Method that returns the function to execute from a workflow step instance.
@@ -411,29 +416,34 @@ public class WorkflowRunner {
      * @return the function to run
      */
     private Object getElementToExecute(WorkflowStepInstance stepInstance) {
-        if (Objects.requireNonNull(stepInstance.getControlStructure()) == ControlStructure.SWITCH) {
-            String switchCase = expressionEvaluator.evaluateStringExpression(stepInstance.getWorkflowInstanceUid(), stepInstance.getSwitchCase());
-            DecisionCase decisionCase = getDecisionCaseByName(stepInstance.getDecisionCases(), switchCase);
-            if (decisionCase != null) {
-                return getFunctionOrSubworkflow(stepInstance, decisionCase);
+        try {
+            if (Objects.requireNonNull(stepInstance.getControlStructure()) == ControlStructure.SWITCH) {
+                String switchCase = expressionEvaluator.evaluateStringExpression(stepInstance.getWorkflowInstanceUid(), stepInstance.getSwitchCase());
+                DecisionCase decisionCase = getDecisionCaseByName(stepInstance.getDecisionCases(), switchCase);
+                if (decisionCase != null) {
+                    return getFunctionOrSubWorkflow(stepInstance, decisionCase);
+                }
+                if ((decisionCase = getDecisionCaseByName(stepInstance.getDecisionCases(), "default")) != null) {
+                    return getFunctionOrSubWorkflow(stepInstance, decisionCase);
+                }
+                return null;
             }
-            if ((decisionCase = getDecisionCaseByName(stepInstance.getDecisionCases(), "default")) != null) {
-                return getFunctionOrSubworkflow(stepInstance, decisionCase);
+            if (Objects.requireNonNull(stepInstance.getControlStructure()) == ControlStructure.SUB_WORKFLOW) {
+                return workflowServiceClient.getWorkflowById(stepInstance.getSubWorkflowUid());
             }
+            return functionServiceClient.getFunctionByUid(stepInstance.getFunctionUid());
+        } catch (Exception e) {
+            logger.error(e.getMessage());
             return null;
         }
-        if (Objects.requireNonNull(stepInstance.getControlStructure()) == ControlStructure.SUB_WORKFLOW) {
-            return workflowServiceClient.getWorkflowById(stepInstance.getSubWorkflowId());
-        }
-        return functionServiceClient.getFunctionByUid(stepInstance.getFunctionId());
     }
 
 
-    private Object getFunctionOrSubworkflow(WorkflowStepInstance stepInstance, DecisionCase decisionCase) {
+    private Object getFunctionOrSubWorkflow(WorkflowStepInstance stepInstance, DecisionCase decisionCase) {
         Function func =  functionServiceClient.getFunctionByUid(decisionCase.getFunctionUid());
         stepInstance.setSelectedCaseName(decisionCase.getName());
         if(decisionCase.isSubWorkflow()){
-            return workflowServiceClient.getWorkflowById(stepInstance.getSubWorkflowId());
+            return workflowServiceClient.getWorkflowById(stepInstance.getSubWorkflowUid());
         }
         stepInstance.setInputData(decisionCase.getInputData());
         workflowStepInstanceRepository.save(stepInstance);
@@ -467,5 +477,14 @@ public class WorkflowRunner {
         return queueElement;
     }
 
+
+    private boolean contained(List<Function> undeployedFunctions, Function dcFunction) {
+        for(Function function : undeployedFunctions){
+            if(function.getUid().equals(dcFunction.getUid())){
+                return true;
+            }
+        }
+        return false;
+    }
 
 }

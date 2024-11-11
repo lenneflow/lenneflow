@@ -58,12 +58,13 @@ public class InstanceController {
      * @param inputData  the specific input parameters.
      * @return the created workflow instance.
      */
-    public WorkflowInstance generateWorkflowInstance(Workflow workflow, Map<String, Object> inputData, String parentInstanceUid) {
+    public WorkflowInstance generateWorkflowInstance(Workflow workflow, Map<String, Object> inputData, String parentInstanceUid, String parentStepInstanceUid) {
 
         //create an instance for the workflow
         WorkflowInstance workflowInstance = ObjectMapper.mapToWorkflowInstance(workflow);
         workflowInstance.setUid(UUID.randomUUID().toString());
         workflowInstance.setParentInstanceUid(parentInstanceUid);
+        workflowInstance.setParentStepInstanceUid(parentStepInstanceUid);
         workflowInstance.setRunStatus(RunStatus.NEW);
         workflowInstance.setInputData(inputData);
         workflowInstance.setCreated(LocalDateTime.now());
@@ -210,6 +211,16 @@ public class InstanceController {
     }
 
     /**
+     * Sets the output data of the workflow
+     *
+     * @param workflowInstance the workflow instance
+     */
+    public void updateOutputData(WorkflowInstance workflowInstance, Map<String, Object> outputData) {
+        workflowInstance.setOutputData(outputData);
+        workflowInstanceRepository.save(workflowInstance);
+    }
+
+    /**
      * Sets the failure reason to the workflow and to the workflow execution
      *
      * @param workflowInstance the workflow instance
@@ -246,7 +257,7 @@ public class InstanceController {
 
             //iterate over the sorted executions and add the oldest to the list to remove
             for (WorkflowInstance instance : sortedInstances) {
-                if (instance.getStartTime().plusDays(keepDaysCount).isBefore(now)) {
+                if (instance.getStartTime().plusDays(keepDaysCount).isBefore(now) && (instance.getParentInstanceUid() == null || instance.getParentInstanceUid().isEmpty())) {
                     instancesToDelete.add(instance);
                 } else {
                     if (sortedInstances.size() - instancesToDelete.size() >= maxInstancesCount) {
@@ -276,18 +287,22 @@ public class InstanceController {
      * @return the next workflow step instance.
      */
     public WorkflowStepInstance getNextWorkflowStepInstance(WorkflowStepInstance stepInstance) {
-        switch (stepInstance.getControlStructure()) {
-            case SIMPLE, SUB_WORKFLOW, SWITCH:
-                return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
-            case DO_WHILE:
-                if (expressionEvaluator.evaluateDoWhileCondition(stepInstance.getWorkflowInstanceUid(), stepInstance.getStopCondition(), stepInstance.getRunCount()))
+        try {
+            switch (stepInstance.getControlStructure()) {
+                case SIMPLE, SUB_WORKFLOW, SWITCH:
                     return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
-                else
-                    return stepInstance;
-            default:
-                throw new InternalServiceException("The next workflow step to execute could not be found");
+                case DO_WHILE:
+                    if (expressionEvaluator.evaluateDoWhileCondition(stepInstance.getWorkflowInstanceUid(), stepInstance.getStopCondition(), stepInstance.getRunCount()))
+                        return workflowStepInstanceRepository.findByUid(stepInstance.getNextStepId());
+                    else
+                        return stepInstance;
+                default:
+                    logger.error(("The next workflow step to execute could not be found"));
+            }
+        } catch (Exception e) {
+            logger.error("Could not get next workflow step instance!\n{}", e.getMessage());
         }
-
+        return null;
     }
 
     /**

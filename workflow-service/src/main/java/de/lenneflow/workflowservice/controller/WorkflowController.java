@@ -92,6 +92,12 @@ public class WorkflowController {
         return jsonSchemaRepository.findByUid(uid);
     }
 
+    @Operation(summary = "Delete JSON Schema by UID")
+    @DeleteMapping("/json-schema/{uid}")
+    public void deleteJsonSchema(@PathVariable String uid) {
+        jsonSchemaRepository.delete(jsonSchemaRepository.findByUid(uid));
+    }
+
     @Operation(summary = "Delete the Workflow and all Steps")
     @DeleteMapping("/{uid}")
     public void deleteWorkflow(@PathVariable String uid) {

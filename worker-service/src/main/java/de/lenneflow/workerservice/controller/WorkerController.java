@@ -147,6 +147,12 @@ public class WorkerController {
         return accessTokenRepository.findByUid(uid);
     }
 
+    @Operation(summary = "Get access Token")
+    @DeleteMapping("/cluster/api-token/{uid}")
+    public void deleteLocalApiToken(@PathVariable String uid) {
+        accessTokenRepository.delete(accessTokenRepository.findByUid(uid));
+    }
+
     @Operation(summary = "Get access Token list")
     @GetMapping("/cluster/api-token/list")
     public List<AccessToken> getLocalApiTokenList() {

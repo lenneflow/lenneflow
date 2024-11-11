@@ -1,7 +1,9 @@
 package de.lenneflow.orchestrationservice.utils;
 
+import com.ezylang.evalex.EvaluationException;
 import com.ezylang.evalex.Expression;
 import com.ezylang.evalex.data.EvaluationValue;
+import com.ezylang.evalex.parser.ParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
@@ -142,7 +144,7 @@ public class ExpressionEvaluator {
      * @param expression          the expression to evaluate
      * @return the boolean value
      */
-    public boolean evaluateDoWhileCondition(String workflowInstanceUid, String expression, int currentRunCount) {
+    public boolean evaluateDoWhileCondition(String workflowInstanceUid, String expression, int currentRunCount) throws EvaluationException, ParseException {
         EvaluationValue result = evaluateExpression(workflowInstanceUid, expression, currentRunCount);
         return result.getBooleanValue();
     }
@@ -154,7 +156,7 @@ public class ExpressionEvaluator {
      * @param expression          the expression to evaluate
      * @return the string value
      */
-    public String evaluateStringExpression(String workflowInstanceUid, String expression) {
+    public String evaluateStringExpression(String workflowInstanceUid, String expression) throws EvaluationException, ParseException {
         EvaluationValue result = evaluateExpression(workflowInstanceUid, expression, 0);
         return result.getStringValue();
 
@@ -167,7 +169,7 @@ public class ExpressionEvaluator {
      * @param expression          the expression to evaluate
      * @return the double value
      */
-    public double evaluateDoubleExpression(String workflowInstanceUid, String expression) {
+    public double evaluateDoubleExpression(String workflowInstanceUid, String expression) throws EvaluationException, ParseException {
         EvaluationValue result = evaluateExpression(workflowInstanceUid, expression, 0);
         return result.getNumberValue().doubleValue();
 
@@ -180,22 +182,18 @@ public class ExpressionEvaluator {
      * @param expression          the expression to evaluate
      * @return the {@link EvaluationValue}
      */
-    private EvaluationValue evaluateExpression(String workflowInstanceUid, String expression, int currentRunCount) {
+    private EvaluationValue evaluateExpression(String workflowInstanceUid, String expression, int currentRunCount) throws EvaluationException, ParseException {
         String[] subStrings = StringUtils.substringsBetween(expression, "[", "]");
         for (String s : subStrings) {
-            if(s.equalsIgnoreCase("runCount")){
-                expression = expression.replace("["+s+"]", currentRunCount+"");
-            }else{
+            if (s.equalsIgnoreCase("runCount")) {
+                expression = expression.replace(s, currentRunCount + "").replace("[", "").replace("]", "");
+            } else {
                 expression = expression.replace(s, readDataFromPath(workflowInstanceUid, s).toString());
             }
         }
         expression = expression.replace("[", "").replace("]", "");
         Expression exp = new Expression(expression);
-        try {
-            return exp.evaluate();
-        } catch (Exception e) {
-            throw new InternalServiceException("Invalid expression in Payload: " + expression);
-        }
+        return exp.evaluate();
     }
 
 }

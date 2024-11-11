@@ -47,9 +47,9 @@ public class WorkflowStepInstance {
 
     private RunStatus runStatus;
 
-    private String functionId;
+    private String functionUid;
 
-    private String subWorkflowId;
+    private String subWorkflowUid;
 
     private List<DecisionCase> decisionCases = new ArrayList<>();
 
@@ -97,9 +97,10 @@ public class WorkflowStepInstance {
         this.executionOrder = step.getExecutionOrder();
         this.decisionCases = step.getDecisionCases();
         this.inputData = step.getInputData();
-        this.functionId = step.getFunctionId();
+        this.functionUid = step.getFunctionUid();
         this.switchCase = step.getSwitchCase();
         this.stopCondition = step.getStopCondition();
+        this.subWorkflowUid = step.getSubWorkflowUid();
         this.runStatus = RunStatus.NEW;
         this.workflowInstanceUid = workflowInstanceUid;
         this.controlStructure = step.getControlStructure();

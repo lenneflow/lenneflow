@@ -56,13 +56,13 @@ public class FunctionController {
 
     @Operation(summary = "Get a function by id")
     @GetMapping("/{uid}")
-    public Function getFunctionById(@PathVariable("uid") @Parameter(name = "uid", description = "Function uid") String uid) {
+    public Function getFunctionById(@PathVariable("uid") String uid) {
         return functionRepository.findByUid(uid);
     }
 
     @Operation(summary = "Get a function by name", description = "Returns a function as per the name")
     @GetMapping("/name/{function-name}")
-    public Function getFunctionByName(@PathVariable("function-name") @Parameter(name = "function-name", description = "Function name") String name) {
+    public Function getFunctionByName(@PathVariable("function-name") String name) {
         return functionRepository.findByName(name);
     }
 
