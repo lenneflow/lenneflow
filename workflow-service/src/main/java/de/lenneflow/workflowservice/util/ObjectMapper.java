@@ -16,7 +16,7 @@ public class ObjectMapper {
         Workflow workflow = new Workflow();
         workflow.setDescription(workflowDTO.getDescription());
         workflow.setName(workflowDTO.getName());
-        workflow.setTimeOutInSeconds(workflowDTO.getTimeOutInSeconds());
+        workflow.setTimeOutInSeconds(Long.MAX_VALUE);
         return workflow;
     }
 
