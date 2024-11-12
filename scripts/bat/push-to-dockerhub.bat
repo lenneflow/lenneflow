@@ -1,5 +1,5 @@
 
-docker push lenneflow/admin-service
+
 
 docker push lenneflow/orchestration-service
 
