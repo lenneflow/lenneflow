@@ -61,6 +61,6 @@ public class WorkflowInstance {
 
     private LocalDateTime startTime;
 
-    private LocalDateTime EndTime;
+    private LocalDateTime endTime;
 
 }
