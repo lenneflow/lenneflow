@@ -25,9 +25,6 @@ public class Validator {
         if(userDto.getEmail() == null || userDto.getEmail().isEmpty()){
             throw new PayloadNotValidException("Email is empty");
         }
-        if(userRepository.findByUid(userDto.getUid()) != null){
-            throw new PayloadNotValidException("User already exists");
-        }
         if(userRepository.findByEmail(userDto.getEmail()) != null){
             throw new PayloadNotValidException("User already exists");
         }

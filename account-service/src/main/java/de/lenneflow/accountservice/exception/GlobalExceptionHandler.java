@@ -1,7 +1,6 @@
 package de.lenneflow.accountservice.exception;
 
-import de.lenneflow.functionservice.exception.InternalServiceException;
-import de.lenneflow.functionservice.exception.ResourceNotFoundException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
