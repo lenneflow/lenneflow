@@ -10,9 +10,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -20,25 +18,23 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
-public class SecurityConfig {
+public class SecurityConfig  {
 
     private final JwtAuthFilter jwtAuthFilter;
-    private final UserDetailsService userService;
-    private final PasswordEncoder passwordEncoder;
+    private final UserService userService;
 
-    // Reduced whitelist for simplicity
     private static final String[] WHITE_LIST_URL = {
-            "/api/accounts/login",
-            "/api/accounts/register"
+            "/api/accounts/user/login",
+            "/api/accounts/user/register"
     };
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-                .csrf(AbstractHttpConfigurer::disable) // Disabling CSRF as we use JWT which is immune to CSRF
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(WHITE_LIST_URL).permitAll() // Whitelisting some paths from authentication
-                        .anyRequest().authenticated()) // All other requests must be authenticated
+                        .anyRequest().hasAuthority("ADMIN")) // All other requests must be authenticated
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session management
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class).build(); // Registering our JwtAuthFilter
@@ -48,7 +44,7 @@ public class SecurityConfig {
     AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userService); // Setting our custom user details service
-        provider.setPasswordEncoder(passwordEncoder); // Setting the password encoder
+        provider.setPasswordEncoder(bCryptPasswordEncoder()); // Setting the password encoder
         return provider;
     }
 

@@ -20,33 +20,30 @@ public class JwtService {
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
 
-    @Value("${application.security.jwt.expiration}")
-    private long expiration;
-
-    public String generateToken(User user) {
+    public String generateToken(User user, Date expiration) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("uid", user.getUid());
         claims.put("email", user.getEmail());
         claims.put("roles", user.getAuthorities());
-        return createToken(claims, user.getUsername());
+        return createToken(claims, user.getUsername(), expiration);
     }
 
-    public Boolean validateToken(String token, UserDetails userDetails) {
+    public boolean validateToken(String token, UserDetails userDetails) {
         Date expirationDate = extractExpiration(token);
         if (expirationDate.before(new Date())) {
             return false;
         }
         String username = extractUsername(token);
-        return userDetails.getUsername().equals(username) && !expirationDate.before(new Date());
+        return userDetails.getUsername().equals(username);
     }
 
-    private String createToken(Map<String, Object> claims, String username) {
+    private String createToken(Map<String, Object> claims, String username, Date expirationDate) {
         return Jwts.builder()
                 .claims(claims)
                 .subject(username)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignKey())
+                .expiration(expirationDate)
+                .signWith(getSignKey(), Jwts.SIG.HS512)
                 .compact();
     }
 
