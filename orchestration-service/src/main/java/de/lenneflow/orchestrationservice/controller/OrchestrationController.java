@@ -2,7 +2,6 @@ package de.lenneflow.orchestrationservice.controller;
 
 import de.lenneflow.orchestrationservice.dto.GlobalInputDataDto;
 import de.lenneflow.orchestrationservice.exception.PayloadNotValidException;
-import de.lenneflow.orchestrationservice.feignclients.FunctionServiceClient;
 import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
 import de.lenneflow.orchestrationservice.helpercomponents.InstanceController;
@@ -11,13 +10,13 @@ import de.lenneflow.orchestrationservice.dto.WorkflowExecution;
 import de.lenneflow.orchestrationservice.model.WorkflowInstance;
 import de.lenneflow.orchestrationservice.repository.GlobalInputDataRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
-import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
 import de.lenneflow.orchestrationservice.helpercomponents.WorkflowRunner;
 import de.lenneflow.orchestrationservice.utils.ObjectMapper;
 import de.lenneflow.orchestrationservice.utils.Validator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,27 +33,16 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/control")
 @Tag(name = "Workflow Run API")
+@RequiredArgsConstructor
 public class OrchestrationController {
 
     final WorkflowServiceClient workflowServiceClient;
-    final FunctionServiceClient functionServiceClient;
     final WorkflowInstanceRepository workflowInstanceRepository;
-    final WorkflowStepInstanceRepository workflowStepInstanceRepository;
     final WorkflowRunner workflowRunner;
     final InstanceController instanceController;
     final GlobalInputDataRepository globalInputDataRepository;
 
-    public OrchestrationController(WorkflowServiceClient workflowServiceClient, FunctionServiceClient functionServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, WorkflowRunner workflowRunner, InstanceController instanceController, GlobalInputDataRepository globalInputDataRepository) {
-        this.workflowServiceClient = workflowServiceClient;
-        this.functionServiceClient = functionServiceClient;
-        this.workflowInstanceRepository = workflowInstanceRepository;
-        this.workflowStepInstanceRepository = workflowStepInstanceRepository;
-        this.workflowRunner = workflowRunner;
-        this.instanceController = instanceController;
-        this.globalInputDataRepository = globalInputDataRepository;
-    }
-
-    @Operation(summary = "Starts a workflow by UID", description = "")
+    @Operation(summary = "Starts a workflow by UID")
     @GetMapping("/workflow/{workflow-uid}/input-data/{input-data-uid}/start")
     public WorkflowExecution startWorkflowGet(@PathVariable(name = "workflow-uid") @Parameter(name = "Workflow UID") String workflowId, @PathVariable("input-data-uid") @Parameter(name = "Input data UID") String inputdataId) {
         GlobalInputData globalInputData = globalInputDataRepository.findByUid(inputdataId);
@@ -73,7 +61,7 @@ public class OrchestrationController {
         return workflowRunner.startWorkflow(workflowInstance);
     }
 
-    @Operation(summary = "Starts a workflow by UID", description = "")
+    @Operation(summary = "Starts a workflow by UID")
     @GetMapping("/workflow/{workflow-uid}/start")
     public WorkflowExecution startWorkflowGet2(@PathVariable(name = "workflow-uid") String workflowId) {
         Workflow workflow = workflowServiceClient.getWorkflowById(workflowId);
@@ -85,7 +73,7 @@ public class OrchestrationController {
         return workflowRunner.startWorkflow(workflowInstance);
     }
 
-    @Operation(summary = "Starts a workflow by UID", description = "")
+    @Operation(summary = "Starts a workflow by UID")
     @PostMapping("/workflow/{workflow-uid}/start")
     public WorkflowExecution startWorkflowPost(@PathVariable(name = "workflow-uid") String workflowId, @RequestBody Map<String, Object> inputData) {
         Workflow workflow = workflowServiceClient.getWorkflowById(workflowId);

@@ -2,11 +2,8 @@ package de.lenneflow.orchestrationservice.feignclients;
 
 import de.lenneflow.orchestrationservice.feignmodels.Function;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.List;
 

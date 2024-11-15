@@ -5,6 +5,7 @@ import de.lenneflow.orchestrationservice.dto.QueueElement;
 import de.lenneflow.orchestrationservice.dto.ResultQueueElement;
 import de.lenneflow.orchestrationservice.dto.RunNotification;
 import de.lenneflow.orchestrationservice.utils.Util;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.*;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @EnableRabbit
+@RequiredArgsConstructor
 public class QueueController {
 
     private static final Logger logger = LoggerFactory.getLogger(QueueController.class);
@@ -32,11 +34,6 @@ public class QueueController {
     final AmqpAdmin admin;
     final RabbitTemplate rabbitTemplate;
 
-
-    public QueueController(AmqpAdmin admin, RabbitTemplate rabbitTemplate) {
-        this.admin = admin;
-        this.rabbitTemplate = rabbitTemplate;
-    }
 
     public void publishRunStateChange(RunNotification runNotification) {
         try {
@@ -100,18 +97,6 @@ public class QueueController {
         TopicExchange exchange = new TopicExchange(exchangeName, true, false);
         admin.declareExchange(exchange);
         Binding binding = new Binding(queueName, Binding.DestinationType.QUEUE, exchangeName, routingKey, null);
-        admin.declareBinding(binding);
-    }
-
-    /**
-     * Create a rabbitmq queue and the corresponding binding.
-     */
-    private void createFanoutExchangeQueue() {
-        Queue queue = new Queue(QueueController.RUN_STATE_QUEUE, true, false, true);
-        admin.declareQueue(queue);
-        FanoutExchange exchange = new FanoutExchange(QueueController.RUN_STATE_EXCHANGE, false, true);
-        admin.declareExchange(exchange);
-        Binding binding = new Binding(QueueController.RUN_STATE_QUEUE, Binding.DestinationType.QUEUE, QueueController.RUN_STATE_EXCHANGE, QueueController.RUN_STATE_ROUTING, null);
         admin.declareBinding(binding);
     }
 }

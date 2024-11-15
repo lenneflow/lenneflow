@@ -26,7 +26,7 @@ public class Util {
      */
     public static QueueElement deserializeQueueElement(byte[] serializedFunctionDto) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        QueueElement queueElement = null;
+        QueueElement queueElement;
         queueElement = mapper.readValue(serializedFunctionDto, QueueElement.class);
         return queueElement;
     }
@@ -39,7 +39,7 @@ public class Util {
      */
     public static ResultQueueElement deserializeResultQueueElement(byte[] serialized) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        ResultQueueElement queueElement = null;
+        ResultQueueElement queueElement;
         queueElement = mapper.readValue(serialized, ResultQueueElement.class);
         return queueElement;
     }
@@ -52,7 +52,7 @@ public class Util {
      */
     public static byte[] serialize(RunNotification notification) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
-        byte[] serializedFunction = null;
+        byte[] serializedFunction;
         serializedFunction = mapper.writeValueAsBytes(notification);
         return serializedFunction;
     }
@@ -65,7 +65,7 @@ public class Util {
      */
     public static byte[] serialize(QueueElement queueElement) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
-        byte[] serializedFunction = null;
+        byte[] serializedFunction;
         serializedFunction = mapper.writeValueAsBytes(queueElement);
         return serializedFunction;
     }
@@ -78,7 +78,7 @@ public class Util {
      */
     public static byte[] serialize(ResultQueueElement queueElement) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
-        byte[] serializedFunction = null;
+        byte[] serializedFunction;
         serializedFunction = mapper.writeValueAsBytes(queueElement);
         return serializedFunction;
     }

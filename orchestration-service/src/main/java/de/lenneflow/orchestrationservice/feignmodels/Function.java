@@ -2,17 +2,12 @@ package de.lenneflow.orchestrationservice.feignmodels;
 
 import de.lenneflow.orchestrationservice.enums.DeploymentState;
 import de.lenneflow.orchestrationservice.enums.PackageRepository;
-import de.lenneflow.orchestrationservice.enums.RunStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
-
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 @Getter
 @Setter
@@ -52,7 +47,4 @@ public class Function implements Serializable {
 
     private JsonSchema outputSchema;
 
-    //private Map<String, Object> inputData = new HashMap<>();
-
-    //private Map<String, Object> outputData = new HashMap<>();
 }

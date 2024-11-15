@@ -5,7 +5,6 @@ import de.lenneflow.orchestrationservice.dto.RunNotification;
 import de.lenneflow.orchestrationservice.enums.RunOrderLabel;
 import de.lenneflow.orchestrationservice.enums.RunStatus;
 import de.lenneflow.orchestrationservice.exception.InternalServiceException;
-import de.lenneflow.orchestrationservice.feignclients.FunctionServiceClient;
 import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.orchestrationservice.feignmodels.Workflow;
 import de.lenneflow.orchestrationservice.feignmodels.WorkflowStep;
@@ -15,6 +14,7 @@ import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
 import de.lenneflow.orchestrationservice.utils.ExpressionEvaluator;
 import de.lenneflow.orchestrationservice.utils.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -30,25 +30,17 @@ import java.util.*;
  * @author Idrissa Ganemtore
  */
 @Controller
+@RequiredArgsConstructor
 public class InstanceController {
 
     private static final Logger logger = LoggerFactory.getLogger(InstanceController.class);
 
-    final FunctionServiceClient functionServiceClient;
     final WorkflowServiceClient workflowServiceClient;
     final WorkflowInstanceRepository workflowInstanceRepository;
     final WorkflowStepInstanceRepository workflowStepInstanceRepository;
     final QueueController queueController;
     final ExpressionEvaluator expressionEvaluator;
 
-    public InstanceController(FunctionServiceClient functionServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController, ExpressionEvaluator expressionEvaluator) {
-        this.functionServiceClient = functionServiceClient;
-        this.workflowServiceClient = workflowServiceClient;
-        this.workflowInstanceRepository = workflowInstanceRepository;
-        this.workflowStepInstanceRepository = workflowStepInstanceRepository;
-        this.queueController = queueController;
-        this.expressionEvaluator = expressionEvaluator;
-    }
 
     /**
      * From a workflow ID, this method will create a new workflow instance to run.

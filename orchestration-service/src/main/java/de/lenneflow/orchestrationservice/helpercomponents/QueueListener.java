@@ -3,6 +3,7 @@ package de.lenneflow.orchestrationservice.helpercomponents;
 import de.lenneflow.orchestrationservice.dto.QueueElement;
 import de.lenneflow.orchestrationservice.dto.ResultQueueElement;
 import de.lenneflow.orchestrationservice.utils.Util;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.AmqpAdmin;
@@ -19,6 +20,7 @@ import java.io.IOException;
  */
 @Component
 @EnableRabbit
+@RequiredArgsConstructor
 public class QueueListener {
 
     private static final Logger logger = LoggerFactory.getLogger(QueueListener.class);
@@ -26,11 +28,6 @@ public class QueueListener {
     final AmqpAdmin admin;
     final WorkflowRunner workflowRunner;
 
-
-    public QueueListener(AmqpAdmin admin, WorkflowRunner workflowRunner) {
-        this.admin = admin;
-        this.workflowRunner = workflowRunner;
-    }
 
     /**
      * Listener for the function queue. this queue contains the functions from different workflow instances that

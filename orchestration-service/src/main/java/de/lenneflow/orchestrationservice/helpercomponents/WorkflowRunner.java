@@ -21,6 +21,7 @@ import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceReposito
 import de.lenneflow.orchestrationservice.utils.ExpressionEvaluator;
 import de.lenneflow.orchestrationservice.utils.ObjectMapper;
 import de.lenneflow.orchestrationservice.utils.Util;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,6 +43,7 @@ import java.util.Objects;
  * @author Idrissa Ganemtore
  */
 @Component
+@RequiredArgsConstructor
 public class WorkflowRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkflowRunner.class);
@@ -59,16 +61,6 @@ public class WorkflowRunner {
     final ExpressionEvaluator expressionEvaluator;
     final RestTemplate restTemplate;
 
-    WorkflowRunner(FunctionServiceClient functionServiceClient, WorkflowServiceClient workflowServiceClient, WorkflowInstanceRepository workflowInstanceRepository, WorkflowStepInstanceRepository workflowStepInstanceRepository, QueueController queueController, InstanceController instanceController, ExpressionEvaluator expressionEvaluator, RestTemplate restTemplate) {
-        this.functionServiceClient = functionServiceClient;
-        this.workflowServiceClient = workflowServiceClient;
-        this.workflowInstanceRepository = workflowInstanceRepository;
-        this.workflowStepInstanceRepository = workflowStepInstanceRepository;
-        this.queueController = queueController;
-        this.instanceController = instanceController;
-        this.expressionEvaluator = expressionEvaluator;
-        this.restTemplate = restTemplate;
-    }
 
     /**
      * This is the start method of every workflow run. This method searches for the starting workflow step, gets the function
@@ -346,13 +338,13 @@ public class WorkflowRunner {
             if(step.getControlStructure() == ControlStructure.SWITCH){
                 for(DecisionCase decisionCase : step.getDecisionCases()){
                     Function dcFunction = functionServiceClient.getFunctionByUid(decisionCase.getFunctionUid());
-                    if(dcFunction != null && dcFunction.getDeploymentState() != DeploymentState.DEPLOYED && !contained(undeployedFunctions, dcFunction))
+                    if(dcFunction != null && dcFunction.getDeploymentState() != DeploymentState.DEPLOYED && notContained(undeployedFunctions, dcFunction))
                             undeployedFunctions.add(dcFunction);
 
                 }
             }else{
                 Function stepFunction = functionServiceClient.getFunctionByUid(step.getFunctionUid());
-                if(stepFunction != null && stepFunction.getDeploymentState() != DeploymentState.DEPLOYED && !contained(undeployedFunctions, stepFunction))
+                if(stepFunction != null && stepFunction.getDeploymentState() != DeploymentState.DEPLOYED && notContained(undeployedFunctions, stepFunction))
                         undeployedFunctions.add(stepFunction);
 
             }
@@ -478,13 +470,13 @@ public class WorkflowRunner {
     }
 
 
-    private boolean contained(List<Function> undeployedFunctions, Function dcFunction) {
+    private boolean notContained(List<Function> undeployedFunctions, Function dcFunction) {
         for(Function function : undeployedFunctions){
             if(function.getUid().equals(dcFunction.getUid())){
-                return true;
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
 }
