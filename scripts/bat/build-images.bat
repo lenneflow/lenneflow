@@ -26,4 +26,8 @@ cd callback-service
 docker build -t lenneflow/callback-service .
 cd..
 
+cd account-service
+docker build -t lenneflow/account-service .
+cd..
+
 docker images

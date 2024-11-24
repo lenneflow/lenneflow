@@ -49,7 +49,7 @@ public class YamlEditor {
      * @return the {@link Service} resource
      */
     public static Service createKubernetesServiceResource(Function function, CloudProvider cloudProvider) {
-        String serviceType = cloudProvider == CloudProvider.LOCAL ? "NodePort" : "LoadBalancer";
+        String serviceType = cloudProvider == CloudProvider.LOCAL ? "ClusterIP" : "LoadBalancer";
         return new ServiceBuilder().withApiVersion("v1").withKind("Service").withNewMetadata().withName(function.getName()).endMetadata().withNewSpec()
                 .withType(serviceType).withSelector(Collections.singletonMap("app", function.getName())).withPorts().addNewPort().withPort(function.getAssignedHostPort()).withTargetPort(new IntOrString(function.getServicePort())).endPort()
                 .endSpec().build();
