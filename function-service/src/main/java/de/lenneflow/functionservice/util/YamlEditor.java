@@ -126,7 +126,7 @@ public class YamlEditor {
      * @param function the function to deploy
      * @return the request map
      */
-    private static Map<String, Quantity> createResourcesRequestMap(Function function) {
+    protected static Map<String, Quantity> createResourcesRequestMap(Function function) {
         Map<String, Quantity> reqMap = new HashMap<>();
         if(function.getCpuRequest().toLowerCase().endsWith("m")){
             String amount = function.getCpuRequest().toLowerCase().replace("m", "").trim();

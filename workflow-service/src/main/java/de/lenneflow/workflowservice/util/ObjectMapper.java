@@ -13,6 +13,9 @@ public class ObjectMapper {
 
 
     public static Workflow mapToWorkflow(WorkflowDTO workflowDTO) {
+        if (workflowDTO == null) {
+            return null;
+        }
         Workflow workflow = new Workflow();
         workflow.setDescription(workflowDTO.getDescription());
         workflow.setName(workflowDTO.getName());
@@ -21,6 +24,9 @@ public class ObjectMapper {
     }
 
     public static WorkflowStep mapToWorkflowStep(WorkflowStep workflowStep, SubWorkflowStep subWorkflowStep) {
+        if(subWorkflowStep == null){
+            return null;
+        }
         workflowStep.setName(subWorkflowStep.getName());
         workflowStep.setWorkflowUid(subWorkflowStep.getWorkflowUid());
         workflowStep.setSubWorkflowUid(subWorkflowStep.getSubWorkflowUid());
@@ -40,6 +46,9 @@ public class ObjectMapper {
     }
 
     public static WorkflowStep mapToWorkflowStep(WorkflowStep workflowStep, WhileWorkflowStep whileWorkflowStep) {
+        if(whileWorkflowStep == null){
+            return null;
+        }
         workflowStep.setName(whileWorkflowStep.getName());
         workflowStep.setWorkflowUid(whileWorkflowStep.getWorkflowUid());
         workflowStep.setDescription(whileWorkflowStep.getDescription());
@@ -58,6 +67,9 @@ public class ObjectMapper {
     }
 
     public static WorkflowStep mapToWorkflowStep(WorkflowStep workflowStep, SwitchWorkflowStep switchWorkflowStep) {
+        if(switchWorkflowStep == null){
+            return null;
+        }
         workflowStep.setName(switchWorkflowStep.getName());
         workflowStep.setWorkflowUid(switchWorkflowStep.getWorkflowUid());
         workflowStep.setDescription(switchWorkflowStep.getDescription());
@@ -76,6 +88,9 @@ public class ObjectMapper {
     }
 
     public static WorkflowStep mapToWorkflowStep(WorkflowStep workflowStep, SimpleWorkflowStep simpleWorkflowStep) {
+        if(simpleWorkflowStep == null){
+            return null;
+        }
         workflowStep.setName(simpleWorkflowStep.getName());
         workflowStep.setWorkflowUid(simpleWorkflowStep.getWorkflowUid());
         workflowStep.setDescription(simpleWorkflowStep.getDescription());
@@ -88,6 +103,9 @@ public class ObjectMapper {
     }
 
     public static JsonSchema mapToJsonSchema(JsonSchemaDTO schemaDTO) {
+        if(schemaDTO == null){
+            return null;
+        }
         JsonSchema jsonSchema = new JsonSchema();
         jsonSchema.setSchema(schemaDTO.getSchema());
         jsonSchema.setSchemaVersion(schemaDTO.getSchemaVersion());

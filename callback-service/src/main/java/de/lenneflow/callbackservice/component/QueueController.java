@@ -26,7 +26,7 @@ public class QueueController {
     }
 
     public void addFunctionDtoToResultQueue(ResultQueueElement functionDto)  {
-        byte[] serializedFunctionDto = Util.serializeFunctionDto(functionDto);
+        byte[] serializedFunctionDto = Util.serializeResultQueueElement(functionDto);
         String queueName = AppConfiguration.RESULTSQUEUENAME;
         String exchange  = queueName + "-Exchange";
         String routingKey = queueName + "-RoutingKey";

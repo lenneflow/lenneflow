@@ -9,22 +9,22 @@ import java.io.IOException;
 
 public class Util {
 
-    public static ResultQueueElement deserializeFunction(byte[] serializedFunctionDto) {
+    public static ResultQueueElement deserializeResultQueueElement(byte[] serializedResultQueueElement) {
         ObjectMapper mapper = new ObjectMapper();
-        ResultQueueElement functionDto = null;
+        ResultQueueElement resultQueueElement = null;
         try {
-            functionDto = mapper.readValue(serializedFunctionDto, ResultQueueElement.class);
+            resultQueueElement = mapper.readValue(serializedResultQueueElement, ResultQueueElement.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return functionDto;
+        return resultQueueElement;
     }
 
-    public static byte[] serializeFunctionDto(ResultQueueElement functionDto) {
+    public static byte[] serializeResultQueueElement(ResultQueueElement resultQueueElement) {
         ObjectMapper mapper = new ObjectMapper();
         byte[] serializedFunction = null;
         try {
-            serializedFunction = mapper.writeValueAsBytes(functionDto);
+            serializedFunction = mapper.writeValueAsBytes(resultQueueElement);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
