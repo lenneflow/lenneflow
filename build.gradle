@@ -12,3 +12,16 @@ java {
         languageVersion = JavaLanguageVersion.of(17)
     }
 }
+
+repositories {
+    mavenCentral()
+}
+
+tasks.register('AllUnitTests') {
+    dependsOn gradle.includedBuild('worker-service').task(':test')
+    dependsOn gradle.includedBuild('orchestration-service').task(':test')
+    dependsOn gradle.includedBuild('workflow-service').task(':test')
+    dependsOn gradle.includedBuild('function-service').task(':test')
+    dependsOn gradle.includedBuild('callback-service').task(':test')
+    dependsOn gradle.includedBuild('account-service').task(':test')
+}

@@ -34,11 +34,12 @@ public class YamlEditor {
      */
     public static Deployment createKubernetesDeploymentResource(Function function, int replica, String serviceAccountName) {
         Map<String, Quantity> reqMap = createResourcesRequestMap(function);
+        Map<String, Quantity> limitMap = createResourcesLimitsMap(function);
         return new DeploymentBuilder().withApiVersion("apps/v1").withKind("Deployment")
                 .withNewMetadata().withName(function.getName()).endMetadata().withNewSpec().withReplicas(replica).withNewSelector()
                 .withMatchLabels(Collections.singletonMap("app", function.getName())).endSelector().withNewTemplate().withNewMetadata().withLabels(Collections.singletonMap("app", function.getName())).endMetadata().withNewSpec().withServiceAccountName(serviceAccountName).withHostNetwork(false)
                 .withContainers().addNewContainer().withName(function.getName()).withImage(function.getImageName()).withPorts().addNewPort().withContainerPort(function.getServicePort())
-                .withHostPort(function.getAssignedHostPort()).endPort().withResources(new ResourceRequirementsBuilder().withRequests(reqMap).build())
+                .withHostPort(function.getAssignedHostPort()).endPort().withResources(new ResourceRequirementsBuilder().withRequests(reqMap).build()).withResources(new ResourceRequirementsBuilder().withLimits(limitMap).build())
                 .endContainer().endSpec().endTemplate().endSpec().build();
     }
 
@@ -136,6 +137,28 @@ public class YamlEditor {
         }
         String memory = function.getMemoryRequest().toLowerCase().replace("mi", "").trim();
         reqMap.put("memory", new QuantityBuilder().withAmount(memory).withFormat("Mi").build());
+        return reqMap;
+    }
+
+    /**
+     * Create the resources limits map for the deployment.
+     * This is necessary for the Horizontal Pod Autoscaler
+     * @param function the function to deploy
+     * @return the request map
+     */
+    protected static Map<String, Quantity> createResourcesLimitsMap(Function function) {
+        Map<String, Quantity> reqMap = new HashMap<>();
+        if(function.getCpuRequest().toLowerCase().endsWith("m")){
+            String amount = function.getCpuRequest().toLowerCase().replace("m", "").trim();
+            int maxCpu = Integer.parseInt(amount) * 2;
+            reqMap.put("cpu", new QuantityBuilder().withAmount(maxCpu + "").withFormat("m").build());
+        }else {
+            int maxCpu = Integer.parseInt(function.getCpuRequest().trim()) * 2;
+            reqMap.put("cpu", new QuantityBuilder().withAmount(maxCpu + "").build());
+        }
+        String memory = function.getMemoryRequest().toLowerCase().replace("mi", "").trim();
+        int maxMemory = Integer.parseInt(memory) * 2;
+        reqMap.put("memory", new QuantityBuilder().withAmount(maxMemory + "").withFormat("Mi").build());
         return reqMap;
     }
 

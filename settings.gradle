@@ -1,1 +1,8 @@
 rootProject.name = 'lenneflow'
+
+includeBuild 'worker-service'
+includeBuild 'orchestration-service'
+includeBuild 'workflow-service'
+includeBuild 'function-service'
+includeBuild 'callback-service'
+includeBuild 'account-service'
