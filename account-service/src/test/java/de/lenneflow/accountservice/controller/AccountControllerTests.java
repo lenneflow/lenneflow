@@ -4,12 +4,14 @@ import de.lenneflow.accountservice.config.JwtService;
 import de.lenneflow.accountservice.dto.LoginDTO;
 import de.lenneflow.accountservice.dto.LoginResponse;
 import de.lenneflow.accountservice.dto.UserDto;
+import de.lenneflow.accountservice.enums.Role;
 import de.lenneflow.accountservice.exception.PayloadNotValidException;
 import de.lenneflow.accountservice.model.User;
 import de.lenneflow.accountservice.repository.UserRepository;
 import de.lenneflow.accountservice.util.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.AdditionalAnswers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -19,6 +21,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -78,10 +81,11 @@ class AccountControllerTests {
     void registerUser_savesAndReturnsUser_whenValidUserDto() {
         UserDto userDto = new UserDto();
         userDto.setPassword("password");
-        User user = new User();
-        user.setUid(UUID.randomUUID().toString());
+        userDto.setAuthorities(Set.of(Role.ROLE_USER));
+        userDto.setUsername("user");
+        userDto.setEmail("email");
         when(passwordEncoder.encode(any())).thenReturn("encodedPassword");
-        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userRepository.save(any(User.class))).then(AdditionalAnswers.returnsFirstArg());
 
         User result = accountController.registerUser(userDto);
 

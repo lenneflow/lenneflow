@@ -43,13 +43,19 @@ public class ExpressionEvaluator {
      * @param inputData           the input data to normalize
      * @param workflowInstanceUid the ID of the workflow instance.
      */
-    public void normalizeInputData(Map<String, Object> inputData, String workflowInstanceUid) {
+    public void normalizeInputData(Map<String, Object> inputData, String workflowInstanceUid){
         for (Map.Entry<String, Object> entry : inputData.entrySet()) {
             if (entry.getValue() instanceof Map) {
                 normalizeInputData((Map<String, Object>) entry.getValue(), workflowInstanceUid);
-            } else if (entry.getValue() instanceof String string) {
-                Object newValue = evaluateInputDataEntry(workflowInstanceUid, string);
-                inputData.put(entry.getKey(), newValue);
+            } else if (entry.getValue() instanceof String value) {
+                //Object newValue = evaluateInputDataEntry(workflowInstanceUid, value);
+                EvaluationValue eval = null;
+                try {
+                    eval = evaluateExpression(workflowInstanceUid, value, 0);
+                }catch (ParseException | EvaluationException e) {
+                    throw new InternalServiceException("Could not parse or evaluate expression: " + value);
+                }
+                inputData.put(entry.getKey(), eval.getValue());
             }
         }
     }

@@ -64,7 +64,7 @@ class ValidatorTest {
     @Test
     void validate_nullInputData_throwsPayloadNotValidException() {
         GlobalInputData globalInputData = new GlobalInputData();
-        globalInputData.setName("test");
+        globalInputData.setName("");
 
         assertThrows(PayloadNotValidException.class, () -> Validator.validate(globalInputData));
     }

@@ -3,10 +3,7 @@ package de.lenneflow.orchestrationservice.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.*;
 import de.lenneflow.orchestrationservice.enums.JsonSchemaVersion;
 import de.lenneflow.orchestrationservice.exception.PayloadNotValidException;
 import de.lenneflow.orchestrationservice.model.GlobalInputData;
@@ -38,7 +35,7 @@ public class Validator {
                 errors.forEach(x-> message.append(x.getMessage()).append("\n"));
                 throw new PayloadNotValidException("The json input is not valid" + message);
             }
-        } catch (JsonProcessingException e) {
+        } catch (JsonProcessingException | JsonSchemaException e) {
             throw new PayloadNotValidException("Input data parse error " + e.getMessage());
         }
     }

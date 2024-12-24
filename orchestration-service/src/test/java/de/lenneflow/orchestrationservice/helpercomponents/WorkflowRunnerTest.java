@@ -11,6 +11,7 @@ import de.lenneflow.orchestrationservice.exception.InternalServiceException;
 import de.lenneflow.orchestrationservice.feignclients.FunctionServiceClient;
 import de.lenneflow.orchestrationservice.feignclients.WorkflowServiceClient;
 import de.lenneflow.orchestrationservice.feignmodels.Function;
+import de.lenneflow.orchestrationservice.feignmodels.WorkflowStep;
 import de.lenneflow.orchestrationservice.model.WorkflowInstance;
 import de.lenneflow.orchestrationservice.model.WorkflowStepInstance;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
@@ -26,7 +27,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -141,17 +145,25 @@ class WorkflowRunnerTest {
 
     @Test
     void startWorkflow_shouldDeployFunctionsFirst() {
+
         WorkflowInstance workflowInstance = new WorkflowInstance();
+        workflowInstance.setUid("workflowInstanceId");
+
         WorkflowStepInstance firstStepInstance = new WorkflowStepInstance();
+        firstStepInstance.setWorkflowInstanceUid("workflowInstanceId");
         firstStepInstance.setControlStructure(ControlStructure.SIMPLE);
 
         Function undeployedFunction = new Function();
+        undeployedFunction.setUid("function");
         undeployedFunction.setDeploymentState(DeploymentState.UNDEPLOYED);
         undeployedFunction.setLazyDeployment(true);
 
+        List<WorkflowStepInstance> stepList = new ArrayList<>();
+        stepList.add(firstStepInstance);
+
         when(instanceController.getStartStep(workflowInstance)).thenReturn(firstStepInstance);
-        when(functionServiceClient.getFunctionByUid(any())).thenReturn(new Function());
-        //when(workflowRunner.getUndeployedFunctions(workflowInstance)).thenReturn(Collections.singletonList(undeployedFunction));
+        when(workflowStepInstanceRepository.findByWorkflowInstanceUid(any())).thenReturn(stepList);
+        when(functionServiceClient.getFunctionByUid(any())).thenReturn(new Function(), undeployedFunction);
 
         WorkflowExecution result = workflowRunner.startWorkflow(workflowInstance);
 
@@ -183,6 +195,7 @@ class WorkflowRunnerTest {
         resultQueueElement.setWorkflowInstanceId("workflowInstanceId");
         resultQueueElement.setStepInstanceId("stepInstanceId");
         resultQueueElement.setRunStatus(RunStatus.COMPLETED);
+        resultQueueElement.setOutputData(new HashMap<>());
 
         WorkflowInstance workflowInstance = new WorkflowInstance();
         WorkflowStepInstance workflowStepInstance = new WorkflowStepInstance();
@@ -191,10 +204,11 @@ class WorkflowRunnerTest {
         when(workflowInstanceRepository.findByUid("workflowInstanceId")).thenReturn(workflowInstance);
         when(workflowStepInstanceRepository.findByUid("stepInstanceId")).thenReturn(workflowStepInstance);
         when(instanceController.getNextWorkflowStepInstance(workflowStepInstance)).thenReturn(null);
+        doNothing().when(instanceController).deleteLastWorkflowInstances(anyInt(), anyInt());
 
         workflowRunner.processResultFromQueue(resultQueueElement);
 
-         verify(instanceController).updateRunStatus(workflowInstance, RunStatus.COMPLETED);
+         verify(instanceController).deleteLastWorkflowInstances(100, 100);
     }
 
     @Test

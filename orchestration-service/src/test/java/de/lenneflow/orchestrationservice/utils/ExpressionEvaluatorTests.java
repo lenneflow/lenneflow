@@ -25,26 +25,41 @@ class ExpressionEvaluatorTests {
     void normalizeInputData_withValidExpressions_replacesWithValues() {
         Map<String, Object> inputData = new HashMap<>();
         inputData.put("key", "[step1.output.value]");
+
+        Map<String, Object> outputData = new HashMap<>();
+        outputData.put("value", "4");
         WorkflowStepInstance stepInstance = new WorkflowStepInstance();
-        stepInstance.setOutputData(Map.of("value", "replacedValue"));
+        stepInstance.setOutputData(outputData);
+
         when(stepRepo.findByNameAndWorkflowInstanceUid("step1", "workflow1")).thenReturn(stepInstance);
 
         evaluator.normalizeInputData(inputData, "workflow1");
 
-        assertEquals("replacedValue", inputData.get("key"));
+        assertEquals("4", inputData.get("key").toString());
     }
 
     @Test
     void normalizeInputData_withNestedExpressions_replacesWithValues() {
         Map<String, Object> inputData = new HashMap<>();
-        inputData.put("key", Map.of("nestedKey", "[step1.output.value]"));
+        Map<String, Object> nested = new HashMap<>();
+        nested.put("nestedKey", "[step1.output.value]*4");
+        inputData.put("key", nested);
+
+        Map<String, Object> outputData = new HashMap<>();
+        outputData.put("value", "4");
+
+        WorkflowInstance instance = new WorkflowInstance();
+        instance.setUid("workflow1");
         WorkflowStepInstance stepInstance = new WorkflowStepInstance();
-        stepInstance.setOutputData(Map.of("value", "replacedValue"));
+        stepInstance.setName("step1");
+        stepInstance.setOutputData(outputData);
+
+        when(instanceRepo.findByUid("workflow1")).thenReturn(instance);
         when(stepRepo.findByNameAndWorkflowInstanceUid("step1", "workflow1")).thenReturn(stepInstance);
 
         evaluator.normalizeInputData(inputData, "workflow1");
 
-        assertEquals("replacedValue", ((Map) inputData.get("key")).get("nestedKey"));
+        assertEquals("16", ((Map) inputData.get("key")).get("nestedKey").toString());
     }
 
     @Test
@@ -55,9 +70,20 @@ class ExpressionEvaluatorTests {
     }
 
     @Test
-    void evaluateDoWhileCondition_withValidExpression_returnsBoolean() throws EvaluationException, ParseException {
-        when(instanceRepo.findByUid("workflow1")).thenReturn(new WorkflowInstance());
-        when(stepRepo.findByNameAndWorkflowInstanceUid("step1", "workflow1")).thenReturn(new WorkflowStepInstance());
+    void  evaluateDoWhileCondition_withValidExpression_returnsBoolean() throws EvaluationException, ParseException {
+
+        Map<String, Object> outputData = new HashMap<>();
+        outputData.put("value", "true");
+
+        WorkflowInstance instance = new WorkflowInstance();
+        instance.setUid("workflow1");
+
+        WorkflowStepInstance step = new WorkflowStepInstance();
+        step.setName("step1");
+        step.setOutputData(outputData);
+
+        when(instanceRepo.findByUid("workflow1")).thenReturn(instance);
+        when(stepRepo.findByNameAndWorkflowInstanceUid("step1", "workflow1")).thenReturn(step);
 
         boolean result = evaluator.evaluateDoWhileCondition("workflow1", "[step1.output.value] == true", 1);
 
@@ -66,18 +92,35 @@ class ExpressionEvaluatorTests {
 
     @Test
     void evaluateStringExpression_withValidExpression_returnsString() throws EvaluationException, ParseException {
-        when(instanceRepo.findByUid("workflow1")).thenReturn(new WorkflowInstance());
-        when(stepRepo.findByNameAndWorkflowInstanceUid("step1", "workflow1")).thenReturn(new WorkflowStepInstance());
+        Map<String, Object> outputData = new HashMap<>();
+        outputData.put("value", "2=3");
+        WorkflowInstance instance = new WorkflowInstance();
+        instance.setUid("workflow1");
+        WorkflowStepInstance step = new WorkflowStepInstance();
+        step.setName("step1");
+        step.setOutputData(outputData);
+        when(instanceRepo.findByUid("workflow1")).thenReturn(instance);
+        when(stepRepo.findByNameAndWorkflowInstanceUid("step1", "workflow1")).thenReturn(step);
 
         String result = evaluator.evaluateStringExpression("workflow1", "[step1.output.value]");
 
-        assertEquals("expectedString", result);
+        assertEquals("false", result);
     }
 
     @Test
     void evaluateDoubleExpression_withValidExpression_returnsDouble() throws EvaluationException, ParseException {
-        when(instanceRepo.findByUid("workflow1")).thenReturn(new WorkflowInstance());
-        when(stepRepo.findByNameAndWorkflowInstanceUid("step1", "workflow1")).thenReturn(new WorkflowStepInstance());
+        Map<String, Object> outputData = new HashMap<>();
+        outputData.put("value", "1.0");
+
+        WorkflowInstance instance = new WorkflowInstance();
+        instance.setUid("workflow1");
+
+        WorkflowStepInstance step = new WorkflowStepInstance();
+        step.setName("step1");
+        step.setOutputData(outputData);
+
+        when(instanceRepo.findByUid("workflow1")).thenReturn(instance);
+        when(stepRepo.findByNameAndWorkflowInstanceUid("step1", "workflow1")).thenReturn(step);
 
         double result = evaluator.evaluateDoubleExpression("workflow1", "[step1.output.value]");
 
