@@ -365,25 +365,22 @@ public class WorkflowRunner {
             if (function != null && function.isLazyDeployment()  && function.getDeploymentState() == DeploymentState.UNDEPLOYED) {
                 functionServiceClient.deployFunction(function.getUid());
             }else if(function != null && !function.isLazyDeployment() && function.getDeploymentState() == DeploymentState.UNDEPLOYED) {
-                String reason = "Function " + function.getName() + " is undeployed but the lazy deployment flag is not set!";
+                String reason = "Function " + function.getName() + " is not deployed but the lazy deployment flag is not set!";
                 terminateWorkflowRun(workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason, null);
                 throw new InternalServiceException(reason);
             }
         }
-        while (true) {
-            LocalDateTime start = LocalDateTime.now();
+        for(int i = 0; i < 60; i++){
             if (allFunctionsDeployed(steps)) {
                 instanceController.updateRunStatus(workflowInstance, RunStatus.RUNNING);
                 runStep(stepInstance, queueElement);
-                break;
+                return;
+            }else{
+                Util.pause(5000);
             }
-            if (start.plusMinutes(10).isBefore(LocalDateTime.now())) {
-                String reason = "All functions could not be deployed in time. Workflow run will be cancelled!";
-                terminateWorkflowRun(workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason, null);
-                throw new InternalServiceException(reason);
-            }
-            Util.pause(5000);
         }
+        String reason = "All functions could not be deployed in time. Workflow run will be cancelled!";
+        terminateWorkflowRun(workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason, null);
     }
 
     /**

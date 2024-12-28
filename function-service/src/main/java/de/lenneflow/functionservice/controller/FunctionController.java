@@ -225,7 +225,7 @@ public class FunctionController {
      */
     private void checkAndAllocateResourcesRequest(Function function) {
         if (function.getCpuRequest() == null || function.getCpuRequest().isEmpty()) {
-            function.setCpuRequest("250m");
+            function.setCpuRequest("100m");
         }
         if (function.getMemoryRequest() == null || function.getMemoryRequest().isEmpty()) {
             function.setMemoryRequest("128Mi");
