@@ -50,9 +50,12 @@ jobs:
 
     - name: Collect test results
       run: |
-        for i in 'worker-service' 'function-service' 'workflow-service' 'callback-service' 'orchestration-service' 'account-service'
+        for service in 'worker-service' 'function-service' 'workflow-service' 'callback-service' 'orchestration-service' 'account-service'
         do
-          echo "Test: $i"
+          echo "Test: $service"
+          rm -rf test-results
+          mkdir -p test-results
+          cp $service/build/test-results/**/*.xml test-result
         done
         
     - name: Build test report
@@ -61,7 +64,7 @@ jobs:
       with:
         gh_pages: gh-pages
         allure_history: allure-history
-        allure_results: build/test-results/test
+        allure_results: test-results
         
     - name: Publish test report
       uses: peaceiris/actions-gh-pages@v3
