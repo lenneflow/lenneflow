@@ -71,6 +71,9 @@ public class Validator {
         if (managedClusterDTO.getClusterName() == null || managedClusterDTO.getClusterName().isEmpty()) {
             throw new PayloadNotValidException("KubernetesCluster Name is required");
         }
+        if(managedClusterDTO.getClusterName().length() > 16) {
+            throw new PayloadNotValidException("Managed Cluster Name must be at maximum 16 characters long");
+        }
         if (managedClusterDTO.getRegion() == null || managedClusterDTO.getRegion().isEmpty()) {
             throw new PayloadNotValidException("Region is required");
         }

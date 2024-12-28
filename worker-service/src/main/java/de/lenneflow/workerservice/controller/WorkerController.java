@@ -132,6 +132,27 @@ public class WorkerController {
         return cloudCredentialRepository.save(cloudCredential);
     }
 
+    @Operation(summary = "Get the list of cloud Credentials")
+    @GetMapping("/cloud/credentials/list")
+    public List<CloudCredential> getClusterCredentialList() {
+        return cloudCredentialRepository.findAll();
+    }
+
+    @Operation(summary = "Delete the given cloud Credential")
+    @DeleteMapping("/cloud/credentials/{uid}")
+    public void deleteCloudCredential(@PathVariable String uid) {
+        CloudCredential credential = cloudCredentialRepository.findByUid(uid);
+        if(credential != null) {
+            cloudCredentialRepository.delete(credential);
+        }
+    }
+
+    @Operation(summary = "Delete the given cloud Credential")
+    @GetMapping("/cloud/credentials/{uid}")
+    public CloudCredential getCloudCredential(@PathVariable String uid) {
+        return cloudCredentialRepository.findByUid(uid);
+    }
+
     @Operation(summary = "Create access Token")
     @PostMapping("/cluster/api-token/create")
     public AccessToken createLocalApiToken(@RequestBody AccessTokenDto accessTokenDto) {
