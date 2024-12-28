@@ -35,10 +35,22 @@ jobs:
       uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
 
     - name: Make gradlew executable
-      run: chmod +x ./gradlew
+      run: |
+        chmod +x ./gradlew
+        chmod -R +x test-results
 
     - name: Build and Test
       run: ./gradlew AllUnitTests
+
+    - name: Collect test results
+      run: |
+        rm -rf test-results
+        mkdir -p test-results
+        for service in 'worker-service' 'function-service' 'workflow-service' 'callback-service' 'orchestration-service' 'account-service'
+        do
+          echo "$service"
+          cp $service/build/test-results/**/*.xml test-results
+        done
 
     - name: Load test report history
       uses: actions/checkout@v3
@@ -47,16 +59,6 @@ jobs:
       with:
         ref: gh-pages
         path: gh-pages
-
-    - name: Collect test results
-      run: |
-        rm -rf test-results
-        mkdir -p test-results
-        for service in 'worker-service' 'function-service' 'workflow-service' 'callback-service' 'orchestration-service' 'account-service'
-        do
-          echo "Test: $service"
-          cp $service/build/test-results/**/*.xml test-results
-        done
         
     - name: Build test report
       uses: simple-elf/allure-report-action@v1.7
