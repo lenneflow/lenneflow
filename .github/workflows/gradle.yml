@@ -37,18 +37,18 @@ jobs:
     - name: Make gradlew executable
       run: |
         chmod +x ./gradlew
-        chmod -R +x test-results
 
     - name: Build and Test
       run: ./gradlew AllUnitTests
 
     - name: Collect test results
       run: |
+        # chmod -R +x test-results
         rm -rf test-results
         mkdir -p test-results
         for service in 'worker-service' 'function-service' 'workflow-service' 'callback-service' 'orchestration-service' 'account-service'
         do
-          echo "$service"
+          echo "copying tests from $service"
           cp $service/build/test-results/**/*.xml test-results
         done
 
