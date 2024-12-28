@@ -55,7 +55,7 @@ jobs:
           echo "Test: $service"
           rm -rf test-results
           mkdir -p test-results
-          cp $service/build/test-results/**/*.xml test-result
+          cp $service/build/test-results/**/*.xml test-results
         done
         
     - name: Build test report
