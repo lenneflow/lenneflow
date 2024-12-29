@@ -88,7 +88,7 @@ public class WorkflowRunner {
             instanceController.updateRunStatus(workflowInstance, RunStatus.RUNNING);
             runStep(firstStepInstance, queueElement);
         }else{
-            new Thread(() -> deployFunctionsFirstAndRunStep(undeployedFunctions, workflowInstance, queueElement, firstStepInstance)).start();
+            new Thread(() -> deployFunctionsFirstAndRunStep(undeployedFunctions, workflowInstance, firstStepInstance)).start();
         }
         return new WorkflowExecution(workflowInstance);
     }
@@ -356,7 +356,7 @@ public class WorkflowRunner {
      *
      * @param workflowInstance the workflow instance to run
      */
-    private void deployFunctionsFirstAndRunStep(List<Function> undeployedFunctions, WorkflowInstance workflowInstance, QueueElement queueElement, WorkflowStepInstance stepInstance) {
+    private void deployFunctionsFirstAndRunStep(List<Function> undeployedFunctions, WorkflowInstance workflowInstance, WorkflowStepInstance stepInstance) {
         instanceController.updateRunStatus(workflowInstance, RunStatus.DEPLOYING_FUNCTIONS);
         for (Function function : undeployedFunctions) {
             if (function != null && function.isLazyDeployment()  && function.getDeploymentState() == DeploymentState.UNDEPLOYED) {
@@ -371,6 +371,8 @@ public class WorkflowRunner {
         for(int i = 0; i < 30; i++){
             if (getUndeployedFunctions(workflowInstance).isEmpty()) {
                 instanceController.updateRunStatus(workflowInstance, RunStatus.RUNNING);
+                Function function = functionServiceClient.getFunctionByUid(stepInstance.getFunctionUid());
+                QueueElement queueElement = generateRunQueueElement(workflowInstance, stepInstance, function);
                 runStep(stepInstance, queueElement);
                 return;
             }else{
