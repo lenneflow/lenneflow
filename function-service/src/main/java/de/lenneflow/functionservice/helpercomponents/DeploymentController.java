@@ -10,10 +10,13 @@ import de.lenneflow.functionservice.repository.FunctionRepository;
 import de.lenneflow.functionservice.util.YamlEditor;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.autoscaling.v1.*;
+import io.fabric8.kubernetes.api.model.autoscaling.v2.*;
+import io.fabric8.kubernetes.api.model.flowcontrol.v1.PolicyRulesWithSubjectsBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -152,7 +155,7 @@ public class DeploymentController {
                         d -> (d.getStatus().getReadyReplicas() != null && d.getStatus().getReadyReplicas() > 0), 5, MINUTES);
                 if(client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).get().getStatus().getReadyReplicas() > 0){
                     updateFunctionDeploymentState(function, DeploymentState.DEPLOYED);
-                    client.resource(createHorizontalPodsAutoscaler(deploymentName, 1, 25)).inNamespace(NAMESPACE).create();
+                    client.resource(createV2HorizontalPodsAutoscaler(deploymentName, 1, 10)).inNamespace(NAMESPACE).create();
                 }
             }catch (Exception e){
                 logger.error(e.getMessage());
@@ -160,21 +163,45 @@ public class DeploymentController {
             }
     }
 
-    private HorizontalPodAutoscaler createHorizontalPodsAutoscaler(String deploymentName, int minPods, int maxPods) {
+//    private HorizontalPodAutoscaler createV1HorizontalPodsAutoscaler(String deploymentName, int minPods, int maxPods) {
+//        return new HorizontalPodAutoscalerBuilder()
+//                .withNewMetadata()
+//                .withName(deploymentName)
+//                .addToLabels("name", deploymentName)
+//                .endMetadata()
+//                .withNewSpec()
+//                .withNewScaleTargetRef()
+//                .withApiVersion("apps/v1")
+//                .withKind("Deployment")
+//                .withName(deploymentName)
+//                .endScaleTargetRef()
+//                .withMinReplicas(minPods)
+//                .withMaxReplicas(maxPods)
+//                .withTargetCPUUtilizationPercentage(50)
+//                .endSpec().build();
+//    }
+
+    private HorizontalPodAutoscaler createV2HorizontalPodsAutoscaler(String deploymentName, int minPods, int maxPods) {
         return new HorizontalPodAutoscalerBuilder()
+                .withApiVersion("autoscaling/v2")
                 .withNewMetadata()
                 .withName(deploymentName)
                 .addToLabels("name", deploymentName)
                 .endMetadata()
                 .withNewSpec()
-                .withNewScaleTargetRef()
-                .withApiVersion("apps/v1")
-                .withKind("Deployment")
-                .withName(deploymentName)
-                .endScaleTargetRef()
+                .withNewBehavior()
+                .withNewScaleDown()
+                .withStabilizationWindowSeconds(300)
+                .withPolicies(new HPAScalingPolicyBuilder().withType("Pods").withValue(1).withPeriodSeconds(60).build())
+                .endScaleDown()
+                .withNewScaleUp()
+                .withStabilizationWindowSeconds(60)
+                .withPolicies(new HPAScalingPolicyBuilder().withType("Pods").withValue(1).withPeriodSeconds(60).build())
+                .endScaleUp()
+                .endBehavior()
                 .withMinReplicas(minPods)
                 .withMaxReplicas(maxPods)
-                .withTargetCPUUtilizationPercentage(50)
+                .withMetrics(new MetricSpecBuilder().withType("Resource").withNewResource().withName("cpu").withTarget(new MetricTargetBuilder().withType("Utilization").withAverageUtilization(50).build()).endResource().build())
                 .endSpec().build();
     }
 
