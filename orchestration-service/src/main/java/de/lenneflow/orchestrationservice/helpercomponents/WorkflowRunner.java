@@ -31,7 +31,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +88,6 @@ public class WorkflowRunner {
             instanceController.updateRunStatus(workflowInstance, RunStatus.RUNNING);
             runStep(firstStepInstance, queueElement);
         }else{
-            instanceController.updateRunStatus(workflowInstance, RunStatus.DEPLOYING_FUNCTIONS);
             new Thread(() -> deployFunctionsFirstAndRunStep(undeployedFunctions, workflowInstance, queueElement, firstStepInstance)).start();
         }
         return new WorkflowExecution(workflowInstance);
@@ -360,6 +358,7 @@ public class WorkflowRunner {
      * @param workflowInstance the workflow instance to run
      */
     private void deployFunctionsFirstAndRunStep(List<Function> undeployedFunctions, WorkflowInstance workflowInstance, QueueElement queueElement, WorkflowStepInstance stepInstance) {
+        instanceController.updateRunStatus(workflowInstance, RunStatus.DEPLOYING_FUNCTIONS);
         List<WorkflowStepInstance> steps = workflowStepInstanceRepository.findByWorkflowInstanceUid(workflowInstance.getUid());
         for (Function function : undeployedFunctions) {
             if (function != null && function.isLazyDeployment()  && function.getDeploymentState() == DeploymentState.UNDEPLOYED) {
@@ -370,6 +369,7 @@ public class WorkflowRunner {
                 throw new InternalServiceException(reason);
             }
         }
+        Util.pause(10000);
         for(int i = 0; i < 60; i++){
             if (allFunctionsDeployed(steps)) {
                 instanceController.updateRunStatus(workflowInstance, RunStatus.RUNNING);
@@ -391,7 +391,7 @@ public class WorkflowRunner {
     private boolean allFunctionsDeployed(List<WorkflowStepInstance> steps){
         for (WorkflowStepInstance step : steps) {
             Function function = functionServiceClient.getFunctionByUid(step.getFunctionUid());
-            if (function != null && function.getDeploymentState() == DeploymentState.DEPLOYING) {
+            if (function != null && function.getDeploymentState() != DeploymentState.DEPLOYED) {
                 return false;
             }
         }

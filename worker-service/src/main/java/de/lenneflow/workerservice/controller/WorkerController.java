@@ -147,7 +147,7 @@ public class WorkerController {
         }
     }
 
-    @Operation(summary = "Delete the given cloud Credential")
+    @Operation(summary = "Find the given cloud Credential")
     @GetMapping("/cloud/credentials/{uid}")
     public CloudCredential getCloudCredential(@PathVariable String uid) {
         return cloudCredentialRepository.findByUid(uid);
