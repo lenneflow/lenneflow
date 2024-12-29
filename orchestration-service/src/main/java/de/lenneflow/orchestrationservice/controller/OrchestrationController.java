@@ -8,9 +8,11 @@ import de.lenneflow.orchestrationservice.helpercomponents.InstanceController;
 import de.lenneflow.orchestrationservice.model.GlobalInputData;
 import de.lenneflow.orchestrationservice.dto.WorkflowExecution;
 import de.lenneflow.orchestrationservice.model.WorkflowInstance;
+import de.lenneflow.orchestrationservice.model.WorkflowStepInstance;
 import de.lenneflow.orchestrationservice.repository.GlobalInputDataRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.helpercomponents.WorkflowRunner;
+import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
 import de.lenneflow.orchestrationservice.utils.ObjectMapper;
 import de.lenneflow.orchestrationservice.utils.Validator;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,6 +40,7 @@ public class OrchestrationController {
 
     final WorkflowServiceClient workflowServiceClient;
     final WorkflowInstanceRepository workflowInstanceRepository;
+    final WorkflowStepInstanceRepository workflowStepInstanceRepository;
     final WorkflowRunner workflowRunner;
     final InstanceController instanceController;
     final GlobalInputDataRepository globalInputDataRepository;
@@ -112,6 +115,16 @@ public class OrchestrationController {
     @GetMapping("/workflow/run/list")
     public List<WorkflowExecution> executionList() {
         return getWorkflowExecutionList();
+    }
+
+    @DeleteMapping("/workflow/run/{uid}")
+    public void deleteWorkflowRun(@PathVariable String uid) {
+        WorkflowInstance instance = workflowInstanceRepository.findByUid(uid);
+        if (instance == null) {
+            throw new PayloadNotValidException("Could not find workflow instance with id " + uid);
+        }
+        workflowStepInstanceRepository.deleteAll(instance.getStepInstances());
+        workflowInstanceRepository.delete(instance);
     }
 
     @PostMapping("/workflow/input-data/create")

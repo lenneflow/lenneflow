@@ -333,21 +333,20 @@ public class WorkflowRunner {
             if(step.getControlStructure() == ControlStructure.SUB_WORKFLOW){
                 continue;
             }
-            if(step.getControlStructure() == ControlStructure.SWITCH){
+            if(step.getControlStructure() == ControlStructure.SWITCH && step.getDecisionCases() != null){
                 for(DecisionCase decisionCase : step.getDecisionCases()){
                     Function dcFunction = functionServiceClient.getFunctionByUid(decisionCase.getFunctionUid());
-                    if(dcFunction != null && dcFunction.getDeploymentState() != DeploymentState.DEPLOYED && notContained(undeployedFunctions, dcFunction))
-                            undeployedFunctions.add(dcFunction);
-
+                    if(dcFunction != null && dcFunction.getDeploymentState() != DeploymentState.DEPLOYED){
+                        addFunctionToList(undeployedFunctions, dcFunction);
+                    }
                 }
             }else{
                 Function stepFunction = functionServiceClient.getFunctionByUid(step.getFunctionUid());
-                if(stepFunction != null && stepFunction.getDeploymentState() != DeploymentState.DEPLOYED && notContained(undeployedFunctions, stepFunction))
-                        undeployedFunctions.add(stepFunction);
-
+                if(stepFunction != null && stepFunction.getDeploymentState() != DeploymentState.DEPLOYED){
+                    addFunctionToList(undeployedFunctions, stepFunction);
+                }
             }
         }
-
         return undeployedFunctions;
     }
 
@@ -359,7 +358,6 @@ public class WorkflowRunner {
      */
     private void deployFunctionsFirstAndRunStep(List<Function> undeployedFunctions, WorkflowInstance workflowInstance, QueueElement queueElement, WorkflowStepInstance stepInstance) {
         instanceController.updateRunStatus(workflowInstance, RunStatus.DEPLOYING_FUNCTIONS);
-        List<WorkflowStepInstance> steps = workflowStepInstanceRepository.findByWorkflowInstanceUid(workflowInstance.getUid());
         for (Function function : undeployedFunctions) {
             if (function != null && function.isLazyDeployment()  && function.getDeploymentState() == DeploymentState.UNDEPLOYED) {
                 functionServiceClient.deployFunction(function.getUid());
@@ -370,8 +368,8 @@ public class WorkflowRunner {
             }
         }
         Util.pause(10000);
-        for(int i = 0; i < 60; i++){
-            if (allFunctionsDeployed(steps)) {
+        for(int i = 0; i < 30; i++){
+            if (getUndeployedFunctions(workflowInstance).isEmpty()) {
                 instanceController.updateRunStatus(workflowInstance, RunStatus.RUNNING);
                 runStep(stepInstance, queueElement);
                 return;
@@ -381,21 +379,6 @@ public class WorkflowRunner {
         }
         String reason = "All functions could not be deployed in time. Workflow run will be cancelled!";
         terminateWorkflowRun(workflowInstance, RunStatus.FAILED_WITH_TERMINAL_ERROR, reason, null);
-    }
-
-    /**
-     * Loop over all steps and check if all functions are deployed
-     * @param steps the workflow steps
-     * @return the result
-     */
-    private boolean allFunctionsDeployed(List<WorkflowStepInstance> steps){
-        for (WorkflowStepInstance step : steps) {
-            Function function = functionServiceClient.getFunctionByUid(step.getFunctionUid());
-            if (function != null && function.getDeploymentState() != DeploymentState.DEPLOYED) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
@@ -467,13 +450,13 @@ public class WorkflowRunner {
     }
 
 
-    private boolean notContained(List<Function> undeployedFunctions, Function dcFunction) {
-        for(Function function : undeployedFunctions){
-            if(function.getUid().equals(dcFunction.getUid())){
-                return false;
+    private void addFunctionToList(List<Function> functionList, Function functionToAdd) {
+        for(Function function : functionList){
+            if(function.getUid().equals(functionToAdd.getUid())){
+                return;
             }
         }
-        return true;
+        functionList.add(functionToAdd);
     }
 
 }

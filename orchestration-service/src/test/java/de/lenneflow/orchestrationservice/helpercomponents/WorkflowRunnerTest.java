@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
+import org.mockito.verification.Timeout;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -166,7 +167,7 @@ class WorkflowRunnerTest {
         WorkflowExecution result = workflowRunner.startWorkflow(workflowInstance);
 
         assertNotNull(result);
-        verify(instanceController).updateRunStatus(workflowInstance, RunStatus.DEPLOYING_FUNCTIONS);
+        verify(instanceController, timeout(500)).updateRunStatus(workflowInstance, RunStatus.DEPLOYING_FUNCTIONS);
     }
 
     @Test

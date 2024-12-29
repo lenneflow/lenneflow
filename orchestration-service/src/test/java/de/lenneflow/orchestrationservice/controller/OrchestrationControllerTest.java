@@ -13,6 +13,7 @@ import de.lenneflow.orchestrationservice.model.WorkflowInstance;
 import de.lenneflow.orchestrationservice.repository.GlobalInputDataRepository;
 import de.lenneflow.orchestrationservice.repository.WorkflowInstanceRepository;
 import de.lenneflow.orchestrationservice.helpercomponents.WorkflowRunner;
+import de.lenneflow.orchestrationservice.repository.WorkflowStepInstanceRepository;
 import de.lenneflow.orchestrationservice.utils.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,8 @@ class OrchestrationControllerTest {
     @Mock
     private WorkflowInstanceRepository workflowInstanceRepository;
     @Mock
+    WorkflowStepInstanceRepository workflowStepInstanceRepository;
+    @Mock
     private WorkflowRunner workflowRunner;
     @Mock
     private InstanceController instanceController;
@@ -44,7 +47,7 @@ class OrchestrationControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        orchestrationController = new OrchestrationController(workflowServiceClient, workflowInstanceRepository, workflowRunner, instanceController, globalInputDataRepository);
+        orchestrationController = new OrchestrationController(workflowServiceClient, workflowInstanceRepository, workflowStepInstanceRepository, workflowRunner, instanceController, globalInputDataRepository);
     }
 
     @Test
