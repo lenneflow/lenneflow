@@ -44,7 +44,7 @@ public class YamlEditor {
                 .withNewSpec().withServiceAccountName(serviceAccountName).withHostNetwork(false)
                 .withContainers()
                 .addNewContainer().withName(function.getName()).withImage(function.getImageName())
-                .withPorts().addNewPort().withContainerPort(function.getServicePort()).withHostPort(function.getAssignedHostPort())
+                .withPorts().addNewPort().withContainerPort(function.getServicePort()) //.withHostPort(function.getAssignedHostPort())
                 .endPort().withResources(new ResourceRequirementsBuilder().withRequests(reqMap).build()) //.withResources(new ResourceRequirementsBuilder().withLimits(limitMap).build())
                 .withReadinessProbe(new ProbeBuilder().withTcpSocket(new TCPSocketActionBuilder().withPort(new IntOrString(function.getServicePort())).build())
                         .withInitialDelaySeconds(function.getStartDelayInSeconds()).withPeriodSeconds(10).build())
