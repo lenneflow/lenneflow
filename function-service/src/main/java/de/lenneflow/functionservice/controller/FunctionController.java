@@ -230,6 +230,9 @@ public class FunctionController {
         if (function.getMemoryRequest() == null || function.getMemoryRequest().isEmpty()) {
             function.setMemoryRequest("128Mi");
         }
+        if(function.getStartDelayInSeconds() <= 0) {
+            function.setStartDelayInSeconds(15);
+        }
     }
 
 }

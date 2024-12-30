@@ -2,6 +2,7 @@ package de.lenneflow.orchestrationservice.feignmodels;
 
 import de.lenneflow.orchestrationservice.enums.DeploymentState;
 import de.lenneflow.orchestrationservice.enums.PackageRepository;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,6 +35,8 @@ public class Function implements Serializable {
     private String cpuRequest;
 
     private String memoryRequest;
+
+    private int startDelayInSeconds;
 
     private boolean lazyDeployment;
 

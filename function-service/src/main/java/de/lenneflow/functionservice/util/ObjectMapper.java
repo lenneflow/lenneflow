@@ -27,6 +27,7 @@ public class ObjectMapper {
         function.setType(functionDTO.getType());
         function.setCpuRequest(functionDTO.getCpuRequest());
         function.setMemoryRequest(functionDTO.getMemoryRequest());
+        function.setStartDelayInSeconds(functionDTO.getStartDelayInSeconds());
         function.setPackageRepository(functionDTO.getPackageRepository());
         function.setResourcePath(functionDTO.getResourcePath());
         function.setServicePort(functionDTO.getServicePort());

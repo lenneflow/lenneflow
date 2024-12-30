@@ -43,6 +43,7 @@ public class ObjectMapper {
         queueElement.setFunctionType(queueElement.getFunctionType());
         queueElement.setCpuRequest(function.getCpuRequest());
         queueElement.setMemoryRequest(function.getMemoryRequest());
+        queueElement.setStartDelayInSeconds(function.getStartDelayInSeconds());
         queueElement.setServiceUrl(function.getServiceUrl());
         return queueElement;
     }

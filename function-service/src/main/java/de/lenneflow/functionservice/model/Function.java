@@ -45,6 +45,8 @@ public class Function {
 
     private String memoryRequest;
 
+    private int startDelayInSeconds;
+
     private String imageName;
 
     private boolean lazyDeployment;

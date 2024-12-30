@@ -36,11 +36,23 @@ public class YamlEditor {
         Map<String, Quantity> reqMap = createResourcesRequestMap(function);
         Map<String, Quantity> limitMap = createResourcesLimitsMap(function);
         return new DeploymentBuilder().withApiVersion("apps/v1").withKind("Deployment")
-                .withNewMetadata().withName(function.getName()).endMetadata().withNewSpec().withReplicas(replica).withNewSelector()
-                .withMatchLabels(Collections.singletonMap("app", function.getName())).endSelector().withNewTemplate().withNewMetadata().withLabels(Collections.singletonMap("app", function.getName())).endMetadata().withNewSpec().withServiceAccountName(serviceAccountName).withHostNetwork(false)
-                .withContainers().addNewContainer().withName(function.getName()).withImage(function.getImageName()).withPorts().addNewPort().withContainerPort(function.getServicePort())
-                .withHostPort(function.getAssignedHostPort()).endPort().withResources(new ResourceRequirementsBuilder().withRequests(reqMap).build()) //.withResources(new ResourceRequirementsBuilder().withLimits(limitMap).build())
-                .endContainer().endSpec().endTemplate().endSpec().build();
+                .withNewMetadata().withName(function.getName()).endMetadata()
+                .withNewSpec().withReplicas(replica).withNewSelector()
+                .withMatchLabels(Collections.singletonMap("app", function.getName())).endSelector()
+                .withNewTemplate().withNewMetadata().withLabels(Collections.singletonMap("app", function.getName()))
+                .endMetadata()
+                .withNewSpec().withServiceAccountName(serviceAccountName).withHostNetwork(false)
+                .withContainers()
+                .addNewContainer().withName(function.getName()).withImage(function.getImageName())
+                .withPorts().addNewPort().withContainerPort(function.getServicePort()).withHostPort(function.getAssignedHostPort())
+                .endPort().withResources(new ResourceRequirementsBuilder().withRequests(reqMap).build()) //.withResources(new ResourceRequirementsBuilder().withLimits(limitMap).build())
+                .withReadinessProbe(new ProbeBuilder().withTcpSocket(new TCPSocketActionBuilder().withPort(new IntOrString(function.getServicePort())).build())
+                        .withInitialDelaySeconds(function.getStartDelayInSeconds()).withPeriodSeconds(10).build())
+                .endContainer()
+                .endSpec()
+                .endTemplate()
+                .endSpec()
+                .build();
     }
 
     /**

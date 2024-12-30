@@ -49,6 +49,9 @@ public class FunctionDTO {
     @Schema(examples = {"300Mi"}, requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String memoryRequest;
 
+    @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private int startDelayInSeconds;
+
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     private String inputSchemaUid;
 

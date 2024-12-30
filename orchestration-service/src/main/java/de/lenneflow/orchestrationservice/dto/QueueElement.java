@@ -32,6 +32,8 @@ public class QueueElement {
 
     private String memoryRequest;
 
+    private int startDelayInSeconds;
+
     private String callBackUrl;
 
     private String failureReason;
