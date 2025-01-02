@@ -102,6 +102,7 @@ public class WorkflowRunner {
     public WorkflowExecution stopWorkflow(String workflowInstanceId) {
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(workflowInstanceId);
         instanceController.updateRunStatus(workflowInstance, RunStatus.STOPPED);
+        terminateWorkflowRun(workflowInstance, RunStatus.STOPPED, "", workflowInstance.getOutputData());
         return new WorkflowExecution(workflowInstance);
     }
 
@@ -114,6 +115,11 @@ public class WorkflowRunner {
     public WorkflowExecution pauseWorkflow(String workflowInstanceId) {
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(workflowInstanceId);
         instanceController.updateRunStatus(workflowInstance, RunStatus.PAUSED);
+        for(WorkflowStepInstance stepInstance : workflowInstance.getStepInstances()){
+           if(stepInstance.getRunStatus() == RunStatus.RUNNING){
+               instanceController.updateRunStatus(stepInstance, RunStatus.PAUSED);
+           }
+        }
         return new WorkflowExecution(workflowInstance);
     }
 
@@ -127,6 +133,13 @@ public class WorkflowRunner {
     public WorkflowExecution resumeWorkflow(String workflowInstanceId) {
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(workflowInstanceId);
         instanceController.updateRunStatus(workflowInstance, RunStatus.RUNNING);
+        for(WorkflowStepInstance stepInstance : workflowInstance.getStepInstances()){
+            if(stepInstance.getRunStatus() == RunStatus.PAUSED){
+                Function function = functionServiceClient.getFunctionByUid(stepInstance.getFunctionUid());
+                QueueElement queueElement = generateRunQueueElement(workflowInstance, stepInstance, function);
+                runStep(stepInstance, queueElement);
+            }
+        }
         return new WorkflowExecution(workflowInstance);
     }
 
@@ -147,6 +160,13 @@ public class WorkflowRunner {
      * @param queueElement the function dto object
      */
     public void processFunctionDtoFromQueue(QueueElement queueElement) {
+
+        //check if the workflows is still running
+        WorkflowStepInstance workflowStepInstance = workflowStepInstanceRepository.findByUid(queueElement.getStepInstanceId());
+        if(workflowStepInstance != null && workflowStepInstance.getRunStatus() != RunStatus.RUNNING){
+            return;
+        }
+
         logger.info("Start processing function {} from send queue.", queueElement.getFunctionName());
         Map<String, Object> inputData = queueElement.getInputData();
         String serviceUrl = queueElement.getServiceUrl();
