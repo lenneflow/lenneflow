@@ -18,9 +18,9 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-server:latest.release'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-server:4.2.0'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:3.4.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.4'
 }
 
 
