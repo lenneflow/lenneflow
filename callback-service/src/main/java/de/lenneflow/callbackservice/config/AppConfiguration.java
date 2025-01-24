@@ -42,7 +42,7 @@ public class AppConfiguration {
 
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        return builder.setReadTimeout(Duration.ofMinutes(10)).build();
+        return builder.readTimeout(Duration.ofMinutes(10)).build();
     }
 
 

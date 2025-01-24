@@ -1,7 +1,6 @@
 package de.lenneflow.workerservice.config;
 
 import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -85,7 +84,7 @@ public class AppConfiguration {
         // Create a RestTemplate with a custom request factory
 
         // Build RestTemplate with SimpleClientHttpRequestFactory
-        return new RestTemplateBuilder().requestFactory(SimpleClientHttpRequestFactory.class).setReadTimeout(Duration.ofMinutes(10))
+        return new RestTemplateBuilder().requestFactory(SimpleClientHttpRequestFactory.class).readTimeout(Duration.ofMinutes(10))
                 .build();
     }
 

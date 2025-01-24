@@ -34,6 +34,8 @@ public class AccountController {
     @Value("${application.security.jwt.expiration}")
     private long expiration;
 
+    private static final String TOKEN_TYPE = "Bearer";
+
     final UserRepository userRepository;
     final Validator validator;
     final AuthenticationProvider authenticationManager;
@@ -71,7 +73,7 @@ public class AccountController {
             LoginResponse loginResponse = LoginResponse
                     .builder()
                     .accessToken(jwt)
-                    .tokenType("Bearer")
+                    .tokenType(TOKEN_TYPE)
                     .expiration(tokenExpiration.toInstant()
                             .atZone(ZoneId.systemDefault())
                             .toLocalDateTime())
