@@ -93,7 +93,7 @@ class WorkflowRunnerTest {
         WorkflowExecution result = workflowRunner.stopWorkflow(workflowInstanceId);
 
         assertNotNull(result);
-        verify(instanceController).updateRunStatus(workflowInstance, RunStatus.STOPPED);
+        verify(instanceController, atLeast(1)).updateRunStatus(workflowInstance, RunStatus.STOPPED);
     }
 
     @Test

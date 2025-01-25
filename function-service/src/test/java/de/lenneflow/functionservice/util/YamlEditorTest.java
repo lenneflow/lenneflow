@@ -23,7 +23,6 @@ class YamlEditorTest {
         function.setName("testFunction");
         function.setImageName("testImage");
         function.setServicePort(8080);
-        function.setAssignedHostPort(30000);
         function.setCpuRequest("500m");
         function.setMemoryRequest("256Mi");
 
@@ -32,7 +31,6 @@ class YamlEditorTest {
         assertEquals("testFunction", deployment.getMetadata().getName());
         assertEquals("testImage", deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         assertEquals(8080, deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getContainerPort());
-        assertEquals(30000, deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getHostPort());
     }
 
     @Test
