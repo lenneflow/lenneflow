@@ -24,8 +24,9 @@ public class SecurityConfig  {
     private final UserService userService;
 
     private static final String[] WHITE_LIST_URL = {
-            "/api/accounts/user/login",
-            "/api/accounts/user/register"
+            "/api/accounts/docs/**",
+            "/api/accounts/ping",
+            "/actuator/**"
     };
 
     @Bean
@@ -33,8 +34,10 @@ public class SecurityConfig  {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(WHITE_LIST_URL).permitAll() // Whitelisting some paths from authentication
-                        .anyRequest().hasAuthority("ADMIN")) // All other requests must be authenticated
+                        .requestMatchers(WHITE_LIST_URL).permitAll()
+                        .requestMatchers("/api/accounts/user/**").hasAuthority("USER")// Whitelisting some paths from authentication
+                        .requestMatchers("/api/accounts/admin/**").hasAuthority("ADMIN"))
+                // All other requests must be authenticated
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session management
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class).build(); // Registering our JwtAuthFilter

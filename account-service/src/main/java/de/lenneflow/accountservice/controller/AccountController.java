@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -49,8 +50,8 @@ public class AccountController {
         return userRepository.findByUid(uid);
     }
 
-    @Operation(summary = "Register a new User")
-    @PostMapping("/user/register")
+    @Operation(summary = "Create a new User")
+    @PostMapping("/user/create")
     public User registerUser(@RequestBody UserDto userDto) {
         validator.validate(userDto);
         User user = ObjectMapper.mapToUser(userDto);
@@ -62,7 +63,12 @@ public class AccountController {
         return userRepository.save(user);
     }
 
-    @PostMapping("/user/login")
+    @GetMapping("/user/list")
+    public List<User> userList() {
+        return userRepository.findAll();
+    }
+
+    @PostMapping("/user/token")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginDTO loginDTO) {
         try {
             authenticationManager

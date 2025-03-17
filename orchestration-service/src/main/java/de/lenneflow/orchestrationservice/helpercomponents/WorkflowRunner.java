@@ -167,7 +167,7 @@ public class WorkflowRunner {
             return;
         }
 
-        logger.info("Start processing function {} from send queue.", queueElement.getFunctionName());
+
         Map<String, Object> inputData = queueElement.getInputData();
         String serviceUrl = queueElement.getServiceUrl();
         String callBackUrl = callBackRoot + "/" + queueElement.getStepInstanceId() + "/" + queueElement.getWorkflowInstanceId();
@@ -177,7 +177,6 @@ public class WorkflowRunner {
         functionPayload.setCallBackUrl(callBackUrl);
         functionPayload.setFailureReason("");
 
-        logger.info("Send function {} with a post request to the url {}", queueElement.getFunctionName(), serviceUrl);
         ResponseEntity<Void> response = restTemplate.exchange(serviceUrl, HttpMethod.POST, new HttpEntity<>(functionPayload), Void.class);
         if (response.getStatusCode().value() != 200) {
             logger.error("send request to the url {} failed.", serviceUrl);
@@ -197,7 +196,6 @@ public class WorkflowRunner {
      * @param resultQueueElement function object
      */
     public void processResultFromQueue(ResultQueueElement resultQueueElement) {
-        logger.info("Start processing Queue element with the state {} from the results queue.", resultQueueElement.getRunStatus());
         WorkflowInstance workflowInstance = workflowInstanceRepository.findByUid(resultQueueElement.getWorkflowInstanceId());
         WorkflowStepInstance workflowStepInstance = workflowStepInstanceRepository.findByUid(resultQueueElement.getStepInstanceId());
 
