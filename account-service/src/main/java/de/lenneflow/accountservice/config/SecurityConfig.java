@@ -1,5 +1,6 @@
 package de.lenneflow.accountservice.config;
 
+import de.lenneflow.accountservice.enums.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +27,7 @@ public class SecurityConfig  {
     private static final String[] WHITE_LIST_URL = {
             "/api/accounts/docs/**",
             "/api/accounts/ping",
+            "/api/accounts/user/token",
             "/actuator/**"
     };
 
@@ -35,8 +37,8 @@ public class SecurityConfig  {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(WHITE_LIST_URL).permitAll()
-                        .requestMatchers("/api/accounts/user/**").hasAuthority("USER")// Whitelisting some paths from authentication
-                        .requestMatchers("/api/accounts/admin/**").hasAuthority("ADMIN"))
+                        .requestMatchers("/api/accounts/user/**").authenticated()
+                        .requestMatchers("/api/accounts/secure/**").hasAuthority(String.valueOf(Role.ROLE_ADMIN)))
                 // All other requests must be authenticated
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session management
@@ -55,5 +57,4 @@ public class SecurityConfig  {
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
 }

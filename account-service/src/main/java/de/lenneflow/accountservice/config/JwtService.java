@@ -52,7 +52,7 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    private Date extractExpiration(String token){
+    private Date extractExpiration(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(getSignKey())
                 .build()
@@ -61,7 +61,7 @@ public class JwtService {
         return claims.getExpiration();
     }
 
-    public String extractUsername(String token){
+    public String extractUsername(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(getSignKey())
                 .build()

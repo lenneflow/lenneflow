@@ -1,12 +1,12 @@
 package de.lenneflow.accountservice.controller;
 
 import de.lenneflow.accountservice.config.JwtService;
+import de.lenneflow.accountservice.config.UserService;
 import de.lenneflow.accountservice.dto.LoginDTO;
 import de.lenneflow.accountservice.dto.LoginResponse;
 import de.lenneflow.accountservice.dto.UserDto;
 import de.lenneflow.accountservice.exception.PayloadNotValidException;
 import de.lenneflow.accountservice.model.User;
-import de.lenneflow.accountservice.repository.UserRepository;
 import de.lenneflow.accountservice.util.ObjectMapper;
 import de.lenneflow.accountservice.util.Validator;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,7 +37,7 @@ public class AccountController {
 
     private static final String TOKEN_TYPE = "Bearer";
 
-    final UserRepository userRepository;
+    final UserService userRepository;
     final Validator validator;
     final AuthenticationProvider authenticationManager;
     final JwtService jwtService;
@@ -45,13 +45,13 @@ public class AccountController {
     private final PasswordEncoder passwordEncoder;
 
     @Operation(summary = "Get a User by uid")
-    @GetMapping("/user/{uid}")
+    @GetMapping("/secure/user/{uid}")
     public User getUserById(@PathVariable("uid") String uid) {
         return userRepository.findByUid(uid);
     }
 
     @Operation(summary = "Create a new User")
-    @PostMapping("/user/create")
+    @PostMapping("/secure/user/create")
     public User registerUser(@RequestBody UserDto userDto) {
         validator.validate(userDto);
         User user = ObjectMapper.mapToUser(userDto);
@@ -63,7 +63,13 @@ public class AccountController {
         return userRepository.save(user);
     }
 
-    @GetMapping("/user/list")
+    @DeleteMapping("/secure/user/{uid}")
+    public void deleteUser(@PathVariable String uid) {
+        User user = userRepository.findByUid(uid);
+        userRepository.delete(user);
+    }
+
+    @GetMapping("/secure/user/list")
     public List<User> userList() {
         return userRepository.findAll();
     }
