@@ -50,6 +50,12 @@ public class AccountController {
         return userRepository.findByUid(uid);
     }
 
+    @Operation(summary = "Get a User by User Name")
+    @GetMapping("/secure/user/name/{userName}")
+    public User getUserByName(@PathVariable("userName") String userName) {
+        return userRepository.findByUsername(userName);
+    }
+
     @Operation(summary = "Create a new User")
     @PostMapping("/secure/user/create")
     public User registerUser(@RequestBody UserDto userDto) {
